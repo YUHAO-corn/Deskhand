@@ -22,17 +22,30 @@ export interface AgentConfig {
 }
 
 // Default model
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+const DEFAULT_MODEL = 'claude-haiku-4-5-20251001'
 
 /**
  * Get the Anthropic client with credentials
+ * Priority: Environment variables > Config file
  */
 async function getAnthropicClient(): Promise<Anthropic> {
+  // Check environment variables first (for dev/testing)
+  const envApiKey = process.env.ANTHROPIC_API_KEY
+  const envBaseUrl = process.env.ANTHROPIC_BASE_URL
+
+  if (envApiKey) {
+    return new Anthropic({
+      apiKey: envApiKey,
+      baseURL: envBaseUrl || undefined,
+    })
+  }
+
+  // Fall back to config file
   const credentials = await loadCredentials()
   const config = loadConfig()
 
   if (!credentials?.anthropic) {
-    throw new Error('No API credentials configured')
+    throw new Error('No API credentials configured. Set ANTHROPIC_API_KEY env var or configure in app.')
   }
 
   return new Anthropic({

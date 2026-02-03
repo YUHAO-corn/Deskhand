@@ -21,6 +21,19 @@ export function registerOnboardingHandlers(): void {
     IPC_CHANNELS.ONBOARDING_GET_AUTH_STATE,
     async (): Promise<IpcResponse<GetAuthStateResponse>> => {
       try {
+        // Check environment variables first
+        const envApiKey = process.env.ANTHROPIC_API_KEY
+        if (envApiKey) {
+          return {
+            success: true,
+            data: {
+              isConfigured: true,
+              authType: 'api_key',
+              hasCredential: true,
+            },
+          }
+        }
+
         const config = loadConfig()
         const hasCreds = hasCredentials()
 
@@ -53,7 +66,7 @@ export function registerOnboardingHandlers(): void {
 
         // Try a simple API call to validate the key
         await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 1,
           messages: [{ role: 'user', content: 'hi' }],
         })
