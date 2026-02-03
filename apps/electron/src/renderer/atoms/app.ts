@@ -1,0 +1,24 @@
+import { atom } from 'jotai'
+import type { AuthType } from '@deskhand/shared/auth'
+
+/**
+ * Auth state atom
+ */
+export interface AuthState {
+  isConfigured: boolean
+  authType: AuthType | null
+  isLoading: boolean
+}
+
+export const authStateAtom = atom<AuthState>({
+  isConfigured: false,
+  authType: null,
+  isLoading: true,
+})
+
+/**
+ * Theme atom
+ */
+export type Theme = 'light' | 'dark'
+
+export const themeAtom = atom<Theme>('light')

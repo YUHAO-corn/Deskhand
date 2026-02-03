@@ -1,4 +1,9 @@
-export default function App() {
+import { useEffect } from 'react'
+import { useAtom } from 'jotai'
+import { authStateAtom } from './atoms'
+import { Onboarding } from './components/Onboarding'
+
+function MainApp() {
   return (
     <div className="h-screen flex">
       {/* Navigator Panel */}
@@ -38,4 +43,58 @@ export default function App() {
       </main>
     </div>
   )
+}
+
+export default function App() {
+  const [authState, setAuthState] = useAtom(authStateAtom)
+
+  useEffect(() => {
+    // Check auth state on mount
+    async function checkAuth() {
+      try {
+        const result = await window.electronAPI.getAuthState()
+        if (result.success && result.data) {
+          setAuthState({
+            isConfigured: result.data.isConfigured,
+            authType: result.data.authType,
+            isLoading: false,
+          })
+        } else {
+          setAuthState((prev) => ({ ...prev, isLoading: false }))
+        }
+      } catch (error) {
+        console.error('Failed to check auth state:', error)
+        setAuthState((prev) => ({ ...prev, isLoading: false }))
+      }
+    }
+
+    checkAuth()
+  }, [setAuthState])
+
+  // Loading state
+  if (authState.isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
+  // Show onboarding if not configured
+  if (!authState.isConfigured) {
+    return (
+      <Onboarding
+        onComplete={() => {
+          setAuthState((prev) => ({
+            ...prev,
+            isConfigured: true,
+            authType: 'api_key',
+          }))
+        }}
+      />
+    )
+  }
+
+  // Main app
+  return <MainApp />
 }
