@@ -12,13 +12,35 @@ export { setAnthropicOptionsEnv, setPathToClaudeCodeExecutable, resetClaudeConfi
 
 /**
  * AgentEvent - Events emitted during agent execution
- * Matches the SessionEvent pattern from craft-agents-oss
+ * Designed for Activity-based UI rendering (craft-agents-oss pattern)
  */
 export type AgentEvent =
-  | { type: 'text_delta'; delta: string; turnId?: string }
-  | { type: 'text_complete'; text: string; isIntermediate?: boolean; turnId?: string }
-  | { type: 'tool_start'; toolName: string; toolUseId: string; toolInput: Record<string, unknown>; turnId?: string }
-  | { type: 'tool_result'; toolUseId: string; toolName: string; result: string; turnId?: string; isError?: boolean }
+  // Turn lifecycle
+  | { type: 'turn_start'; turnId: string }
+  | { type: 'turn_end'; turnId: string }
+  // Text streaming
+  | { type: 'text_delta'; delta: string; turnId?: string; parentToolUseId?: string }
+  | { type: 'text_complete'; text: string; isIntermediate?: boolean; turnId?: string; parentToolUseId?: string }
+  // Tool events (Activity)
+  | {
+      type: 'tool_start'
+      toolName: string
+      toolUseId: string
+      toolInput: Record<string, unknown>
+      toolIntent?: string
+      turnId?: string
+      parentToolUseId?: string
+    }
+  | {
+      type: 'tool_result'
+      toolUseId: string
+      toolName: string
+      result: string
+      turnId?: string
+      parentToolUseId?: string
+      isError?: boolean
+    }
+  // System events
   | { type: 'error'; message: string }
   | { type: 'complete'; tokenUsage?: { inputTokens: number; outputTokens: number } }
   | { type: 'info'; message: string }
@@ -117,7 +139,10 @@ export class DeskhandAgent {
       // Start the query
       this.currentQuery = query({ prompt, options })
 
+      // State for streaming
       let fullText = ''
+      let pendingText: string | null = null
+      let currentTurnId: string | null = null
       let inputTokens = 0
       let outputTokens = 0
 
@@ -129,56 +154,133 @@ export class DeskhandAgent {
           break
         }
 
+        // Get parentToolUseId from SDK message (for subagent context)
+        const parentToolUseId = 'parent_tool_use_id' in message ? (message.parent_tool_use_id as string | null) : null
+
         // Process message based on type
         if (message.type === 'stream_event') {
-          // Streaming event - handle text deltas
           const event = message.event
+
+          // message_start - capture turn ID
+          if (event.type === 'message_start') {
+            const messageId = (event as { message?: { id?: string } }).message?.id
+            if (messageId) {
+              currentTurnId = messageId
+              yield { type: 'turn_start', turnId: messageId }
+            }
+          }
+
+          // message_delta - contains stop_reason, emit pending text
+          if (event.type === 'message_delta') {
+            const stopReason = (event as { delta?: { stop_reason?: string } }).delta?.stop_reason
+            if (pendingText) {
+              const isIntermediate = stopReason === 'tool_use'
+              yield {
+                type: 'text_complete',
+                text: pendingText,
+                isIntermediate,
+                turnId: currentTurnId || undefined,
+                parentToolUseId: parentToolUseId || undefined,
+              }
+              pendingText = null
+            }
+          }
+
+          // content_block_delta - text streaming
           if (event.type === 'content_block_delta') {
             const delta = event.delta as { type: string; text?: string }
             if (delta.type === 'text_delta' && delta.text) {
               fullText += delta.text
-              yield { type: 'text_delta', delta: delta.text }
+              yield {
+                type: 'text_delta',
+                delta: delta.text,
+                turnId: currentTurnId || undefined,
+                parentToolUseId: parentToolUseId || undefined,
+              }
+            }
+          }
+
+          // content_block_start - tool_use start
+          if (event.type === 'content_block_start') {
+            const contentBlock = (event as { content_block?: { type: string; id?: string; name?: string; input?: unknown } }).content_block
+            if (contentBlock?.type === 'tool_use' && contentBlock.id && contentBlock.name) {
+              yield {
+                type: 'tool_start',
+                toolName: contentBlock.name,
+                toolUseId: contentBlock.id,
+                toolInput: (contentBlock.input ?? {}) as Record<string, unknown>,
+                turnId: currentTurnId || undefined,
+                parentToolUseId: parentToolUseId || undefined,
+              }
             }
           }
         } else if (message.type === 'assistant') {
-          // Assistant message - extract text content
+          // Full assistant message - extract text for pendingText
+          let textContent = ''
           for (const block of message.message.content) {
             if (block.type === 'text') {
-              const newText = block.text.slice(fullText.length)
-              if (newText) {
-                fullText = block.text
-                yield { type: 'text_delta', delta: newText }
-              }
+              textContent = block.text
             } else if (block.type === 'tool_use') {
+              // Emit tool_start if not already emitted via stream_event
               yield {
                 type: 'tool_start',
                 toolName: block.name,
                 toolUseId: block.id,
                 toolInput: block.input as Record<string, unknown>,
+                turnId: currentTurnId || undefined,
+                parentToolUseId: parentToolUseId || undefined,
               }
             }
           }
+          if (textContent) {
+            pendingText = textContent
+            fullText = textContent
+          }
 
-          // Capture usage if available
+          // Capture usage
           if (message.message.usage) {
             inputTokens = message.message.usage.input_tokens
             outputTokens = message.message.usage.output_tokens
           }
+        } else if (message.type === 'user') {
+          // User message with tool_result
+          if ('tool_use_result' in message && message.tool_use_result !== undefined) {
+            const toolResult = message.tool_use_result as { tool_use_id?: string; content?: string; is_error?: boolean }
+            if (toolResult.tool_use_id) {
+              yield {
+                type: 'tool_result',
+                toolUseId: toolResult.tool_use_id,
+                toolName: '', // Not available in this context
+                result: typeof toolResult.content === 'string' ? toolResult.content : JSON.stringify(toolResult.content),
+                turnId: currentTurnId || undefined,
+                parentToolUseId: parentToolUseId || undefined,
+                isError: toolResult.is_error,
+              }
+            }
+          }
         } else if (message.type === 'result') {
           // Result message - query completed
           if (message.subtype === 'success') {
-            // Extract usage from result
             if (message.usage) {
               inputTokens = message.usage.input_tokens
               outputTokens = message.usage.output_tokens
             }
           }
+          // Emit turn_end
+          if (currentTurnId) {
+            yield { type: 'turn_end', turnId: currentTurnId }
+          }
         }
       }
 
-      // Emit text complete if we have text
-      if (fullText) {
-        yield { type: 'text_complete', text: fullText }
+      // Emit any remaining pending text
+      if (pendingText) {
+        yield {
+          type: 'text_complete',
+          text: pendingText,
+          isIntermediate: false,
+          turnId: currentTurnId || undefined,
+        }
       }
 
       // Emit complete with token usage
