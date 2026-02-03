@@ -31,10 +31,14 @@ export interface CurrentSession {
   session: Session | null
   messages: Message[]
   isLoading: boolean
+  isProcessing: boolean
+  streamingText: string
 }
 
 export const currentSessionAtom = atom<CurrentSession>({
   session: null,
   messages: [],
   isLoading: false,
+  isProcessing: false,
+  streamingText: '',
 })
