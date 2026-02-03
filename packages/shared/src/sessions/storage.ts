@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type { Session, SessionWithMessages, Message } from './types'
+import type { Session, SessionWithMessages, Message, SessionListItem } from './types'
 import { SessionSchema, MessageSchema, generateId } from './types'
 import { CONFIG_DIR } from '../config/types'
 
@@ -43,6 +43,8 @@ export function createSession(name?: string): Session {
     name: name || 'New Chat',
     createdAt: now,
     updatedAt: now,
+    permissionMode: 'ask',
+    enabledSourceSlugs: [],
   }
 
   // Write session metadata as first line
@@ -55,24 +57,37 @@ export function createSession(name?: string): Session {
 }
 
 /**
- * List all sessions (metadata only)
+ * List all sessions with preview text
  */
-export function listSessions(): Session[] {
+export function listSessions(): SessionListItem[] {
   ensureSessionsDir()
   const dir = getSessionsDir()
 
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.jsonl'))
-  const sessions: Session[] = []
+  const sessions: SessionListItem[] = []
 
   for (const file of files) {
     try {
       const content = fs.readFileSync(path.join(dir, file), 'utf8')
-      const firstLine = content.split('\n')[0]
-      const data = JSON.parse(firstLine)
+      const lines = content.split('\n').filter(Boolean)
 
-      if (data.type === 'session') {
-        const { type: _type, ...sessionData } = data
-        sessions.push(SessionSchema.parse(sessionData))
+      let session: Session | null = null
+      let previewText: string | undefined
+
+      for (const line of lines) {
+        const data = JSON.parse(line)
+
+        if (data.type === 'session') {
+          const { type: _type, ...sessionData } = data
+          session = SessionSchema.parse(sessionData)
+        } else if (data.type === 'message' && !previewText && data.role === 'user') {
+          // Get first user message as preview
+          previewText = data.content?.slice(0, 100)
+        }
+      }
+
+      if (session) {
+        sessions.push({ ...session, previewText })
       }
     } catch {
       // Skip invalid files
