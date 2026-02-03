@@ -1,4 +1,6 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { app, ipcMain, BrowserWindow } from 'electron'
+import { join } from 'path'
+import { existsSync } from 'fs'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import type { IpcResponse, SessionEvent } from '../shared/types'
 import type { Session, SessionWithMessages, SessionListItem, Message } from '@deskhand/shared/sessions'
@@ -11,7 +13,9 @@ import {
   appendMessage,
   generateId,
 } from '@deskhand/shared/sessions'
-import { chat } from '@deskhand/shared/agent'
+import { chat, setPathToClaudeCodeExecutable } from '@deskhand/shared/agent'
+import { loadConfig } from '@deskhand/shared/config'
+import { loadCredentials } from '@deskhand/shared/credentials'
 
 /**
  * Managed session state in memory
@@ -357,4 +361,78 @@ export function registerSessionHandlers(): void {
       }
     }
   )
+}
+
+/**
+ * Initialize the Claude Agent SDK.
+ * Must be called before any agent operations.
+ * Sets up the SDK executable path and authentication environment variables.
+ */
+export async function initializeAgent(): Promise<void> {
+  // Set path to Claude Code executable (cli.js from SDK)
+  const basePath = app.isPackaged ? app.getAppPath() : process.cwd()
+  const sdkRelativePath = join('node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js')
+  let cliPath = join(basePath, sdkRelativePath)
+
+  // In monorepos, dependencies may be hoisted to the root
+  if (!existsSync(cliPath) && !app.isPackaged) {
+    const monorepoRoot = join(basePath, '..', '..')
+    cliPath = join(monorepoRoot, sdkRelativePath)
+  }
+
+  if (existsSync(cliPath)) {
+    console.log('[Agent] Setting pathToClaudeCodeExecutable:', cliPath)
+    setPathToClaudeCodeExecutable(cliPath)
+  } else {
+    console.warn('[Agent] Claude Code SDK cli.js not found at:', cliPath)
+  }
+
+  // Set authentication environment variables
+  await reinitializeAuth()
+}
+
+/**
+ * Reinitialize authentication environment variables.
+ * Call this after onboarding or settings changes to pick up new credentials.
+ */
+export async function reinitializeAuth(): Promise<void> {
+  try {
+    const config = loadConfig()
+    const credentials = await loadCredentials()
+    const customBaseUrl = config.anthropicBaseUrl
+
+    console.log('[Agent] Reinitializing auth', customBaseUrl ? `(custom base URL: ${customBaseUrl})` : '')
+
+    // Priority 1: Custom base URL (Ollama, OpenRouter, etc.)
+    if (customBaseUrl) {
+      process.env.ANTHROPIC_BASE_URL = customBaseUrl
+      delete process.env.CLAUDE_CODE_OAUTH_TOKEN
+
+      if (credentials?.anthropic?.value) {
+        process.env.ANTHROPIC_API_KEY = credentials.anthropic.value
+        console.log(`[Agent] Using custom provider at ${customBaseUrl}`)
+      } else {
+        // Set a placeholder key for providers like Ollama that don't validate keys
+        process.env.ANTHROPIC_API_KEY = 'not-needed'
+        console.warn('[Agent] Custom base URL configured but no API key set')
+      }
+    } else if (credentials?.anthropic?.type === 'oauth_token' && credentials?.anthropic?.value) {
+      // Priority 2: Claude Max subscription via OAuth token
+      process.env.CLAUDE_CODE_OAUTH_TOKEN = credentials.anthropic.value
+      delete process.env.ANTHROPIC_API_KEY
+      delete process.env.ANTHROPIC_BASE_URL
+      console.log('[Agent] Set Claude OAuth Token')
+    } else if (credentials?.anthropic?.value) {
+      // Priority 3: API key with default Anthropic endpoint
+      process.env.ANTHROPIC_API_KEY = credentials.anthropic.value
+      delete process.env.CLAUDE_CODE_OAUTH_TOKEN
+      delete process.env.ANTHROPIC_BASE_URL
+      console.log('[Agent] Set Anthropic API Key')
+    } else {
+      console.error('[Agent] No authentication configured!')
+    }
+  } catch (error) {
+    console.error('[Agent] Failed to reinitialize auth:', error)
+    throw error
+  }
 }

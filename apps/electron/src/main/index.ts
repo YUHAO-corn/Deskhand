@@ -2,7 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { registerOnboardingHandlers } from './onboarding'
 import { registerConfigHandlers, registerThemeHandlers } from './ipc'
-import { registerSessionHandlers } from './sessions'
+import { registerSessionHandlers, initializeAgent } from './sessions'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -38,7 +38,10 @@ function createWindow() {
   })
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Initialize agent SDK before other handlers
+  await initializeAgent()
+
   // Register IPC handlers
   registerOnboardingHandlers()
   registerSessionHandlers()
