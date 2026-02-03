@@ -1,0 +1,14 @@
+{
+  "name": "@deskhand/electron",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run ../../scripts/electron-dev.ts",
+    "build": "bun run ../../scripts/electron-build.ts",
+    "start": "electron .",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  }
+}

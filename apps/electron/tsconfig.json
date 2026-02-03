@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "bun"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/renderer/*"],
+      "@deskhand/shared": ["../../packages/shared/src/index.ts"],
+      "@deskhand/shared/*": ["../../packages/shared/src/*"],
+      "@deskhand/core": ["../../packages/core/src/index.ts"],
+      "@deskhand/core/*": ["../../packages/core/src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

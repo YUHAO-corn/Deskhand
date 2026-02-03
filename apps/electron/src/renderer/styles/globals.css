@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Background colors */
+  --background: #FFFFFF;
+  --secondary: #F7F8FA;
+  --accent: #F0F2F5;
+  --input: #FAFBFC;
+
+  /* Text colors */
+  --foreground: #1A1A1A;
+  --secondary-foreground: #6B7280;
+  --muted-foreground: #9CA3AF;
+
+  /* Border colors */
+  --border: #E5E7EB;
+
+  /* User message gradient */
+  --user-message-start: #5EACAB;
+  --user-message-end: #4A9190;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.drag-region button,
+.drag-region input {
+  -webkit-app-region: no-drag;
+}
+
+/* Tailwind theme mapping */
+.bg-background { background-color: var(--background); }
+.bg-secondary { background-color: var(--secondary); }
+.bg-accent { background-color: var(--accent); }
+.bg-input { background-color: var(--input); }
+.text-foreground { color: var(--foreground); }
+.text-secondary-foreground { color: var(--secondary-foreground); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.border-border { border-color: var(--border); }
+.ring-accent { --tw-ring-color: var(--accent); }
