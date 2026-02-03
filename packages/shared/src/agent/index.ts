@@ -117,6 +117,12 @@ export class DeskhandAgent {
 
       // Get SDK options with environment variables
       const defaultOptions = getDefaultOptions()
+
+      // Thinking token budget (similar to craft-agents-oss)
+      // Haiku: 4,000 tokens, Others: 10,000 tokens (default 'think' level)
+      const isHaiku = model.toLowerCase().includes('haiku')
+      const maxThinkingTokens = isHaiku ? 4_000 : 10_000
+
       const options: Partial<Options> = {
         ...defaultOptions,
         model,
@@ -124,6 +130,7 @@ export class DeskhandAgent {
         cwd: this.config.workingDirectory,
         abortController: this.abortController,
         includePartialMessages: true, // Enable streaming
+        maxThinkingTokens, // Enable extended thinking
       }
 
       // Build the prompt - prepend previous messages as context
