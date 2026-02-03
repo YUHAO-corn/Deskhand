@@ -16,6 +16,14 @@ export const IPC_CHANNELS = {
   SESSION_DELETE: 'session:delete',
   SESSION_RENAME: 'session:rename',
 
+  // Message handling
+  SEND_MESSAGE: 'session:send-message',
+  CANCEL_PROCESSING: 'session:cancel',
+  SESSION_EVENT: 'session:event',
+
+  // Permission handling
+  RESPOND_TO_PERMISSION: 'session:respond-permission',
+
   // Config
   CONFIG_GET: 'config:get',
   CONFIG_SET: 'config:set',
