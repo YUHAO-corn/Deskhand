@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./auth": "./src/auth/index.ts",
     "./credentials": "./src/credentials/index.ts",
-    "./config": "./src/config/index.ts"
+    "./config": "./src/config/index.ts",
+    "./sessions": "./src/sessions/index.ts"
   },
   "dependencies": {
     "zod": "^3.23.0"

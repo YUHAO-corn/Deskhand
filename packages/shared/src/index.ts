@@ -1,3 +1,4 @@
 export * from './auth'
 export * from './credentials'
 export * from './config'
+export * from './sessions'
