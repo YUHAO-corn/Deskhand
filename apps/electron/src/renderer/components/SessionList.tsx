@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Session } from '@deskhand/shared/sessions'
+import type { SessionListItem } from '@deskhand/shared/sessions'
 import { SessionCard } from './SessionCard'
 
 interface SessionListProps {
@@ -13,7 +13,7 @@ export function SessionList({
   onSessionSelect,
   onSessionCreate,
 }: SessionListProps) {
-  const [sessions, setSessions] = useState<Session[]>([])
+  const [sessions, setSessions] = useState<SessionListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Load sessions on mount
@@ -80,6 +80,7 @@ export function SessionList({
               key={session.id}
               session={session}
               isSelected={session.id === selectedSessionId}
+              previewText={session.previewText}
               onClick={() => onSessionSelect(session.id)}
             />
           ))

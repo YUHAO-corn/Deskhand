@@ -3,10 +3,11 @@ import type { Session } from '@deskhand/shared/sessions'
 interface SessionCardProps {
   session: Session
   isSelected: boolean
+  previewText?: string
   onClick: () => void
 }
 
-export function SessionCard({ session, isSelected, onClick }: SessionCardProps) {
+export function SessionCard({ session, isSelected, previewText, onClick }: SessionCardProps) {
   return (
     <div
       onClick={onClick}
@@ -17,17 +18,19 @@ export function SessionCard({ session, isSelected, onClick }: SessionCardProps) 
       className={`
         px-3 py-2 rounded-lg cursor-pointer transition-colors
         ${isSelected
-          ? 'bg-blue-50 border-l-[3px] border-l-blue-500 pl-[9px]'
-          : 'hover:bg-accent'
+          ? 'bg-[#DBEAFE] border-l-[3px] border-l-[#3B82F6] pl-[9px]'
+          : 'bg-transparent hover:bg-accent'
         }
       `}
     >
       <div className="text-sm font-medium text-foreground truncate">
         {session.name}
       </div>
-      <div className="text-xs text-muted-foreground truncate mt-0.5">
-        {new Date(session.updatedAt).toLocaleDateString()}
-      </div>
+      {previewText && (
+        <div className="text-xs text-muted-foreground truncate mt-0.5">
+          {previewText}
+        </div>
+      )}
     </div>
   )
 }

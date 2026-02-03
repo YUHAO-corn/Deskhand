@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import type { IpcResponse } from '../shared/types'
-import type { Session, SessionWithMessages } from '@deskhand/shared/sessions'
+import type { Session, SessionWithMessages, SessionListItem } from '@deskhand/shared/sessions'
 import {
   createSession,
   listSessions,
@@ -17,7 +17,7 @@ export function registerSessionHandlers(): void {
   // List all sessions
   ipcMain.handle(
     IPC_CHANNELS.SESSION_LIST,
-    async (): Promise<IpcResponse<Session[]>> => {
+    async (): Promise<IpcResponse<SessionListItem[]>> => {
       try {
         const sessions = listSessions()
         return { success: true, data: sessions }
