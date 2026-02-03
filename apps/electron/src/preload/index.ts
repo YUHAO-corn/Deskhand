@@ -13,6 +13,14 @@ const electronAPI = {
   saveOnboardingConfig: (config: { authType: string; credential: string; anthropicBaseUrl?: string }) =>
     ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_SAVE_CONFIG, config),
 
+  // Sessions
+  listSessions: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_LIST),
+  createSession: (name?: string) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CREATE, name),
+  loadSession: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_LOAD, sessionId),
+  deleteSession: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_DELETE, sessionId),
+  renameSession: (sessionId: string, name: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SESSION_RENAME, sessionId, name),
+
   // Config
   getConfig: () => ipcRenderer.invoke(IPC_CHANNELS.CONFIG_GET),
   setConfig: (key: string, value: unknown) =>

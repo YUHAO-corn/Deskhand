@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import type { AuthType } from '@deskhand/shared/auth'
+import type { Session, Message } from '@deskhand/shared/sessions'
 
 /**
  * Auth state atom
@@ -22,3 +23,18 @@ export const authStateAtom = atom<AuthState>({
 export type Theme = 'light' | 'dark'
 
 export const themeAtom = atom<Theme>('light')
+
+/**
+ * Current session atom
+ */
+export interface CurrentSession {
+  session: Session | null
+  messages: Message[]
+  isLoading: boolean
+}
+
+export const currentSessionAtom = atom<CurrentSession>({
+  session: null,
+  messages: [],
+  isLoading: false,
+})
