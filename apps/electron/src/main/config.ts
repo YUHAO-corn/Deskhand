@@ -1,7 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import { AppConfig, AppConfigSchema, defaultConfig, CONFIG_DIR, CONFIG_FILE } from '@deskhand/shared/config'
+import type { AppConfig } from '@deskhand/shared/config'
+import { AppConfigSchema, defaultConfig, CONFIG_DIR, CONFIG_FILE } from '@deskhand/shared/config'
 
 /**
  * Get config file path
