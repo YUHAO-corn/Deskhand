@@ -48,6 +48,7 @@ export function registerOnboardingHandlers(): void {
       try {
         const client = new Anthropic({
           apiKey: request.apiKey,
+          baseURL: request.anthropicBaseUrl || undefined,
         })
 
         // Try a simple API call to validate the key

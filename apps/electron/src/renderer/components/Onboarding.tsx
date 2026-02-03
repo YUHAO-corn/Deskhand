@@ -9,6 +9,7 @@ type Step = 'select-auth' | 'enter-key'
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState<Step>('select-auth')
   const [apiKey, setApiKey] = useState('')
+  const [baseUrl, setBaseUrl] = useState('')
   const [isValidating, setIsValidating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,7 +28,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
     try {
       // Validate API key
-      const validateResult = await window.electronAPI.validateApiKey(apiKey)
+      const validateResult = await window.electronAPI.validateApiKey(apiKey, baseUrl || undefined)
       if (!validateResult.success) {
         setError(validateResult.error || 'Validation failed')
         setIsValidating(false)
@@ -44,6 +45,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       const saveResult = await window.electronAPI.saveOnboardingConfig({
         authType: 'api_key',
         credential: apiKey,
+        anthropicBaseUrl: baseUrl || undefined,
       })
 
       if (!saveResult.success) {
@@ -132,6 +134,22 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 >
                   console.anthropic.com
                 </a>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                API Base URL <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="https://api.anthropic.com"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-input focus:outline-none focus:ring-2 focus:ring-accent text-foreground placeholder:text-muted-foreground"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Leave empty for official API, or enter your proxy URL
               </p>
             </div>
 

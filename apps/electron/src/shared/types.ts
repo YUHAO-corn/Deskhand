@@ -28,6 +28,7 @@ export interface SaveOnboardingConfigRequest {
 
 export interface ValidateApiKeyRequest {
   apiKey: string
+  anthropicBaseUrl?: string
 }
 
 export interface ValidateApiKeyResponse {

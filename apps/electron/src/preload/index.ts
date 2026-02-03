@@ -9,8 +9,8 @@ const electronAPI = {
 
   // Onboarding
   getAuthState: () => ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_GET_AUTH_STATE),
-  validateApiKey: (apiKey: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_VALIDATE_API_KEY, { apiKey }),
+  validateApiKey: (apiKey: string, anthropicBaseUrl?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_VALIDATE_API_KEY, { apiKey, anthropicBaseUrl }),
   saveOnboardingConfig: (config: { authType: string; credential: string; anthropicBaseUrl?: string }) =>
     ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_SAVE_CONFIG, config),
 
