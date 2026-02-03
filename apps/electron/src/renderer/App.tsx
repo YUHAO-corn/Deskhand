@@ -1,35 +1,122 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAtom } from 'jotai'
 import { authStateAtom, currentSessionAtom } from './atoms'
 import { Onboarding } from './components/Onboarding'
 import { SessionList } from './components/SessionList'
+import { MessageList } from './components/MessageList'
+import { ChatInput } from './components/ChatInput'
+import type { SessionEvent } from '../shared/types'
+import type { Message } from '@deskhand/shared/sessions'
 
 function MainApp() {
   const [currentSession, setCurrentSession] = useAtom(currentSessionAtom)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
-  const handleSessionSelect = async (sessionId: string) => {
-    setSelectedSessionId(sessionId)
-    setCurrentSession((prev) => ({ ...prev, isLoading: true }))
+  // Handle session events from main process
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onSessionEvent((event: SessionEvent) => {
+      // Only handle events for the current session
+      if (event.sessionId !== selectedSessionId) return
 
-    try {
-      const result = await window.electronAPI.loadSession(sessionId)
-      if (result.success && result.data) {
-        setCurrentSession({
-          session: result.data,
-          messages: result.data.messages,
-          isLoading: false,
-        })
-      } else {
+      switch (event.type) {
+        case 'user_message':
+          // Add user message to list
+          setCurrentSession((prev) => ({
+            ...prev,
+            messages: [...prev.messages, event.message],
+            isProcessing: event.status === 'processing',
+          }))
+          break
+
+        case 'text_delta':
+          // Update streaming text
+          setCurrentSession((prev) => ({
+            ...prev,
+            streamingText: prev.streamingText + event.delta,
+          }))
+          break
+
+        case 'text_complete': {
+          // Finalize assistant message
+          const assistantMessage: Message = {
+            id: `msg-${Date.now()}`,
+            role: 'assistant',
+            content: event.text,
+            timestamp: Date.now(),
+          }
+          setCurrentSession((prev) => ({
+            ...prev,
+            messages: [...prev.messages, assistantMessage],
+            streamingText: '',
+          }))
+          break
+        }
+
+        case 'error': {
+          // Show error message
+          const errorMessage: Message = {
+            id: `err-${Date.now()}`,
+            role: 'error',
+            content: event.error,
+            timestamp: Date.now(),
+          }
+          setCurrentSession((prev) => ({
+            ...prev,
+            messages: [...prev.messages, errorMessage],
+            streamingText: '',
+          }))
+          break
+        }
+
+        case 'complete':
+          // Processing complete
+          setCurrentSession((prev) => ({
+            ...prev,
+            isProcessing: false,
+            streamingText: '',
+          }))
+          break
+
+        case 'interrupted':
+          setCurrentSession((prev) => ({
+            ...prev,
+            isProcessing: false,
+            streamingText: '',
+          }))
+          break
+      }
+    })
+
+    return () => unsubscribe()
+  }, [selectedSessionId, setCurrentSession])
+
+  const handleSessionSelect = useCallback(
+    async (sessionId: string) => {
+      setSelectedSessionId(sessionId)
+      setCurrentSession((prev) => ({ ...prev, isLoading: true }))
+
+      try {
+        const result = await window.electronAPI.loadSession(sessionId)
+        if (result.success && result.data) {
+          setCurrentSession({
+            session: result.data,
+            messages: result.data.messages,
+            isLoading: false,
+            isProcessing: false,
+            streamingText: '',
+          })
+        } else {
+          setCurrentSession((prev) => ({ ...prev, isLoading: false }))
+        }
+      } catch (error) {
+        console.error('Failed to load session:', error)
         setCurrentSession((prev) => ({ ...prev, isLoading: false }))
       }
-    } catch (error) {
-      console.error('Failed to load session:', error)
-      setCurrentSession((prev) => ({ ...prev, isLoading: false }))
-    }
-  }
+    },
+    [setCurrentSession]
+  )
 
-  const handleSessionCreate = async () => {
+  const handleSessionCreate = useCallback(async () => {
     try {
       const result = await window.electronAPI.createSession()
       if (result.success && result.data) {
@@ -38,12 +125,40 @@ function MainApp() {
           session: result.data,
           messages: [],
           isLoading: false,
+          isProcessing: false,
+          streamingText: '',
         })
       }
     } catch (error) {
       console.error('Failed to create session:', error)
     }
-  }
+  }, [setCurrentSession])
+
+  const handleSendMessage = useCallback(
+    async (message: string) => {
+      if (!currentSession.session) return
+
+      setCurrentSession((prev) => ({ ...prev, isProcessing: true }))
+
+      try {
+        await window.electronAPI.sendMessage(currentSession.session.id, message)
+      } catch (error) {
+        console.error('Failed to send message:', error)
+        setCurrentSession((prev) => ({ ...prev, isProcessing: false }))
+      }
+    },
+    [currentSession.session, setCurrentSession]
+  )
+
+  const handleCancelProcessing = useCallback(async () => {
+    if (!currentSession.session) return
+
+    try {
+      await window.electronAPI.cancelProcessing(currentSession.session.id)
+    } catch (error) {
+      console.error('Failed to cancel processing:', error)
+    }
+  }, [currentSession.session])
 
   return (
     <div className="h-screen flex">
@@ -69,36 +184,29 @@ function MainApp() {
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1 flex items-center justify-center">
-          {currentSession.isLoading ? (
+        {currentSession.isLoading ? (
+          <div className="flex-1 flex items-center justify-center">
             <p className="text-muted-foreground">Loading...</p>
-          ) : currentSession.session ? (
-            currentSession.messages.length === 0 ? (
-              <p className="text-muted-foreground">Start a conversation</p>
-            ) : (
-              <div className="w-full h-full p-4 overflow-y-auto">
-                {/* Messages will be rendered here */}
-                <p className="text-muted-foreground text-center">
-                  {currentSession.messages.length} messages
-                </p>
-              </div>
-            )
-          ) : (
-            <p className="text-muted-foreground">Select or create a new chat to get started</p>
-          )}
-        </div>
-
-        {/* Input Area */}
-        <div className="p-4 border-t border-border">
-          <div className="max-w-3xl mx-auto">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              disabled={!currentSession.session}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-input focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
-            />
           </div>
-        </div>
+        ) : currentSession.session ? (
+          <>
+            <MessageList
+              messages={currentSession.messages}
+              streamingText={currentSession.streamingText}
+              isProcessing={currentSession.isProcessing}
+            />
+            <ChatInput
+              onSend={handleSendMessage}
+              onCancel={handleCancelProcessing}
+              disabled={!currentSession.session}
+              isProcessing={currentSession.isProcessing}
+            />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-muted-foreground">Select or create a new chat to get started</p>
+          </div>
+        )}
       </main>
     </div>
   )
