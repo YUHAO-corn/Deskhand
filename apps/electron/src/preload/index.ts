@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
+import type { SessionEvent } from '../shared/types'
 
 // Type-safe IPC API
 const electronAPI = {
@@ -20,6 +21,23 @@ const electronAPI = {
   deleteSession: (sessionId: string) => ipcRenderer.invoke(IPC_CHANNELS.SESSION_DELETE, sessionId),
   renameSession: (sessionId: string, name: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.SESSION_RENAME, sessionId, name),
+
+  // Message handling
+  sendMessage: (sessionId: string, message: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SEND_MESSAGE, sessionId, message),
+  cancelProcessing: (sessionId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.CANCEL_PROCESSING, sessionId),
+
+  // Permission handling
+  respondToPermission: (requestId: string, allowed: boolean, alwaysAllow?: boolean) =>
+    ipcRenderer.invoke(IPC_CHANNELS.RESPOND_TO_PERMISSION, requestId, allowed, alwaysAllow),
+
+  // Event listeners
+  onSessionEvent: (callback: (event: SessionEvent) => void) => {
+    const handler = (_event: unknown, sessionEvent: SessionEvent) => callback(sessionEvent)
+    ipcRenderer.on(IPC_CHANNELS.SESSION_EVENT, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.SESSION_EVENT, handler)
+  },
 
   // Config
   getConfig: () => ipcRenderer.invoke(IPC_CHANNELS.CONFIG_GET),
