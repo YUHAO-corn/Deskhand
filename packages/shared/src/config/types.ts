@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { AuthType } from '../auth/types'
 
 /**
  * App configuration schema

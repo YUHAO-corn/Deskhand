@@ -9,7 +9,7 @@ import type {
   ValidateApiKeyResponse,
 } from '../shared/types'
 import { loadConfig, saveConfig } from './config'
-import { saveCredentials, loadCredentials, hasCredentials } from '@deskhand/shared/credentials'
+import { saveCredentials, hasCredentials } from '@deskhand/shared/credentials'
 import type { AuthType } from '@deskhand/shared/auth'
 
 /**

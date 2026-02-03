@@ -1,4 +1,4 @@
-import type { AuthState, AuthType, OnboardingConfig } from '@deskhand/shared/auth'
+import type { AuthType } from '@deskhand/shared/auth'
 import type { AppConfig } from '@deskhand/shared/config'
 
 /**
