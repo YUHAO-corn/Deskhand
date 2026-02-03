@@ -101,6 +101,7 @@ export class DeskhandAgent {
         systemPrompt: 'You are a helpful AI assistant called Deskhand. Be concise and helpful.',
         cwd: this.config.workingDirectory,
         abortController: this.abortController,
+        includePartialMessages: true, // Enable streaming
       }
 
       // Build the prompt - prepend previous messages as context
@@ -129,7 +130,17 @@ export class DeskhandAgent {
         }
 
         // Process message based on type
-        if (message.type === 'assistant') {
+        if (message.type === 'stream_event') {
+          // Streaming event - handle text deltas
+          const event = message.event
+          if (event.type === 'content_block_delta') {
+            const delta = event.delta as { type: string; text?: string }
+            if (delta.type === 'text_delta' && delta.text) {
+              fullText += delta.text
+              yield { type: 'text_delta', delta: delta.text }
+            }
+          }
+        } else if (message.type === 'assistant') {
           // Assistant message - extract text content
           for (const block of message.message.content) {
             if (block.type === 'text') {
