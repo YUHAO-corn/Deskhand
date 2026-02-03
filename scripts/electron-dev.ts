@@ -1,6 +1,10 @@
 import * as esbuild from 'esbuild'
 import { spawn, type ChildProcess } from 'child_process'
 import { join } from 'path'
+import { config } from 'dotenv'
+
+// Load .env file
+config({ path: join(import.meta.dir, '../.env') })
 
 const electronDir = join(import.meta.dir, '../apps/electron')
 let electronProcess: ChildProcess | null = null

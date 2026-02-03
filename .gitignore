@@ -36,3 +36,4 @@ Deskhand-Dev-Package/
 docs-no-git/
 photo-no-git/
 *-no-git/
+.env
