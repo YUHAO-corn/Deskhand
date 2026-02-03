@@ -46,19 +46,23 @@ export interface SetConfigRequest {
 
 /**
  * SessionEvent - Events sent from main to renderer for real-time updates
- * Based on craft-agents-oss architecture
+ * Based on craft-agents-oss Activity architecture
  */
 export type SessionEvent =
+  // Turn lifecycle (for grouping activities)
+  | { type: 'turn_start'; sessionId: string; turnId: string }
+  | { type: 'turn_end'; sessionId: string; turnId: string }
   // Streaming text content
-  | { type: 'text_delta'; sessionId: string; delta: string; turnId?: string }
+  | { type: 'text_delta'; sessionId: string; delta: string; turnId?: string; parentToolUseId?: string }
   | {
       type: 'text_complete'
       sessionId: string
       text: string
       isIntermediate?: boolean
       turnId?: string
+      parentToolUseId?: string
     }
-  // Tool execution
+  // Tool execution (Activity)
   | {
       type: 'tool_start'
       sessionId: string
@@ -67,6 +71,7 @@ export type SessionEvent =
       toolInput: Record<string, unknown>
       toolIntent?: string
       turnId?: string
+      parentToolUseId?: string
     }
   | {
       type: 'tool_result'
@@ -75,6 +80,7 @@ export type SessionEvent =
       toolName: string
       result: string
       turnId?: string
+      parentToolUseId?: string
       isError?: boolean
     }
   // Control flow

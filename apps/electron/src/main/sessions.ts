@@ -130,6 +130,22 @@ async function handleSendMessage(
 
       // Convert AgentEvent to SessionEvent
       switch (event.type) {
+        case 'turn_start':
+          sendSessionEvent({
+            type: 'turn_start',
+            sessionId,
+            turnId: event.turnId,
+          })
+          break
+
+        case 'turn_end':
+          sendSessionEvent({
+            type: 'turn_end',
+            sessionId,
+            turnId: event.turnId,
+          })
+          break
+
         case 'text_delta':
           managed.streamingText += event.delta
           sendSessionEvent({
@@ -137,19 +153,22 @@ async function handleSendMessage(
             sessionId,
             delta: event.delta,
             turnId: event.turnId,
+            parentToolUseId: event.parentToolUseId,
           })
           break
 
         case 'text_complete': {
-          // Create and persist assistant message
-          const assistantMsg: Message = {
-            id: generateId(),
-            role: 'assistant',
-            content: event.text,
-            timestamp: Date.now(),
+          // Only persist non-intermediate text as assistant message
+          if (!event.isIntermediate) {
+            const assistantMsg: Message = {
+              id: generateId(),
+              role: 'assistant',
+              content: event.text,
+              timestamp: Date.now(),
+            }
+            appendMessage(sessionId, assistantMsg)
+            managed.messages.push({ role: 'assistant', content: event.text })
           }
-          appendMessage(sessionId, assistantMsg)
-          managed.messages.push({ role: 'assistant', content: event.text })
 
           sendSessionEvent({
             type: 'text_complete',
@@ -157,6 +176,7 @@ async function handleSendMessage(
             text: event.text,
             isIntermediate: event.isIntermediate,
             turnId: event.turnId,
+            parentToolUseId: event.parentToolUseId,
           })
           break
         }
@@ -168,7 +188,9 @@ async function handleSendMessage(
             toolName: event.toolName,
             toolUseId: event.toolUseId,
             toolInput: event.toolInput,
+            toolIntent: event.toolIntent,
             turnId: event.turnId,
+            parentToolUseId: event.parentToolUseId,
           })
           break
 
@@ -180,6 +202,7 @@ async function handleSendMessage(
             toolName: event.toolName,
             result: event.result,
             turnId: event.turnId,
+            parentToolUseId: event.parentToolUseId,
             isError: event.isError,
           })
           break

@@ -140,7 +140,7 @@ export class DeskhandAgent {
       this.currentQuery = query({ prompt, options })
 
       // State for streaming
-      let fullText = ''
+      let _fullText = '' // Track accumulated text (for debugging)
       let pendingText: string | null = null
       let currentTurnId: string | null = null
       let inputTokens = 0
@@ -190,7 +190,7 @@ export class DeskhandAgent {
           if (event.type === 'content_block_delta') {
             const delta = event.delta as { type: string; text?: string }
             if (delta.type === 'text_delta' && delta.text) {
-              fullText += delta.text
+              _fullText += delta.text
               yield {
                 type: 'text_delta',
                 delta: delta.text,
@@ -234,7 +234,7 @@ export class DeskhandAgent {
           }
           if (textContent) {
             pendingText = textContent
-            fullText = textContent
+            _fullText = textContent
           }
 
           // Capture usage
