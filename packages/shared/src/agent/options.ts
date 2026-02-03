@@ -142,8 +142,7 @@ export function getDefaultOptions(): Partial<Options> {
   if (customPathToClaudeCodeExecutable) {
     return {
       pathToClaudeCodeExecutable: customPathToClaudeCodeExecutable,
-      executable: 'bun' as const,
-      executableArgs: [envFileFlag],
+      // Let SDK auto-detect executable (bun/node/deno)
       env: {
         ...process.env,
         ...optionsEnv,
