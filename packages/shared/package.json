@@ -5,12 +5,30 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./auth": "./src/auth/index.ts",
-    "./credentials": "./src/credentials/index.ts",
-    "./config": "./src/config/index.ts",
-    "./sessions": "./src/sessions/index.ts",
-    "./agent": "./src/agent/index.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./auth": {
+      "types": "./src/auth/index.ts",
+      "default": "./src/auth/index.ts"
+    },
+    "./credentials": {
+      "types": "./src/credentials/index.ts",
+      "default": "./src/credentials/index.ts"
+    },
+    "./config": {
+      "types": "./src/config/index.ts",
+      "default": "./src/config/index.ts"
+    },
+    "./sessions": {
+      "types": "./src/sessions/index.ts",
+      "default": "./src/sessions/index.ts"
+    },
+    "./agent": {
+      "types": "./src/agent/index.ts",
+      "default": "./src/agent/index.ts"
+    }
   },
   "dependencies": {
     "zod": "^3.23.0"
