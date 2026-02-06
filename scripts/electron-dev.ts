@@ -87,18 +87,23 @@ async function killProcessOnPort(port: string): Promise<void> {
 }
 
 // Build using esbuild
-async function runEsbuild(entryPoint: string, outfile: string): Promise<{ success: boolean; error?: string }> {
+async function runEsbuild(entryPoint: string, outfile: string, bundleDeps = false): Promise<{ success: boolean; error?: string }> {
   try {
-    await esbuild.build({
+    const buildOptions: esbuild.BuildOptions = {
       entryPoints: [join(ROOT_DIR, entryPoint)],
       bundle: true,
       platform: "node",
       format: "cjs",
       outfile: join(ROOT_DIR, outfile),
       external: ["electron"],
-      packages: "external",
       logLevel: "warning",
-    });
+    };
+    // Only use packages: "external" when not bundling deps (preload script)
+    // Main process needs deps bundled to handle ESM-only packages like claude-agent-sdk
+    if (!bundleDeps) {
+      buildOptions.packages = "external";
+    }
+    await esbuild.build(buildOptions);
     return { success: true };
   } catch (err) {
     return { success: false, error: String(err) };
@@ -155,8 +160,8 @@ async function main(): Promise<void> {
   if (existsSync(preloadCjsPath)) rmSync(preloadCjsPath);
 
   const [mainResult, preloadResult] = await Promise.all([
-    runEsbuild("apps/electron/src/main/index.ts", "apps/electron/dist/main.cjs"),
-    runEsbuild("apps/electron/src/preload/index.ts", "apps/electron/dist/preload.cjs"),
+    runEsbuild("apps/electron/src/main/index.ts", "apps/electron/dist/main.cjs", true),  // bundle deps for main
+    runEsbuild("apps/electron/src/preload/index.ts", "apps/electron/dist/preload.cjs", false),  // external deps for preload
   ]);
 
   if (!mainResult.success) {
@@ -193,7 +198,7 @@ async function main(): Promise<void> {
   });
   processes.push(viteProc);
 
-  // 2. Main process watcher
+  // 2. Main process watcher (bundle deps to handle ESM-only packages)
   const mainContext = await esbuild.context({
     entryPoints: [join(ROOT_DIR, "apps/electron/src/main/index.ts")],
     bundle: true,
@@ -201,7 +206,7 @@ async function main(): Promise<void> {
     format: "cjs",
     outfile: join(ROOT_DIR, "apps/electron/dist/main.cjs"),
     external: ["electron"],
-    packages: "external",
+    // Note: no packages: "external" - deps are bundled to convert ESM to CJS
     logLevel: "info",
   });
   await mainContext.watch();
