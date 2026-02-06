@@ -2,11 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles */
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+/* ============================================
+   Design System
+   来源：deskhand-prototype/src/index.css
+   ============================================ */
+
+@layer base {
+  :root {
+    /* 背景色 */
+    --bg-primary: #f0f7f7;
+    --bg-secondary: #f8fbfb;
+    --bg-sidebar: #ffffff;
+
+    /* 文字色 */
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+
+    /* 边框色 */
+    --border-color: #e0e8e8;
+    --border-light: #e8eded;
+
+    /* 强调色 */
+    --accent-color: #10a37f;
+    --accent-bg: #eff6f3;
+
+    /* 交互状态 */
+    --selected-bg: #dce8f5;
+    --hover-bg: #e6f0f0;
+
+    /* 阴影 */
+    --shadow-popup: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+    /* 过渡 */
+    --transition-fast: 0.15s ease;
+    --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* 尺寸 */
+    --sidebar-width: 260px;
+    --titlebar-height: 52px;
+
+    /* 字号 */
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+
+    /* 圆角 */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: var(--bg-primary);
+  }
 }
 
 /* Drag region for window */
