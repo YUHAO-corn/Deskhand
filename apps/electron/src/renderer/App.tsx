@@ -8,14 +8,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Provider, useAtom } from 'jotai';
+import { Provider, useAtom, useSetAtom } from 'jotai';
 import type { SetupNeeds } from '@deskhand/core';
 import { TitleBar } from './components/app-shell/TitleBar';
 import { SessionSidebar } from './components/app-shell/SessionSidebar';
 import { ChatArea } from './components/chat/ChatArea';
 import { ArtifactPanel } from './components/artifact/ArtifactPanel';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { settingsOpenAtom } from './atoms/sessions';
+import { settingsOpenAtom, activeSessionIdAtom } from './atoms/sessions';
 
 type AppState = 'loading' | 'onboarding' | 'ready';
 
@@ -23,9 +23,14 @@ function AppContent() {
   const [appState, setAppState] = useState<AppState>('loading');
   const [setupNeeds, setSetupNeeds] = useState<SetupNeeds | null>(null);
   const [settingsOpen] = useAtom(settingsOpenAtom);
+  const setActiveSessionId = useSetAtom(activeSessionIdAtom);
 
   useEffect(() => {
     const initialize = async () => {
+      // Create default session for Phase 2 testing
+      const defaultSessionId = crypto.randomUUID();
+      setActiveSessionId(defaultSessionId);
+
       try {
         const needs = await window.electronAPI.getSetupNeeds();
         setSetupNeeds(needs);
@@ -43,7 +48,7 @@ function AppContent() {
     };
 
     initialize();
-  }, []);
+  }, [setActiveSessionId]);
 
   // Loading state
   if (appState === 'loading') {

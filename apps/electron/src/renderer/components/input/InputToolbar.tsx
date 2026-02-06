@@ -12,9 +12,16 @@
  * - 提供发送按钮
  */
 
-import { useState } from 'react';
-import { useAtom } from 'jotai';
-import { activeSessionIdAtom, sessionInputFamily } from '../../atoms/sessions';
+import { useState, useCallback } from 'react';
+import { useAtom, useSetAtom } from 'jotai';
+import type { Message } from '@deskhand/core';
+import { generateMessageId } from '@deskhand/core';
+import {
+  activeSessionIdAtom,
+  sessionInputFamily,
+  sessionMessagesFamily,
+  sessionProcessingFamily,
+} from '../../atoms/sessions';
 import {
   WorkspacePopup,
   ToolsPopup,
@@ -26,9 +33,15 @@ import {
 export function InputToolbar() {
   const [activeSessionId] = useAtom(activeSessionIdAtom);
 
+  // 使用固定的 atom key 避免 hooks 规则问题
+  const sessionKey = activeSessionId ?? '__empty__';
+
   // 输入内容（per-session 隔离）
-  const inputAtom = activeSessionId ? sessionInputFamily(activeSessionId) : null;
-  const [inputValue, setInputValue] = inputAtom ? useAtom(inputAtom) : ['', () => {}];
+  const [inputValue, setInputValue] = useAtom(sessionInputFamily(sessionKey));
+
+  // 消息和处理状态
+  const setMessages = useSetAtom(sessionMessagesFamily(sessionKey));
+  const setProcessing = useSetAtom(sessionProcessingFamily(sessionKey));
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
@@ -43,12 +56,33 @@ export function InputToolbar() {
   // ============================================
   // 发送消息
   // ============================================
-  const handleSend = () => {
-    if (!inputValue.trim() || !activeSessionId) return;
-    // TODO: 调用 onSendMessage(inputValue, attachments)
-    // TODO: 清空输入框
-    console.log('Send:', inputValue);
-  };
+  const handleSend = useCallback(async () => {
+    const trimmedInput = inputValue.trim();
+    if (!trimmedInput || !activeSessionId) return;
+
+    // 1. 添加用户消息到 atoms
+    const userMessage: Message = {
+      id: generateMessageId(),
+      role: 'user',
+      content: trimmedInput,
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // 2. 设置处理状态
+    setProcessing(true);
+
+    // 3. 清空输入框
+    setInputValue('');
+
+    // 4. 调用 IPC 发送消息
+    try {
+      await window.electronAPI?.chat(activeSessionId, trimmedInput);
+    } catch (error) {
+      console.error('[InputToolbar] chat error:', error);
+      // Error will be handled by useAgentEvents via error event
+    }
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
