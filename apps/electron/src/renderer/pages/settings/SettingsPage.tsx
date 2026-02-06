@@ -50,21 +50,24 @@ export function SettingsPage() {
   const currentNav = navItems.find((item) => item.id === activeSection);
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-[var(--bg-primary)]">
-      {/* ============================================
-          区域：侧边栏
-          功能：导航菜单
-          ============================================ */}
-      <div className="w-56 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col">
-        {/* macOS 窗口控制按钮 */}
-        <div className="flex items-center gap-2 px-5 py-4">
-          <div
-            className="w-3 h-3 rounded-full bg-[#ff5f57] cursor-pointer"
-            onClick={() => setSettingsOpen(false)}
-          />
-          <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-          <div className="w-3 h-3 rounded-full bg-[#28c940]" />
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* 背景遮罩 */}
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={() => setSettingsOpen(false)}
+      />
+
+      {/* 设置面板 */}
+      <div className="relative z-10 flex w-[800px] h-[560px] rounded-xl overflow-hidden shadow-xl bg-[var(--bg-primary)]">
+        {/* ============================================
+            区域：侧边栏
+            功能：导航菜单
+            ============================================ */}
+        <div className="w-56 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col">
+          {/* 标题 */}
+          <div className="px-5 py-4">
+            <h2 className="text-[var(--font-size-sm)] font-semibold text-[var(--text-primary)]">Settings</h2>
+          </div>
 
         {/* 导航菜单 */}
         <nav className="flex-1 overflow-y-auto px-3 py-1">
@@ -136,6 +139,7 @@ export function SettingsPage() {
 
           {activeSection === 'skills' && <SkillsSection />}
         </div>
+      </div>
       </div>
     </div>
   );
