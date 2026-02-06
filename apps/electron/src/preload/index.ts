@@ -3,6 +3,16 @@
  *
  * Exposes a safe API from main process to renderer.
  * Uses contextBridge to prevent direct Node.js access in renderer.
+ *
+ * IPC Pattern:
+ * - invoke: renderer -> main (request/response)
+ * - on/send: main -> renderer (events, like agent streaming)
+ *
+ * Usage in renderer:
+ *   const sessions = await window.electronAPI.listSessions();
+ *   const unsubscribe = window.electronAPI.onAgentEvent((sessionId, event) => {
+ *     console.log('Agent event:', event);
+ *   });
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
@@ -27,7 +37,7 @@ export interface ElectronAPI {
   chat: (sessionId: string, message: string) => Promise<void>;
   stopAgent: (sessionId: string) => Promise<void>;
   respondToPermission: (sessionId: string, requestId: string, response: 'allow' | 'deny') => Promise<void>;
-  onAgentEvent: (callback: (event: AgentEvent) => void) => () => void;
+  onAgentEvent: (callback: (sessionId: string, event: AgentEvent) => void) => () => void;
 }
 
 // ============ IPC Channels ============
@@ -68,7 +78,11 @@ const electronAPI: ElectronAPI = {
   respondToPermission: (sessionId, requestId, response) =>
     ipcRenderer.invoke(IPC_CHANNELS.AGENT_PERMISSION_RESPONSE, sessionId, requestId, response),
   onAgentEvent: (callback) => {
-    const handler = (_: unknown, event: AgentEvent) => callback(event);
+    // 实现步骤：
+    // 1. 创建 handler 函数，接收 sessionId 和 event
+    // 2. 注册到 ipcRenderer.on
+    // 3. 返回清理函数（用于组件卸载时取消监听）
+    const handler = (_: unknown, sessionId: string, event: AgentEvent) => callback(sessionId, event);
     ipcRenderer.on(IPC_CHANNELS.AGENT_EVENT, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_EVENT, handler);
   },
