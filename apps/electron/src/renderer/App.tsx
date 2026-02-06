@@ -4,19 +4,25 @@
  * Handles:
  * - App state (loading → onboarding → ready)
  * - AuthGuard for authentication
- * - Layout with SessionSidebar, ChatArea, ArtifactPanel
+ * - Layout with TitleBar, SessionSidebar, ChatArea, ArtifactPanel
  */
 
 import { useState, useEffect } from 'react';
+import { Provider, useAtom } from 'jotai';
 import type { SetupNeeds } from '@deskhand/core';
-// import { AuthGuard } from './components/auth/AuthGuard.tsx';
-// import { AppShell } from './components/app-shell/AppShell.tsx';
+import { TitleBar } from './components/app-shell/TitleBar';
+import { SessionSidebar } from './components/app-shell/SessionSidebar';
+import { ChatArea } from './components/chat/ChatArea';
+import { ArtifactPanel } from './components/artifact/ArtifactPanel';
+import { SettingsPage } from './pages/settings/SettingsPage';
+import { settingsOpenAtom } from './atoms/sessions';
 
 type AppState = 'loading' | 'onboarding' | 'ready';
 
-export function App() {
+function AppContent() {
   const [appState, setAppState] = useState<AppState>('loading');
   const [setupNeeds, setSetupNeeds] = useState<SetupNeeds | null>(null);
+  const [settingsOpen] = useAtom(settingsOpenAtom);
 
   useEffect(() => {
     const initialize = async () => {
@@ -31,7 +37,8 @@ export function App() {
         }
       } catch (error) {
         console.error('Failed to initialize:', error);
-        setAppState('onboarding');
+        // For Phase 0.5: Skip to ready state to test UI
+        setAppState('ready');
       }
     };
 
@@ -41,9 +48,9 @@ export function App() {
   // Loading state
   if (appState === 'loading') {
     return (
-      <div className="flex items-center justify-center h-screen bg-zinc-900 text-zinc-400">
+      <div className="flex items-center justify-center h-screen bg-[var(--bg-primary)] text-[var(--text-muted)]">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-zinc-600 border-t-zinc-400 rounded-full mx-auto mb-4" />
+          <div className="animate-spin w-8 h-8 border-2 border-[var(--border-color)] border-t-[var(--accent-color)] rounded-full mx-auto mb-4" />
           <p>Loading...</p>
         </div>
       </div>
@@ -51,24 +58,23 @@ export function App() {
   }
 
   // Onboarding state (needs API key)
-  if (appState === 'onboarding' || setupNeeds?.needsAuth) {
+  if (appState === 'onboarding' && setupNeeds?.needsAuth) {
     return (
-      <div className="flex items-center justify-center h-screen bg-zinc-900 text-zinc-100">
+      <div className="flex items-center justify-center h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <div className="w-full max-w-md p-8">
           <h1 className="text-2xl font-bold mb-6">Welcome to Deskhand</h1>
-          <p className="text-zinc-400 mb-6">
+          <p className="text-[var(--text-secondary)] mb-6">
             Enter your Anthropic API key to get started.
           </p>
-          {/* TODO: AuthForm component */}
           <div className="space-y-4">
             <input
               type="password"
               placeholder="sk-ant-..."
-              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+              className="w-full px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)]"
             />
             <button
               onClick={() => setAppState('ready')}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+              className="w-full px-4 py-2 bg-[var(--accent-color)] hover:opacity-90 rounded-lg font-medium text-white transition-opacity"
             >
               Continue
             </button>
@@ -78,44 +84,25 @@ export function App() {
     );
   }
 
-  // Ready state - main app
+  // Ready state - main app with full layout
   return (
-    <div className="flex h-screen bg-zinc-900 text-zinc-100">
-      {/* Sidebar placeholder */}
-      <aside className="w-64 border-r border-zinc-800 flex flex-col">
-        <div className="p-4 border-b border-zinc-800 drag-region">
-          <h1 className="text-lg font-semibold">Deskhand</h1>
-        </div>
-        <div className="flex-1 p-2">
-          {/* Session list placeholder */}
-          <div className="text-zinc-500 text-sm p-2">No sessions yet</div>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 flex flex-col">
-        <div className="flex-1 p-4">
-          {/* Chat area placeholder */}
-          <div className="text-zinc-500 text-center mt-20">
-            <p className="text-2xl mb-2">👋</p>
-            <p>Start a new conversation</p>
-          </div>
-        </div>
-
-        {/* Input area placeholder */}
-        <div className="p-4 border-t border-zinc-800">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Ask anything..."
-              className="flex-1 px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-            />
-            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors">
-              Send
-            </button>
-          </div>
-        </div>
-      </main>
+    <div className="w-full h-screen bg-[var(--bg-primary)] flex flex-col overflow-hidden">
+      <TitleBar />
+      <div className="main-content flex-1 flex overflow-hidden relative">
+        <SessionSidebar />
+        <ChatArea />
+        <ArtifactPanel />
+      </div>
+      {/* Settings overlay */}
+      {settingsOpen && <SettingsPage />}
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <Provider>
+      <AppContent />
+    </Provider>
   );
 }
