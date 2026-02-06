@@ -51,6 +51,9 @@ export const sessionProcessingFamily = atomFamily(
 
 // ============ UI Atoms ============
 
+/** Sidebar open state */
+export const sidebarOpenAtom = atom<boolean>(true);
+
 /** Settings panel open state */
 export const settingsOpenAtom = atom<boolean>(false);
 
