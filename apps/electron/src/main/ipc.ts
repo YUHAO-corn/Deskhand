@@ -12,7 +12,9 @@
  * - Main handles via: ipcMain.handle('channel', handler)
  */
 
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow, app } from 'electron';
+import { join } from 'path';
+import { existsSync } from 'fs';
 import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent } from '@deskhand/core';
 import {
   loadConfig,
@@ -37,19 +39,33 @@ const agents = new Map<string, DeskhandAgent>();
 
 // Get or create agent for a session
 async function getOrCreateAgent(sessionId: string): Promise<DeskhandAgent | null> {
-  // 实现步骤：
-  // 1. 检查 agents Map 是否已有该 session 的 agent
-  // 2. 如果有，直接返回
-  // 3. 如果没有，获取 API key，创建新 agent
-  // 4. 将新 agent 存入 Map 并返回
   if (agents.has(sessionId)) {
     return agents.get(sessionId)!;
   }
 
-  const apiKey = await getApiKey();
+  // Try env var first (dev mode), then encrypted storage
+  const apiKey = process.env.ANTHROPIC_API_KEY || await getApiKey();
   if (!apiKey) return null;
 
-  const agent = new DeskhandAgent({ apiKey });
+  // Resolve the path to the SDK's cli.js
+  // In development: use process.cwd() (project root)
+  // In packaged app: use app.getAppPath()
+  const basePath = app.isPackaged ? app.getAppPath() : process.cwd();
+  const sdkRelativePath = join('node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
+  let cliPath = join(basePath, sdkRelativePath);
+
+  // For monorepos, try root level if not found locally
+  if (!existsSync(cliPath) && !app.isPackaged) {
+    // We're already at project root in dev mode, so this should work
+    console.log('[ipc] SDK cli.js not found at:', cliPath);
+  }
+
+  console.log('[ipc] Using pathToClaudeCodeExecutable:', cliPath);
+
+  const agent = new DeskhandAgent({
+    apiKey,
+    pathToClaudeCodeExecutable: cliPath,
+  });
   agents.set(sessionId, agent);
   return agent;
 }
@@ -82,9 +98,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.GET_SETUP_NEEDS, async (): Promise<SetupNeeds> => {
     // 实现步骤：
-    // 1. 检查是否存在 API key
+    // 1. 检查是否存在 API key (env var or encrypted storage)
     // 2. 返回 SetupNeeds 对象
-    const hasKey = await hasApiKey();
+    const hasKey = !!process.env.ANTHROPIC_API_KEY || await hasApiKey();
     return {
       isFullyConfigured: hasKey,
       needsAuth: !hasKey,
