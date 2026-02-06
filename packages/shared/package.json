@@ -1,0 +1,28 @@
+{
+  "name": "@deskhand/shared",
+  "version": "0.1.0",
+  "description": "Shared business logic for Deskhand - agent, config, sessions, skills",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./agent": "./src/agent/index.ts",
+    "./config": "./src/config/index.ts",
+    "./sessions": "./src/sessions/index.ts",
+    "./skills": "./src/skills/index.ts"
+  },
+  "dependencies": {
+    "@deskhand/core": "workspace:*",
+    "bash-parser": "^0.5.0",
+    "shell-quote": "^1.8.3"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.19",
+    "@anthropic-ai/sdk": ">=0.70.0",
+    "zod": ">=3.0.0"
+  },
+  "devDependencies": {
+    "@types/shell-quote": "^1.7.5"
+  }
+}
