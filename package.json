@@ -1,0 +1,57 @@
+{
+  "name": "deskhand",
+  "version": "0.1.0",
+  "description": "Desktop AI Agent powered by Claude",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "cd packages/core && bun run tsc --noEmit && cd ../shared && bun run tsc --noEmit",
+    "lint": "cd apps/electron && bun run lint",
+    "electron:dev": "bun run scripts/electron-dev.ts",
+    "electron:build": "bun run scripts/electron-build.ts",
+    "electron:start": "bun run electron:build && electron apps/electron"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.19",
+    "@anthropic-ai/sdk": "^0.71.1",
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "@radix-ui/react-dropdown-menu": "^2.1.0",
+    "@radix-ui/react-scroll-area": "^1.2.0",
+    "@radix-ui/react-select": "^2.1.0",
+    "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-tooltip": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
+    "gray-matter": "^4.0.3",
+    "jotai": "^2.10.0",
+    "lucide-react": "^0.460.0",
+    "marked": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.0",
+    "react-resizable-panels": "^2.1.0",
+    "shiki": "^1.24.0",
+    "tailwind-merge": "^2.5.0",
+    "tailwindcss": "^3.4.0",
+    "zod": "^3.23.0"
+  }
+}
