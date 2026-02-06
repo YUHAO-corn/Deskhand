@@ -177,6 +177,7 @@ export async function updateSessionMeta(
   const updatedSession: Session = {
     id: session.id,
     createdAt: session.createdAt,
+    messageCount: session.messageCount,
     name: updates.name ?? session.name,
     lastMessageAt: updates.lastMessageAt ?? session.lastMessageAt,
     preview: updates.preview ?? session.preview,
