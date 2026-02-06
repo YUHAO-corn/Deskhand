@@ -1,0 +1,26 @@
+{
+  "name": "@deskhand/electron",
+  "version": "0.1.0",
+  "description": "Electron desktop app for Deskhand",
+  "main": "dist/main.cjs",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build:main": "esbuild src/main/index.ts --bundle --platform=node --format=cjs --outfile=dist/main.cjs --external:electron",
+    "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --outfile=dist/preload.cjs --external:electron",
+    "build:renderer": "vite build",
+    "build": "bun run build:main && bun run build:preload && bun run build:renderer",
+    "start": "bun run build && electron .",
+    "dev": "vite dev",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@deskhand/core": "workspace:*",
+    "@deskhand/shared": "workspace:*",
+    "jotai-family": "^1.0.1"
+  }
+}
