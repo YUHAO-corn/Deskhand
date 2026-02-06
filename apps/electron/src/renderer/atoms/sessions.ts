@@ -62,3 +62,24 @@ export const artifactPanelOpenAtom = atom<boolean>(false);
 
 /** Artifact panel active tab */
 export const artifactActiveTabAtom = atom<'files' | 'changes' | 'terminal' | 'preview'>('files');
+
+/** Artifact panel width */
+export const artifactPanelWidthAtom = atom<number>(480);
+
+/** Selected file path in Files tab */
+export const selectedFileAtom = atom<string | null>(null);
+
+/** File preview mode (code/preview) */
+export const filePreviewModeAtom = atom<'code' | 'preview'>('code');
+
+/** Permission mode (explore/ask/auto) */
+export const permissionModeAtom = atom<'explore' | 'ask' | 'auto'>('ask');
+
+/** Current permission request */
+export const permissionRequestAtom = atom<{ isOpen: boolean; command?: string } | null>(null);
+
+/** Thinking level for AI responses */
+export const thinkingLevelAtom = atom<'none' | 'low' | 'medium' | 'high'>('medium');
+
+/** Selected model */
+export const selectedModelAtom = atom<string>('claude-sonnet-4-20250514');
