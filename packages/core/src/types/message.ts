@@ -49,6 +49,23 @@ export interface TokenUsage {
   cacheCreationTokens?: number;
 }
 
+// ============ Tool Display ============
+
+/**
+ * Tool display metadata for MCP tools
+ * Used for custom tool icons and names in the UI
+ */
+export interface ToolDisplayMeta {
+  /** Display name for the tool (e.g., "Commit", "Linear") */
+  displayName: string;
+  /** Base64-encoded icon as data URL (e.g., "data:image/png;base64,...") - 32x32px */
+  iconDataUrl?: string;
+  /** Description of what this tool does */
+  description?: string;
+  /** Category for grouping/styling */
+  category?: 'skill' | 'source' | 'native' | 'mcp';
+}
+
 // ============ Attachment ============
 
 /** Stored attachment (persisted to disk) */

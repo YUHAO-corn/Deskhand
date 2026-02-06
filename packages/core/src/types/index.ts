@@ -23,6 +23,7 @@ export type {
   CredentialInputMode,
   AttachmentType,
   TokenUsage,
+  ToolDisplayMeta,
   StoredAttachment,
   Message,
   StoredMessage,
