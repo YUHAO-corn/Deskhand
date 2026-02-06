@@ -15,6 +15,13 @@
 import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { activeSessionIdAtom, sessionInputFamily } from '../../atoms/sessions';
+import {
+  WorkspacePopup,
+  ToolsPopup,
+  SkillsPopup,
+  ReasoningPopup,
+  ModelSelectorPopup,
+} from './popups';
 
 export function InputToolbar() {
   const [activeSessionId] = useAtom(activeSessionIdAtom);
@@ -73,13 +80,12 @@ export function InputToolbar() {
         {/* ============================================
             区域：弹窗容器
             功能：各种选择器弹窗（Workspace、Tools、Skills、Reasoning、Model）
-            TODO: 实现各个弹窗组件
             ============================================ */}
-        {/* <WorkspacePopup /> */}
-        {/* <ToolsPopup /> */}
-        {/* <SkillsPopup /> */}
-        {/* <ReasoningPopup /> */}
-        {/* <ModelSelectorPopup /> */}
+        <WorkspacePopup isOpen={activePopup === 'workspace'} />
+        <ToolsPopup isOpen={activePopup === 'tools'} />
+        <SkillsPopup isOpen={activePopup === 'skills'} />
+        <ReasoningPopup isOpen={activePopup === 'reasoning'} />
+        <ModelSelectorPopup isOpen={activePopup === 'model'} />
 
         {/* ============================================
             区域：输入框
