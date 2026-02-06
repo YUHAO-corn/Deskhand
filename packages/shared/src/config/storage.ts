@@ -15,32 +15,45 @@ import type { AppConfig } from '@deskhand/core';
 
 // ============ Paths ============
 
-/** Get Deskhand config directory */
+/** Get Deskhand config directory: ~/.deskhand */
 export function getConfigDir(): string {
   return path.join(os.homedir(), '.deskhand');
 }
 
-/** Get config file path */
+/** Get config file path: ~/.deskhand/config.json */
 export function getConfigPath(): string {
   return path.join(getConfigDir(), 'config.json');
 }
 
-/** Get credentials file path */
+/** Get credentials file path: ~/.deskhand/credentials.enc */
 export function getCredentialsPath(): string {
   return path.join(getConfigDir(), 'credentials.enc');
+}
+
+/** Get sessions directory: ~/.deskhand/sessions */
+export function getSessionsDir(): string {
+  return path.join(getConfigDir(), 'sessions');
+}
+
+/** Ensure config directory exists */
+export function ensureConfigDir(): void {
+  const dir = getConfigDir();
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 }
 
 // ============ Config CRUD ============
 
 /**
  * Load app config from disk
- *
- * TODO: Implement
- * - Read config.json
- * - Parse JSON
- * - Return typed config
  */
 export async function loadConfig(): Promise<AppConfig | null> {
+  // 实现步骤：
+  // 1. 检查 config.json 是否存在
+  // 2. 读取文件内容
+  // 3. JSON.parse 并返回 AppConfig
+  // 4. 出错返回 null
   const configPath = getConfigPath();
   if (!fs.existsSync(configPath)) {
     return null;
@@ -58,13 +71,67 @@ export async function loadConfig(): Promise<AppConfig | null> {
  * Save app config to disk
  */
 export async function saveConfig(config: AppConfig): Promise<void> {
-  const configDir = getConfigDir();
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
-
+  // 实现步骤：
+  // 1. 确保 ~/.deskhand 目录存在
+  // 2. JSON.stringify 配置（格式化）
+  // 3. 写入 config.json
+  ensureConfigDir();
   const configPath = getConfigPath();
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+}
+
+// ============ Credentials (API Key) ============
+
+/**
+ * Save API key to encrypted file
+ */
+export async function saveApiKey(apiKey: string): Promise<void> {
+  // 实现步骤：
+  // 1. 确保配置目录存在
+  // 2. 调用 encryptCredential(apiKey)
+  // 3. 写入 credentials.enc 文件
+  ensureConfigDir();
+  const encrypted = encryptCredential(apiKey);
+  fs.writeFileSync(getCredentialsPath(), encrypted);
+}
+
+/**
+ * Load API key from encrypted file
+ */
+export async function getApiKey(): Promise<string | null> {
+  // 实现步骤：
+  // 1. 检查 credentials.enc 是否存在
+  // 2. 读取文件内容
+  // 3. 调用 decryptCredential() 解密
+  // 4. 返回解密后的 API key
+  const credPath = getCredentialsPath();
+  if (!fs.existsSync(credPath)) {
+    return null;
+  }
+
+  try {
+    const encrypted = fs.readFileSync(credPath, 'utf-8');
+    return decryptCredential(encrypted);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if API key exists
+ */
+export async function hasApiKey(): Promise<boolean> {
+  return fs.existsSync(getCredentialsPath());
+}
+
+/**
+ * Delete API key (logout)
+ */
+export async function deleteApiKey(): Promise<void> {
+  const credPath = getCredentialsPath();
+  if (fs.existsSync(credPath)) {
+    fs.unlinkSync(credPath);
+  }
 }
 
 // ============ Encryption ============
