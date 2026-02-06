@@ -2,25 +2,57 @@
  * IPC handlers for main process
  *
  * Handles communication between renderer and main process:
- * - Config management
- * - Session operations
- * - Agent chat
+ * - Config management (API key, preferences)
+ * - Session operations (CRUD)
+ * - Agent chat (message streaming, permissions)
+ *
+ * Pattern:
+ * - Renderer calls: window.electronAPI.xxx()
+ * - Preload bridges to: ipcRenderer.invoke('channel', args)
+ * - Main handles via: ipcMain.handle('channel', handler)
  */
 
-import { ipcMain } from 'electron';
-import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session } from '@deskhand/core';
+import { ipcMain, BrowserWindow } from 'electron';
+import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent } from '@deskhand/core';
 import {
   loadConfig,
   saveConfig,
-  encryptCredential,
-  decryptCredential,
+  saveApiKey,
+  getApiKey,
+  hasApiKey,
 } from '@deskhand/shared/config';
 import {
   listSessions,
   loadSession,
   createSession,
   deleteSession,
+  generateSessionId,
 } from '@deskhand/shared/sessions';
+import { DeskhandAgent } from '@deskhand/shared/agent';
+
+// ============ Agent Instance Management ============
+
+// Map of sessionId -> agent instance
+const agents = new Map<string, DeskhandAgent>();
+
+// Get or create agent for a session
+async function getOrCreateAgent(sessionId: string): Promise<DeskhandAgent | null> {
+  // 实现步骤：
+  // 1. 检查 agents Map 是否已有该 session 的 agent
+  // 2. 如果有，直接返回
+  // 3. 如果没有，获取 API key，创建新 agent
+  // 4. 将新 agent 存入 Map 并返回
+  if (agents.has(sessionId)) {
+    return agents.get(sessionId)!;
+  }
+
+  const apiKey = await getApiKey();
+  if (!apiKey) return null;
+
+  const agent = new DeskhandAgent({ apiKey });
+  agents.set(sessionId, agent);
+  return agent;
+}
 
 // ============ IPC Channel Names ============
 
@@ -49,10 +81,13 @@ export function registerIpcHandlers(): void {
   // ===== Config =====
 
   ipcMain.handle(IPC_CHANNELS.GET_SETUP_NEEDS, async (): Promise<SetupNeeds> => {
-    const config = await loadConfig();
+    // 实现步骤：
+    // 1. 检查是否存在 API key
+    // 2. 返回 SetupNeeds 对象
+    const hasKey = await hasApiKey();
     return {
-      isFullyConfigured: !!config?.apiKey,
-      needsAuth: !config?.apiKey,
+      isFullyConfigured: hasKey,
+      needsAuth: !hasKey,
     };
   });
 
@@ -61,19 +96,30 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.SAVE_CONFIG, async (_, config: AppConfig): Promise<void> => {
-    // Encrypt API key before saving
+    // 实现步骤：
+    // 1. 如果包含 API key，单独保存到加密文件
+    // 2. 保存其他配置到 config.json（不含 API key）
     if (config.apiKey) {
-      config.apiKey = encryptCredential(config.apiKey);
+      await saveApiKey(config.apiKey);
+      // Don't save API key in config.json
+      const { apiKey, ...rest } = config;
+      await saveConfig(rest as AppConfig);
+    } else {
+      await saveConfig(config);
     }
-    await saveConfig(config);
   });
 
   ipcMain.handle(IPC_CHANNELS.VALIDATE_API_KEY, async (_, apiKey: string, baseUrl?: string): Promise<{ valid: boolean; error?: string }> => {
-    // TODO: Call Anthropic API to validate key
-    // For now, just check format
-    if (!apiKey.startsWith('sk-')) {
-      return { valid: false, error: 'Invalid API key format' };
+    // 实现步骤：
+    // 1. 验证 API key 格式（以 sk-ant- 开头）
+    // 2. 调用 Anthropic API 验证 key 有效性
+    //    const anthropic = new Anthropic({ apiKey, baseUrl });
+    //    await anthropic.messages.create({ model: 'claude-3-haiku', messages: [], max_tokens: 1 });
+    // 3. 返回验证结果
+    if (!apiKey.startsWith('sk-ant-')) {
+      return { valid: false, error: 'API key should start with sk-ant-' };
     }
+    // TODO: Actually call Anthropic API to validate
     return { valid: true };
   });
 
@@ -97,19 +143,53 @@ export function registerIpcHandlers(): void {
 
   // ===== Agent =====
 
-  // TODO: Implement agent handlers
-  ipcMain.handle(IPC_CHANNELS.AGENT_CHAT, async (_, sessionId: string, message: string) => {
-    // TODO: Create/get agent instance, call chat()
+  ipcMain.handle(IPC_CHANNELS.AGENT_CHAT, async (event, sessionId: string, message: string) => {
+    // 实现步骤：
+    // 1. 获取或创建该 session 的 agent 实例
+    // 2. 设置 onEvent 回调，将事件通过 IPC 发送到 renderer
+    //    event.sender.send('agent:event', sessionId, agentEvent)
+    // 3. 调用 agent.chat(message, { onEvent })
+    // 4. 聊天完成后，更新 session 的 lastMessageAt
     console.log('[IPC] agent:chat', sessionId, message);
+
+    const agent = await getOrCreateAgent(sessionId);
+    if (!agent) {
+      event.sender.send('agent:event', sessionId, {
+        type: 'error',
+        error: 'No API key configured',
+      } as AgentEvent);
+      return;
+    }
+
+    await agent.chat(message, {
+      onEvent: (agentEvent: AgentEvent) => {
+        // Forward event to renderer
+        event.sender.send('agent:event', sessionId, agentEvent);
+      },
+    });
   });
 
   ipcMain.handle(IPC_CHANNELS.AGENT_STOP, async (_, sessionId: string) => {
-    // TODO: Stop agent
+    // 实现步骤：
+    // 1. 从 agents Map 获取该 session 的 agent
+    // 2. 如果存在，调用 agent.stop()
     console.log('[IPC] agent:stop', sessionId);
+
+    const agent = agents.get(sessionId);
+    if (agent) {
+      await agent.stop();
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.AGENT_PERMISSION_RESPONSE, async (_, sessionId: string, requestId: string, response: 'allow' | 'deny') => {
-    // TODO: Forward permission response to agent
+    // 实现步骤：
+    // 1. 从 agents Map 获取该 session 的 agent
+    // 2. 调用 agent.respondToPermission(requestId, response)
     console.log('[IPC] agent:permission-response', sessionId, requestId, response);
+
+    const agent = agents.get(sessionId);
+    if (agent) {
+      await agent.respondToPermission(requestId, response);
+    }
   });
 }
