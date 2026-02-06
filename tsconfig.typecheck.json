@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@deskhand/core": ["packages/core/src"],
+      "@deskhand/core/types": ["packages/core/src/types"],
+      "@deskhand/shared": ["packages/shared/src"]
+    }
+  },
+  "include": [
+    "packages/core/src/**/*",
+    "packages/shared/src/**/*"
+  ]
+}

@@ -9,7 +9,7 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "cd packages/core && bun run tsc --noEmit && cd ../shared && bun run tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "lint": "cd apps/electron && bun run lint",
     "electron:dev": "bun run scripts/electron-dev.ts",
     "electron:build": "bun run scripts/electron-build.ts",
