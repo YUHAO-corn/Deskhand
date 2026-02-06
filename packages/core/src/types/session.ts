@@ -30,7 +30,6 @@ export interface Session {
   id: string;
   name?: string;                     // User-defined name
   createdAt: number;                 // Creation timestamp
-  lastUsedAt: number;                // Last activity timestamp
   lastMessageAt?: number;            // Last message timestamp (for sorting)
   preview?: string;                  // First user message preview
   messageCount: number;              // Number of messages
