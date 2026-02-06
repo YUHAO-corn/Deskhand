@@ -1,58 +1,46 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* ============================================
+/* Tell Tailwind where to scan for utility classes */
+@source "../**/*.{tsx,ts,jsx,js}";
+
+/* =============================================================================
    Design System
-   来源：deskhand-prototype/src/index.css
-   ============================================ */
+   ============================================================================= */
+
+@theme {
+  /* 背景色 */
+  --color-bg-primary: #f0f7f7;
+  --color-bg-secondary: #f8fbfb;
+  --color-bg-sidebar: #ffffff;
+
+  /* 文字色 */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+
+  /* 边框色 */
+  --color-border-default: #e0e8e8;
+  --color-border-light: #e8eded;
+
+  /* 强调色 */
+  --color-accent: #10a37f;
+  --color-accent-bg: #eff6f3;
+
+  /* 交互状态 */
+  --color-selected-bg: #dce8f5;
+  --color-hover-bg: #e6f0f0;
+
+  /* 尺寸 */
+  --sidebar-width: 260px;
+  --titlebar-height: 52px;
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
 
 @layer base {
-  :root {
-    /* 背景色 */
-    --bg-primary: #f0f7f7;
-    --bg-secondary: #f8fbfb;
-    --bg-sidebar: #ffffff;
-
-    /* 文字色 */
-    --text-primary: #1a1a1a;
-    --text-secondary: #6b7280;
-    --text-muted: #9ca3af;
-
-    /* 边框色 */
-    --border-color: #e0e8e8;
-    --border-light: #e8eded;
-
-    /* 强调色 */
-    --accent-color: #10a37f;
-    --accent-bg: #eff6f3;
-
-    /* 交互状态 */
-    --selected-bg: #dce8f5;
-    --hover-bg: #e6f0f0;
-
-    /* 阴影 */
-    --shadow-popup: 0 4px 24px rgba(0, 0, 0, 0.12);
-
-    /* 过渡 */
-    --transition-fast: 0.15s ease;
-    --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    /* 尺寸 */
-    --sidebar-width: 260px;
-    --titlebar-height: 52px;
-
-    /* 字号 */
-    --font-size-xs: 11px;
-    --font-size-sm: 13px;
-    --font-size-base: 14px;
-
-    /* 圆角 */
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-  }
-
   html, body, #root {
     height: 100%;
     width: 100%;
@@ -62,7 +50,7 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    background: var(--bg-primary);
+    background: var(--color-bg-primary);
   }
 }
 
@@ -88,10 +76,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
