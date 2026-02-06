@@ -8,6 +8,9 @@
  * - App lifecycle management
  */
 
+// Load .env file for development
+import 'dotenv/config';
+
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
 import { registerIpcHandlers } from './ipc.ts';
