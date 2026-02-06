@@ -10,11 +10,15 @@
  * IPC Event → useAgentEvents → Atoms → UI Components
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useSetAtom } from 'jotai';
 import type { AgentEvent, Message } from '@deskhand/core';
-// import { messagesAtomFamily, sessionProcessingAtomFamily } from '../atoms/session';
-// import { generateMessageId } from '@deskhand/core';
+import { generateMessageId } from '@deskhand/core';
+import {
+  sessionMessagesFamily,
+  sessionProcessingFamily,
+  permissionRequestAtom,
+} from '../atoms/sessions';
 
 /**
  * Hook 参数
@@ -26,19 +30,15 @@ export interface UseAgentEventsOptions {
 
 /**
  * Agent 事件订阅 Hook
- *
- * 使用方式：
- * ```tsx
- * function ChatArea({ sessionId }: { sessionId: string }) {
- *   useAgentEvents({ sessionId, enabled: true });
- *   // ... 渲染消息
- * }
- * ```
  */
 export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOptions) {
   // ─── Atom Setters ───
-  // const setMessages = useSetAtom(messagesAtomFamily(sessionId));
-  // const setProcessing = useSetAtom(sessionProcessingAtomFamily(sessionId));
+  const setMessages = useSetAtom(sessionMessagesFamily(sessionId));
+  const setProcessing = useSetAtom(sessionProcessingFamily(sessionId));
+  const setPermissionRequest = useSetAtom(permissionRequestAtom);
+
+  // Track the current streaming message ID
+  const streamingMessageIdRef = useRef<string | null>(null);
 
   // ─── 事件处理器 ───
   const handleEvent = useCallback((eventSessionId: string, event: AgentEvent) => {
@@ -48,96 +48,192 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
     // 根据事件类型分别处理
     switch (event.type) {
       // ─── 文本流式事件 ───
-      case 'text_delta':
-        // 实现步骤：
-        // 1. 查找当前 streaming 的 assistant 消息
-        // 2. 如果不存在，创建新消息（role: 'assistant', isStreaming: true）
-        // 3. 追加 event.text 到消息内容
-        console.log('[useAgentEvents] text_delta:', event.text.length, 'chars');
-        break;
+      case 'text_delta': {
+        setMessages((prev) => {
+          // Find or create streaming message
+          let messageId = streamingMessageIdRef.current;
+          const existingIdx = messageId
+            ? prev.findIndex((m) => m.id === messageId)
+            : -1;
 
-      case 'text_complete':
-        // 实现步骤：
-        // 1. 查找当前 streaming 的 assistant 消息
-        // 2. 设置 isStreaming = false
-        // 3. 如果 event.isIntermediate，标记为中间消息
-        console.log('[useAgentEvents] text_complete, intermediate:', event.isIntermediate);
+          if (existingIdx >= 0) {
+            // Append to existing message
+            const updated = [...prev];
+            const existing = updated[existingIdx]!;
+            updated[existingIdx] = {
+              ...existing,
+              content: existing.content + event.text,
+            };
+            return updated;
+          } else {
+            // Create new streaming message
+            const newId = generateMessageId();
+            streamingMessageIdRef.current = newId;
+            const newMessage: Message = {
+              id: newId,
+              role: 'assistant',
+              content: event.text,
+              timestamp: Date.now(),
+              isStreaming: true,
+              isPending: true,
+              turnId: event.turnId,
+            };
+            return [...prev, newMessage];
+          }
+        });
         break;
+      }
+
+      case 'text_complete': {
+        setMessages((prev) => {
+          const messageId = streamingMessageIdRef.current;
+          if (!messageId) {
+            // No streaming message, create a complete one
+            const newMessage: Message = {
+              id: generateMessageId(),
+              role: 'assistant',
+              content: event.text,
+              timestamp: Date.now(),
+              isStreaming: false,
+              isIntermediate: event.isIntermediate,
+              turnId: event.turnId,
+            };
+            return [...prev, newMessage];
+          }
+
+          // Update existing streaming message
+          const updated = prev.map((m) =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  content: event.text, // Replace with complete text
+                  isStreaming: false,
+                  isPending: false,
+                  isIntermediate: event.isIntermediate,
+                }
+              : m
+          );
+          streamingMessageIdRef.current = null;
+          return updated;
+        });
+        break;
+      }
 
       // ─── 工具事件 ───
-      case 'tool_start':
-        // 实现步骤：
-        // 1. 创建新的 tool 消息
-        // 2. 设置 toolName, toolUseId, toolInput, toolStatus='executing'
-        // 3. 添加到消息列表
-        console.log('[useAgentEvents] tool_start:', event.toolName);
+      case 'tool_start': {
+        const toolMessage: Message = {
+          id: generateMessageId(),
+          role: 'tool',
+          content: '',
+          timestamp: Date.now(),
+          toolName: event.toolName,
+          toolUseId: event.toolUseId,
+          toolInput: event.input,
+          toolStatus: 'executing',
+          turnId: event.turnId,
+        };
+        setMessages((prev) => [...prev, toolMessage]);
         break;
+      }
 
-      case 'tool_result':
-        // 实现步骤：
-        // 1. 查找对应 toolUseId 的 tool 消息
-        // 2. 更新 toolResult, toolStatus='completed' 或 'error'
-        console.log('[useAgentEvents] tool_result:', event.toolUseId, event.isError);
+      case 'tool_result': {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.toolUseId === event.toolUseId
+              ? {
+                  ...m,
+                  toolResult: event.result,
+                  toolStatus: event.isError ? 'error' : 'completed',
+                }
+              : m
+          )
+        );
         break;
+      }
 
       // ─── 权限请求 ───
-      case 'permission_request':
-        // 实现步骤：
-        // 1. 创建 permission 请求消息或更新 atom
-        // 2. 显示权限确认 UI
-        console.log('[useAgentEvents] permission_request:', event.toolName);
+      case 'permission_request': {
+        setPermissionRequest({
+          isOpen: true,
+          command: event.command,
+        });
         break;
+      }
 
       // ─── 状态和信息 ───
-      case 'status':
-        // 创建 status 消息（role: 'status'）
-        console.log('[useAgentEvents] status:', event.message);
+      case 'status': {
+        const statusMessage: Message = {
+          id: generateMessageId(),
+          role: 'status',
+          content: event.message,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, statusMessage]);
         break;
+      }
 
-      case 'info':
-        // 创建 info 消息（role: 'info'）
-        console.log('[useAgentEvents] info:', event.message);
+      case 'info': {
+        const infoMessage: Message = {
+          id: generateMessageId(),
+          role: 'info',
+          content: event.message,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, infoMessage]);
         break;
+      }
 
       // ─── 错误 ───
-      case 'error':
-        // 创建 error 消息（role: 'error'）
-        console.log('[useAgentEvents] error:', event.message);
+      case 'error': {
+        const errorMessage: Message = {
+          id: generateMessageId(),
+          role: 'error',
+          content: event.message,
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
         break;
+      }
 
-      case 'typed_error':
-        // 创建带结构化信息的 error 消息
-        console.log('[useAgentEvents] typed_error:', event.error.code);
+      case 'typed_error': {
+        const typedErrorMessage: Message = {
+          id: generateMessageId(),
+          role: 'error',
+          content: event.error.message,
+          timestamp: Date.now(),
+          errorCode: event.error.code,
+          errorTitle: event.error.title,
+          errorDetails: event.error.details,
+          errorCanRetry: event.error.canRetry,
+        };
+        setMessages((prev) => [...prev, typedErrorMessage]);
         break;
+      }
 
       // ─── 完成 ───
-      case 'complete':
-        // 实现步骤：
-        // 1. 设置 processing = false
-        // 2. 更新 token usage（如果有）
-        // 3. 持久化消息到 storage
-        console.log('[useAgentEvents] complete, usage:', event.usage);
+      case 'complete': {
+        setProcessing(false);
+        streamingMessageIdRef.current = null;
         break;
+      }
 
       // ─── 后台任务 ───
       case 'task_backgrounded':
       case 'task_progress':
       case 'shell_backgrounded':
       case 'shell_killed':
-        // 更新对应的后台任务状态
-        console.log('[useAgentEvents] background task event:', event.type);
+        // V2: 更新对应的后台任务状态
         break;
 
       // ─── 工作目录变更 ───
       case 'working_directory_changed':
-        // 更新 session 的 workingDirectory
-        console.log('[useAgentEvents] working_directory_changed:', event.workingDirectory);
+        // 更新 session 的 workingDirectory (后续实现)
         break;
 
       default:
         console.log('[useAgentEvents] unknown event type:', (event as { type: string }).type);
     }
-  }, [sessionId]);
+  }, [sessionId, setMessages, setProcessing, setPermissionRequest]);
 
   // ─── 订阅 IPC 事件 ───
   useEffect(() => {
