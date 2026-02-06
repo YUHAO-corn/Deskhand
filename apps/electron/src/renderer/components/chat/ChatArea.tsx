@@ -12,18 +12,42 @@
  * - 提供会话控制操作（停止、重新生成）
  */
 
+import { useMemo, useEffect, useRef } from 'react';
 import { useAtom } from 'jotai';
 import {
   activeSessionIdAtom,
   artifactPanelOpenAtom,
   artifactActiveTabAtom,
+  sessionMessagesFamily,
 } from '../../atoms/sessions';
+import { groupMessagesByTurn, type Turn, type AssistantTurn } from './turn-utils';
+
+/** Get unique key for a turn */
+function getTurnKey(turn: Turn): string {
+  if (turn.type === 'assistant') {
+    return (turn as AssistantTurn).turnId;
+  }
+  return turn.message.id;
+}
+import { useAgentEvents } from '../../hooks/useAgentEvents';
 import { InputToolbar } from '../input/InputToolbar';
+import { UserMessageBubble } from './UserMessageBubble';
+import { TurnCard } from './TurnCard';
 
 export function ChatArea() {
   const [activeSessionId] = useAtom(activeSessionIdAtom);
   const [artifactPanelOpen, setArtifactPanelOpen] = useAtom(artifactPanelOpenAtom);
   const [, setArtifactActiveTab] = useAtom(artifactActiveTabAtom);
+
+  // 订阅 Agent 事件
+  useAgentEvents({
+    sessionId: activeSessionId ?? '',
+    enabled: !!activeSessionId,
+  });
+
+  // 获取消息列表 - 使用固定的 atom key 避免 hooks 规则问题
+  const messagesAtom = sessionMessagesFamily(activeSessionId ?? '__empty__');
+  const [messages] = useAtom(messagesAtom);
 
   // ============================================
   // 打开 Artifact 面板到指定 Tab
@@ -33,19 +57,26 @@ export function ChatArea() {
     setArtifactActiveTab(tab);
   };
 
-  // TODO: 从 sessionMessagesFamily(activeSessionId) 获取消息列表
-  // TODO: 使用 turn-utils.ts 的 buildTurnsFromMessages 转换为 Turn 数组
-  const turns: any[] = []; // TODO: 替换为实际数据
+  // 将消息分组为 Turn
+  const turns = useMemo(() => groupMessagesByTurn(messages), [messages]);
   const isEmpty = turns.length === 0;
+
+  // 自动滚动到底部
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <div className="flex-1 flex flex-col bg-[var(--bg-primary)] relative">
       {/* ============================================
           区域：消息列表
           功能：渲染所有 Turn（用户消息 + AI 回复）
-          数据：turns 数组（由 buildTurnsFromMessages 生成）
+          数据：turns 数组（由 groupMessagesByTurn 生成）
           ============================================ */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {isEmpty ? (
           // 空状态
           <div className="h-full flex items-center justify-center">
@@ -57,7 +88,7 @@ export function ChatArea() {
           // 消息列表
           <div className="max-w-3xl mx-auto py-6 px-4">
             {turns.map((turn) => (
-              <TurnRenderer key={turn.id} turn={turn} />
+              <TurnRenderer key={getTurnKey(turn)} turn={turn} />
             ))}
           </div>
         )}
@@ -140,24 +171,37 @@ export function ChatArea() {
 // ============================================
 
 interface TurnRendererProps {
-  turn: any; // TODO: 使用 Turn 类型
+  turn: Turn;
 }
 
 function TurnRenderer({ turn }: TurnRendererProps) {
-  // TODO: 根据 turn.type 渲染不同组件
-  // - user → UserMessageBubble
-  // - assistant → TurnCard
-  // - system → SystemMessage
-  // - auth-request → AuthRequestCard
+  switch (turn.type) {
+    case 'user':
+      return (
+        <div className="mb-4">
+          <UserMessageBubble message={turn.message} />
+        </div>
+      );
 
-  return (
-    <div className="mb-4">
-      {/* TODO: 实现 Turn 渲染逻辑 */}
-      <div className="p-4 bg-[var(--bg-secondary)] rounded-[var(--radius-md)]">
-        Turn: {turn.type}
-      </div>
-    </div>
-  );
+    case 'assistant':
+      return (
+        <div className="mb-4">
+          <TurnCard turn={turn} />
+        </div>
+      );
+
+    case 'system':
+      return (
+        <div className="mb-4">
+          <div className="text-center text-[var(--text-muted)] text-sm py-2">
+            {turn.message.content}
+          </div>
+        </div>
+      );
+
+    default:
+      return null;
+  }
 }
 
 // ============================================
