@@ -44,16 +44,8 @@ export function TitleBar() {
         drag-region
       "
     >
-      {/* ============================================
-          区域：窗口控制按钮（macOS 风格）
-          功能：关闭/最小化/最大化窗口
-          事件：由 Electron 主进程处理
-          ============================================ */}
-      <div className="flex gap-2 mr-4">
-        <div className="w-3 h-3 rounded-full bg-[#ff5f57] cursor-pointer" />
-        <div className="w-3 h-3 rounded-full bg-[#ffbd2e] cursor-pointer" />
-        <div className="w-3 h-3 rounded-full bg-[#28c940] cursor-pointer" />
-      </div>
+      {/* macOS 原生窗口按钮由 Electron 提供，这里留出空间 */}
+      <div className="w-[70px]" />
 
       {/* ============================================
           区域：标题栏操作按钮
