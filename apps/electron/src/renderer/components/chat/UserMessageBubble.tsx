@@ -16,7 +16,7 @@ export function UserMessageBubble({ message }: UserMessageBubbleProps) {
       <div
         className="
           max-w-[85%] px-4 py-3
-          bg-[var(--accent-primary)] text-white
+          bg-[var(--accent-color)] text-white
           rounded-[16px] rounded-br-[4px]
           text-[var(--font-size-base)] leading-relaxed
           whitespace-pre-wrap break-words
