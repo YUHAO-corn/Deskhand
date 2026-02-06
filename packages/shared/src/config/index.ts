@@ -10,6 +10,10 @@ export {
   getCredentialsPath,
   loadConfig,
   saveConfig,
+  saveApiKey,
+  getApiKey,
+  hasApiKey,
+  deleteApiKey,
   encryptCredential,
   decryptCredential,
 } from './storage.ts';
