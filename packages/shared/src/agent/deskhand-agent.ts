@@ -31,6 +31,8 @@ export interface DeskhandAgentOptions {
   workingDirectory?: string;
   /** Path to the Claude Agent SDK cli.js file */
   pathToClaudeCodeExecutable?: string;
+  /** Callback when SDK session ID is captured (for persistence) */
+  onSdkSessionIdUpdate?: (sdkSessionId: string) => void;
 }
 
 /** Chat options */
@@ -51,12 +53,24 @@ export class DeskhandAgent {
   private currentQuery: Query | null = null;
   private abortController: AbortController | null = null;
   private pendingPermissions: Map<string, { resolve: (allowed: boolean) => void }> = new Map();
+  /** SDK session ID for conversation continuity */
+  private sdkSessionId: string | null = null;
 
   constructor(options: DeskhandAgentOptions) {
     this.options = options;
     if (!options.apiKey) {
       throw new Error('API key is required');
     }
+  }
+
+  /** Get current SDK session ID */
+  getSessionId(): string | null {
+    return this.sdkSessionId;
+  }
+
+  /** Set SDK session ID (for resuming conversations) */
+  setSessionId(sessionId: string | null): void {
+    this.sdkSessionId = sessionId;
   }
 
   /**
@@ -79,6 +93,8 @@ export class DeskhandAgent {
       // Bypass SDK permissions - we handle permissions ourselves
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
+      // Resume from previous session if we have one
+      ...(this.sdkSessionId ? { resume: this.sdkSessionId } : {}),
     };
 
     // ─── Step 2: 调用 SDK query ───
@@ -93,6 +109,14 @@ export class DeskhandAgent {
     // ─── Step 4: 遍历 SDK 消息流 ───
     try {
       for await (const sdkMessage of this.currentQuery) {
+        // Capture SDK session ID from first message (for conversation continuity)
+        const msg = sdkMessage as Record<string, unknown>;
+        if (msg.session_id && !this.sdkSessionId) {
+          this.sdkSessionId = msg.session_id as string;
+          console.log('[DeskhandAgent] Captured SDK session ID:', this.sdkSessionId);
+          this.options.onSdkSessionIdUpdate?.(this.sdkSessionId);
+        }
+
         const events = this.processSdkMessage(
           sdkMessage,
           toolIndex,

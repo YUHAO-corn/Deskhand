@@ -37,6 +37,9 @@ import { DeskhandAgent } from '@deskhand/shared/agent';
 // Map of sessionId -> agent instance
 const agents = new Map<string, DeskhandAgent>();
 
+// Map of sessionId -> SDK session ID (for conversation continuity)
+const sdkSessionIds = new Map<string, string>();
+
 // Get or create agent for a session
 async function getOrCreateAgent(sessionId: string): Promise<DeskhandAgent | null> {
   if (agents.has(sessionId)) {
@@ -65,7 +68,20 @@ async function getOrCreateAgent(sessionId: string): Promise<DeskhandAgent | null
   const agent = new DeskhandAgent({
     apiKey,
     pathToClaudeCodeExecutable: cliPath,
+    // Callback to persist SDK session ID when captured
+    onSdkSessionIdUpdate: (sdkSessionId: string) => {
+      console.log('[ipc] SDK session ID captured for', sessionId, ':', sdkSessionId);
+      sdkSessionIds.set(sessionId, sdkSessionId);
+    },
   });
+
+  // Restore SDK session ID if we have one from previous conversation
+  const existingSdkSessionId = sdkSessionIds.get(sessionId);
+  if (existingSdkSessionId) {
+    console.log('[ipc] Resuming SDK session:', existingSdkSessionId);
+    agent.setSessionId(existingSdkSessionId);
+  }
+
   agents.set(sessionId, agent);
   return agent;
 }
