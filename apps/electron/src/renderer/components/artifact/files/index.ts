@@ -1,0 +1,1 @@
+export { FilesTabContent } from './FilesTabContent';
