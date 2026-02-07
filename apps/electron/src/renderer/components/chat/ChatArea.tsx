@@ -19,6 +19,7 @@ import {
   artifactPanelOpenAtom,
   artifactActiveTabAtom,
   sessionMessagesFamily,
+  sessionProcessingFamily,
 } from '../../atoms/sessions';
 import { groupMessagesByTurn, type Turn, type AssistantTurn } from './turn-utils';
 
@@ -33,6 +34,7 @@ import { useAgentEvents } from '../../hooks/useAgentEvents';
 import { InputToolbar } from '../input/InputToolbar';
 import { UserMessageBubble } from './UserMessageBubble';
 import { TurnCard } from './TurnCard';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 export function ChatArea() {
   const [activeSessionId] = useAtom(activeSessionIdAtom);
@@ -49,6 +51,10 @@ export function ChatArea() {
   const messagesAtom = sessionMessagesFamily(activeSessionId ?? '__empty__');
   const [messages] = useAtom(messagesAtom);
 
+  // 获取处理状态
+  const processingAtom = sessionProcessingFamily(activeSessionId ?? '__empty__');
+  const [isProcessing] = useAtom(processingAtom);
+
   // ============================================
   // 打开 Artifact 面板到指定 Tab
   // ============================================
@@ -60,6 +66,12 @@ export function ChatArea() {
   // 将消息分组为 Turn
   const turns = useMemo(() => groupMessagesByTurn(messages), [messages]);
   const isEmpty = turns.length === 0;
+
+  // 判断是否需要显示等待首个响应的 ThinkingIndicator
+  // 条件：正在处理 + 最后一个 turn 不是 AssistantTurn
+  // 如果已有 AssistantTurn，则由 TurnCard 内部处理 Thinking
+  const lastTurn = turns[turns.length - 1];
+  const showPendingThinking = isProcessing && lastTurn?.type !== 'assistant';
 
   // 自动滚动到底部
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -90,6 +102,29 @@ export function ChatArea() {
             {turns.map((turn) => (
               <TurnRenderer key={getTurnKey(turn)} turn={turn} />
             ))}
+            {/* 等待首个响应时的 ThinkingIndicator */}
+            {showPendingThinking && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="
+                      w-6 h-6 rounded-full
+                      bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]
+                      flex items-center justify-center
+                      text-white text-xs font-medium
+                    "
+                  >
+                    AI
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">
+                    Claude
+                  </span>
+                </div>
+                <div className="pl-8">
+                  <ThinkingIndicator />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

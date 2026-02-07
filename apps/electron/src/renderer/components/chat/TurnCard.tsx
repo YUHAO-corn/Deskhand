@@ -8,9 +8,10 @@
  */
 
 import type { AssistantTurn } from './turn-utils';
-import { deriveTurnPhase } from './turn-utils';
+import { deriveTurnPhase, shouldShowThinkingIndicator } from './turn-utils';
 import { ToolActivityRow } from './ToolActivityRow';
 import { Markdown } from './markdown/Markdown';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 interface TurnCardProps {
   turn: AssistantTurn;
@@ -20,9 +21,12 @@ export function TurnCard({ turn }: TurnCardProps) {
   const { response, activities } = turn;
   const phase = deriveTurnPhase(turn);
 
-  const isStreaming = phase === 'streaming' || phase === 'pending' || phase === 'awaiting';
+  // 是否显示思考指示器（pending/awaiting 阶段）
+  // 暂不实现智能缓冲，isBuffering = false
+  const showThinking = shouldShowThinkingIndicator(phase, false);
   const hasContent = response && response.text.length > 0;
   const hasActivities = activities && activities.length > 0;
+  const isResponseStreaming = response?.isStreaming ?? false;
 
   return (
     <div className="group">
@@ -41,12 +45,14 @@ export function TurnCard({ turn }: TurnCardProps) {
         <span className="text-sm font-medium text-[var(--text-secondary)]">
           Claude
         </span>
-        {isStreaming && (
-          <span className="text-xs text-[var(--text-muted)] animate-pulse">
-            typing...
-          </span>
-        )}
       </div>
+
+      {/* Thinking 指示器 - 在没有内容时显示 */}
+      {showThinking && !hasContent && !hasActivities && (
+        <div className="pl-8">
+          <ThinkingIndicator />
+        </div>
+      )}
 
       {/* 工具调用活动列表 */}
       {hasActivities && (
@@ -67,6 +73,10 @@ export function TurnCard({ turn }: TurnCardProps) {
               />
             ))}
           </div>
+          {/* 工具完成后等待下一步时显示 Thinking */}
+          {showThinking && !hasContent && (
+            <ThinkingIndicator />
+          )}
         </div>
       )}
 
@@ -78,22 +88,14 @@ export function TurnCard({ turn }: TurnCardProps) {
           text-[var(--text-primary)]
         "
       >
-        {hasContent ? (
+        {hasContent && (
           <div>
             <Markdown content={response.text} />
-            {isStreaming && (
+            {isResponseStreaming && (
               <span className="inline-block w-2 h-4 ml-0.5 bg-current animate-pulse" />
             )}
           </div>
-        ) : isStreaming ? (
-          <div className="flex items-center gap-2 text-[var(--text-muted)]">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
