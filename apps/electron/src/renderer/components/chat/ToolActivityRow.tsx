@@ -6,16 +6,31 @@
  * - 工具图标和名称
  * - 简短描述（文件路径、命令等）
  * - 附加信息（执行时长、diff 统计等）
+ * - 展开/折叠按钮（用于 Task 子代理）
  */
 
 import type { ActivityItem, ActivityStatus } from './turn-types';
+import type { TaskOutputData } from './turn-utils';
+import { formatDuration, formatTokens } from './turn-utils';
 
 interface ToolActivityRowProps {
   activity: ActivityItem;
   onClick?: () => void;
+  // Task 子代理展开/折叠支持
+  onToggle?: () => void;
+  isExpanded?: boolean;
+  hasChildren?: boolean;
+  taskOutputData?: TaskOutputData;
 }
 
-export function ToolActivityRow({ activity, onClick }: ToolActivityRowProps) {
+export function ToolActivityRow({
+  activity,
+  onClick,
+  onToggle,
+  isExpanded,
+  hasChildren,
+  taskOutputData,
+}: ToolActivityRowProps) {
   const { status, toolName, content, intent, displayName, error } = activity;
 
   // 获取工具显示名称
@@ -75,6 +90,41 @@ export function ToolActivityRow({ activity, onClick }: ToolActivityRowProps) {
         ">
           Background
         </span>
+      )}
+
+      {/* Task 输出数据（时长、tokens） */}
+      {taskOutputData && (
+        <TaskOutputBadge data={taskOutputData} />
+      )}
+
+      {/* 展开/折叠按钮（仅 Task 有子活动时显示） */}
+      {hasChildren && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle?.();
+          }}
+          className="
+            w-5 h-5 flex items-center justify-center
+            rounded hover:bg-[var(--hover-bg)]
+            text-[var(--text-muted)]
+            transition-transform duration-200
+          "
+          aria-label={isExpanded ? 'Collapse' : 'Expand'}
+        >
+          <svg
+            className={`w-3 h-3 transition-transform duration-200 ${
+              isExpanded ? 'rotate-90' : ''
+            }`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
       )}
     </button>
   );
@@ -279,4 +329,39 @@ function getToolDescription(activity: ActivityItem): string | null {
     default:
       return null;
   }
+}
+
+// ============================================
+// TaskOutputBadge - Task 输出数据徽章
+// ============================================
+
+interface TaskOutputBadgeProps {
+  data: TaskOutputData;
+}
+
+function TaskOutputBadge({ data }: TaskOutputBadgeProps) {
+  const { durationMs, inputTokens, outputTokens } = data;
+
+  // 构建显示内容
+  const parts: string[] = [];
+
+  if (durationMs !== undefined) {
+    parts.push(formatDuration(durationMs));
+  }
+
+  if (inputTokens !== undefined || outputTokens !== undefined) {
+    const tokensStr = `${formatTokens(inputTokens ?? 0)} / ${formatTokens(outputTokens ?? 0)}`;
+    parts.push(tokensStr);
+  }
+
+  if (parts.length === 0) return null;
+
+  return (
+    <span className="
+      px-1.5 py-0.5 rounded text-xs
+      bg-[var(--bg-tertiary)] text-[var(--text-muted)]
+    ">
+      {parts.join(' · ')}
+    </span>
+  );
 }

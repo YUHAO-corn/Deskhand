@@ -9,7 +9,7 @@
 
 import type { AssistantTurn } from './turn-utils';
 import { deriveTurnPhase, shouldShowThinkingIndicator } from './turn-utils';
-import { ToolActivityRow } from './ToolActivityRow';
+import { ActivityTree } from './ActivityTree';
 import { Markdown } from './markdown/Markdown';
 import { ThinkingIndicator } from './ThinkingIndicator';
 
@@ -54,24 +54,22 @@ export function TurnCard({ turn }: TurnCardProps) {
         </div>
       )}
 
-      {/* 工具调用活动列表 */}
+      {/* 工具调用活动列表（树形展示） */}
       {hasActivities && (
         <div className="pl-8 mb-2">
           <div className="
             bg-[var(--bg-secondary)] rounded-lg
             border border-[var(--border-light)]
             overflow-hidden
+            py-1 px-1
           ">
-            {activities.map((activity) => (
-              <ToolActivityRow
-                key={activity.id}
-                activity={activity}
-                onClick={() => {
-                  // TODO: 打开 activity 详情（Overlay）
-                  console.log('Activity clicked:', activity);
-                }}
-              />
-            ))}
+            <ActivityTree
+              activities={activities}
+              onActivityClick={(activity) => {
+                // TODO: 打开 activity 详情（Overlay）
+                console.log('Activity clicked:', activity);
+              }}
+            />
           </div>
           {/* 工具完成后等待下一步时显示 Thinking */}
           {showThinking && !hasContent && (
