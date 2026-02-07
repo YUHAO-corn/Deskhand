@@ -34,7 +34,7 @@ import { useAgentEvents } from '../../hooks/useAgentEvents';
 import { InputToolbar } from '../input/InputToolbar';
 import { UserMessageBubble } from './UserMessageBubble';
 import { TurnCard } from './TurnCard';
-import { ThinkingIndicator } from './ThinkingIndicator';
+import { ProcessingIndicator } from './ProcessingIndicator';
 
 export function ChatArea() {
   const [activeSessionId] = useAtom(activeSessionIdAtom);
@@ -67,9 +67,9 @@ export function ChatArea() {
   const turns = useMemo(() => groupMessagesByTurn(messages), [messages]);
   const isEmpty = turns.length === 0;
 
-  // 判断是否需要显示等待首个响应的 ThinkingIndicator
+  // 判断是否需要显示等待首个响应的 ProcessingIndicator
   // 条件：正在处理 + 最后一个 turn 不是 AssistantTurn
-  // 如果已有 AssistantTurn，则由 TurnCard 内部处理 Thinking
+  // 如果已有 AssistantTurn，则由 TurnCard 内部处理
   const lastTurn = turns[turns.length - 1];
   const showPendingThinking = isProcessing && lastTurn?.type !== 'assistant';
 
@@ -102,7 +102,7 @@ export function ChatArea() {
             {turns.map((turn) => (
               <TurnRenderer key={getTurnKey(turn)} turn={turn} />
             ))}
-            {/* 等待首个响应时的 ThinkingIndicator */}
+            {/* 等待首个响应时的 ProcessingIndicator */}
             {showPendingThinking && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -121,7 +121,7 @@ export function ChatArea() {
                   </span>
                 </div>
                 <div className="pl-8">
-                  <ThinkingIndicator />
+                  <ProcessingIndicator />
                 </div>
               </div>
             )}
