@@ -119,11 +119,11 @@ bun run dev
 - `apps/electron/src/renderer/components/chat/TurnCard.tsx`
 
 ### 完成后体验
-- [ ] TurnCard 顶部有可点击的 Header 行
-- [ ] Header 显示 `▶ [3] list all files and folders in downloads with details`
-- [ ] 点击 Header 展开/折叠活动列表
-- [ ] 展开时 Chevron 旋转 90°
-- [ ] 默认展开状态
+- [x] TurnCard 顶部有可点击的 Header 行
+- [x] Header 显示 `▶ [3] list all files and folders in downloads with details`
+- [x] 点击 Header 展开/折叠活动列表
+- [x] 展开时 Chevron 旋转 90°
+- [x] 默认展开状态
 
 ### 验收命令
 ```bash
@@ -153,10 +153,10 @@ bun run dev
 - `apps/electron/src/renderer/components/chat/TurnCard.tsx` - 更新引用
 
 ### 完成后体验
-- [ ] 等待时显示随机消息（如 "Pondering..."、"Working..."）
-- [ ] 消息每 10 秒切换一次，带淡入淡出动画
-- [ ] 显示读秒（45s / 1:02）
-- [ ] 支持状态消息覆盖（如 "Compacting..."）
+- [x] 等待时显示随机消息（如 "Pondering..."、"Working..."）
+- [x] 消息每 10 秒切换一次，带淡入淡出动画
+- [x] 显示读秒（45s / 1:02）
+- [x] 支持状态消息覆盖（如 "Compacting..."）
 
 ### 验收命令
 ```bash
