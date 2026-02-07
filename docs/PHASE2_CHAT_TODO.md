@@ -136,6 +136,40 @@ bun run dev
 
 ---
 
+## Step 1.5a: ProcessingIndicator 升级
+
+### 背景
+参考 craft 的 `ChatDisplay.tsx`，等待状态不是固定的 "Thinking..."，而是随机循环的消息列表（"Thinking..."、"Working..."、"Churning..."、"Pondering..." 等）加上读秒显示。
+
+### 做什么
+1. 将 `ThinkingIndicator` 升级为 `ProcessingIndicator`
+2. 添加随机循环等待消息数组（参考 craft 的 PROCESSING_MESSAGES）
+3. 每 10 秒切换一条消息（带淡入淡出动画）
+4. 显示已消耗时间（格式：`45s` / `1:02`）
+5. 支持 `statusMessage` prop 覆盖循环消息（如 "Compacting..."）
+
+### 涉及文件
+- `apps/electron/src/renderer/components/chat/ThinkingIndicator.tsx` → 重命名为 `ProcessingIndicator.tsx`
+- `apps/electron/src/renderer/components/chat/TurnCard.tsx` - 更新引用
+
+### 完成后体验
+- [ ] 等待时显示随机消息（如 "Pondering..."、"Working..."）
+- [ ] 消息每 10 秒切换一次，带淡入淡出动画
+- [ ] 显示读秒（45s / 1:02）
+- [ ] 支持状态消息覆盖（如 "Compacting..."）
+
+### 验收命令
+```bash
+bun run dev
+# 发送一个需要较长处理时间的任务
+# 预期:
+#   - 看到随机等待消息（非固定 "Thinking..."）
+#   - 消息会切换
+#   - 旁边显示读秒 (如 "5s", "1:02")
+```
+
+---
+
 ## Step 2: Markdown 渲染（基础版）
 
 ### 做什么
