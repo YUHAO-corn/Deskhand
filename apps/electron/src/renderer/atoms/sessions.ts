@@ -7,7 +7,7 @@
 
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
-import type { Session, SessionMeta, Message } from '@deskhand/core';
+import type { Session, SessionMeta, Message, ThinkingLevel } from '@deskhand/core';
 
 // ============ Session Atoms ============
 
@@ -79,7 +79,7 @@ export const permissionModeAtom = atom<'explore' | 'ask' | 'auto'>('ask');
 export const permissionRequestAtom = atom<{ isOpen: boolean; command?: string } | null>(null);
 
 /** Thinking level for AI responses */
-export const thinkingLevelAtom = atom<'none' | 'low' | 'medium' | 'high'>('medium');
+export const thinkingLevelAtom = atom<ThinkingLevel>('off');
 
 /** Selected model */
 export const selectedModelAtom = atom<string>('claude-sonnet-4-20250514');

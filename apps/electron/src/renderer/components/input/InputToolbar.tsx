@@ -21,6 +21,8 @@ import {
   sessionInputFamily,
   sessionMessagesFamily,
   sessionProcessingFamily,
+  selectedModelAtom,
+  thinkingLevelAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -41,16 +43,29 @@ export function InputToolbar() {
 
   // 消息和处理状态
   const setMessages = useSetAtom(sessionMessagesFamily(sessionKey));
-  const setProcessing = useSetAtom(sessionProcessingFamily(sessionKey));
+  const [isProcessing, setProcessing] = useAtom(sessionProcessingFamily(sessionKey));
+
+  // 模型和思考级别配置
+  const [selectedModel] = useAtom(selectedModelAtom);
+  const [thinkingLevel] = useAtom(thinkingLevelAtom);
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
 
-  // 选中的模型
-  const [selectedModel] = useState('Sonnet 4'); // TODO: 从配置读取
-
   const togglePopup = (popup: string) => {
     setActivePopup(activePopup === popup ? null : popup);
+  };
+
+  // 获取模型显示名称
+  const getModelDisplayName = (modelId: string) => {
+    const modelNames: Record<string, string> = {
+      'claude-opus-4-5-20251101': 'Opus 4.5',
+      'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
+      'claude-sonnet-4-20250514': 'Sonnet 4',
+      'claude-haiku-4-5-20251001': 'Haiku 4.5',
+      'claude-haiku-3-5-20241022': 'Haiku 3.5',
+    };
+    return modelNames[modelId] || modelId;
   };
 
   // ============================================
@@ -75,14 +90,17 @@ export function InputToolbar() {
     // 3. 清空输入框
     setInputValue('');
 
-    // 4. 调用 IPC 发送消息
+    // 4. 调用 IPC 发送消息（传递模型和思考级别配置）
     try {
-      await window.electronAPI?.chat(activeSessionId, trimmedInput);
+      await window.electronAPI?.chat(activeSessionId, trimmedInput, {
+        model: selectedModel,
+        thinkingLevel,
+      });
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
       // Error will be handled by useAgentEvents via error event
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -90,6 +108,19 @@ export function InputToolbar() {
       handleSend();
     }
   };
+
+  // ============================================
+  // 停止生成
+  // ============================================
+  const handleStop = useCallback(async () => {
+    if (!activeSessionId) return;
+    try {
+      await window.electronAPI?.stopAgent(activeSessionId);
+      setProcessing(false);
+    } catch (error) {
+      console.error('[InputToolbar] stop error:', error);
+    }
+  }, [activeSessionId, setProcessing]);
 
   return (
     <div className="relative px-6 pt-4 pb-7">
@@ -119,7 +150,7 @@ export function InputToolbar() {
         <ToolsPopup isOpen={activePopup === 'tools'} />
         <SkillsPopup isOpen={activePopup === 'skills'} />
         <ReasoningPopup isOpen={activePopup === 'reasoning'} />
-        <ModelSelectorPopup isOpen={activePopup === 'model'} />
+        <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
 
         {/* ============================================
             区域：输入框
@@ -227,7 +258,7 @@ export function InputToolbar() {
                 <circle cx="12" cy="12" r="6" />
                 <circle cx="12" cy="12" r="2" />
               </svg>
-              {selectedModel}
+              {getModelDisplayName(selectedModel)}
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 9l6 6 6-6" />
               </svg>
@@ -245,28 +276,48 @@ export function InputToolbar() {
               </svg>
             </ToolbarButton>
 
-            {/* 功能：发送消息
-                状态：无内容时禁用
-                事件：onClick → 发送消息 */}
-            <button
-              onClick={handleSend}
-              disabled={!inputValue?.trim()}
-              className="
-                w-[34px] h-[34px]
-                border-none bg-transparent rounded-lg
-                cursor-pointer
-                flex items-center justify-center
-                text-[var(--text-muted)]
-                transition-colors duration-[var(--transition-fast)]
-                hover:bg-[var(--hover-bg)] hover:text-[var(--accent-color)]
-                disabled:opacity-50 disabled:cursor-not-allowed
-              "
-            >
-              <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
+            {/* 功能：发送消息 / 停止生成
+                状态：无内容时禁用（发送），流式时变为停止按钮
+                事件：onClick → 发送消息 或 停止生成 */}
+            {isProcessing ? (
+              <button
+                onClick={handleStop}
+                title="Stop generating"
+                className="
+                  w-[34px] h-[34px]
+                  border-none bg-red-500 rounded-lg
+                  cursor-pointer
+                  flex items-center justify-center
+                  text-white
+                  transition-colors duration-[var(--transition-fast)]
+                  hover:bg-red-600
+                "
+              >
+                <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!inputValue?.trim()}
+                className="
+                  w-[34px] h-[34px]
+                  border-none bg-transparent rounded-lg
+                  cursor-pointer
+                  flex items-center justify-center
+                  text-[var(--text-muted)]
+                  transition-colors duration-[var(--transition-fast)]
+                  hover:bg-[var(--hover-bg)] hover:text-[var(--accent-color)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
+              >
+                <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </div>
