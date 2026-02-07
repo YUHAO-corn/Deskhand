@@ -15,7 +15,7 @@
 import { ipcMain, BrowserWindow, app } from 'electron';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent } from '@deskhand/core';
+import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
 import {
   loadConfig,
   saveConfig,
@@ -175,14 +175,19 @@ export function registerIpcHandlers(): void {
 
   // ===== Agent =====
 
-  ipcMain.handle(IPC_CHANNELS.AGENT_CHAT, async (event, sessionId: string, message: string) => {
+  ipcMain.handle(IPC_CHANNELS.AGENT_CHAT, async (
+    event,
+    sessionId: string,
+    message: string,
+    config?: { model?: string; thinkingLevel?: ThinkingLevel }
+  ) => {
     // 实现步骤：
     // 1. 获取或创建该 session 的 agent 实例
     // 2. 设置 onEvent 回调，将事件通过 IPC 发送到 renderer
     //    event.sender.send('agent:event', sessionId, agentEvent)
-    // 3. 调用 agent.chat(message, { onEvent })
+    // 3. 调用 agent.chat(message, { onEvent, ...config })
     // 4. 聊天完成后，更新 session 的 lastMessageAt
-    console.log('[IPC] agent:chat', sessionId, message);
+    console.log('[IPC] agent:chat', sessionId, message, config);
 
     const agent = await getOrCreateAgent(sessionId);
     if (!agent) {
@@ -194,6 +199,8 @@ export function registerIpcHandlers(): void {
     }
 
     await agent.chat(message, {
+      model: config?.model,
+      thinkingLevel: config?.thinkingLevel,
       onEvent: (agentEvent: AgentEvent) => {
         // Forward event to renderer
         event.sender.send('agent:event', sessionId, agentEvent);

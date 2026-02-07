@@ -16,7 +16,14 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent } from '@deskhand/core';
+import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
+
+// ============ Chat Config ============
+
+export interface ChatConfig {
+  model?: string;
+  thinkingLevel?: ThinkingLevel;
+}
 
 // ============ API Definition ============
 
@@ -34,7 +41,7 @@ export interface ElectronAPI {
   deleteSession: (sessionId: string) => Promise<void>;
 
   // Agent
-  chat: (sessionId: string, message: string) => Promise<void>;
+  chat: (sessionId: string, message: string, config?: ChatConfig) => Promise<void>;
   stopAgent: (sessionId: string) => Promise<void>;
   respondToPermission: (sessionId: string, requestId: string, response: 'allow' | 'deny') => Promise<void>;
   onAgentEvent: (callback: (sessionId: string, event: AgentEvent) => void) => () => void;
@@ -73,7 +80,7 @@ const electronAPI: ElectronAPI = {
   deleteSession: (sessionId) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_SESSION, sessionId),
 
   // Agent
-  chat: (sessionId, message) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_CHAT, sessionId, message),
+  chat: (sessionId, message, config) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_CHAT, sessionId, message, config),
   stopAgent: (sessionId) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_STOP, sessionId),
   respondToPermission: (sessionId, requestId, response) =>
     ipcRenderer.invoke(IPC_CHANNELS.AGENT_PERMISSION_RESPONSE, sessionId, requestId, response),

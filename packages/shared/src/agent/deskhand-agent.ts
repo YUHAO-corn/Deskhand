@@ -38,6 +38,8 @@ export interface DeskhandAgentOptions {
 /** Chat options */
 export interface ChatOptions {
   skills?: string[];                 // Enabled skill IDs
+  model?: string;                    // Override model for this chat
+  thinkingLevel?: ThinkingLevel;     // Override thinking level for this chat
   onEvent?: (event: AgentEvent) => void;
 }
 
@@ -84,8 +86,18 @@ export class DeskhandAgent {
     // Note: API key and base URL are read from environment variables:
     // - ANTHROPIC_API_KEY
     // - ANTHROPIC_BASE_URL
+
+    // Model priority: runtime options > agent options > env var > default
+    const effectiveModel = options?.model || this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+
+    // TODO: thinkingLevel needs to be mapped to SDK parameters (e.g., budget_tokens)
+    // For now, we log it but don't apply it until we understand the SDK's API
+    if (options?.thinkingLevel && options.thinkingLevel !== 'off') {
+      console.log('[DeskhandAgent] Thinking level requested:', options.thinkingLevel);
+    }
+
     const sdkOptions = {
-      model: this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+      model: effectiveModel,
       cwd: this.options.workingDirectory || process.cwd(),
       abortController: this.abortController,
       // Path to the SDK's cli.js - required for subprocess spawning
