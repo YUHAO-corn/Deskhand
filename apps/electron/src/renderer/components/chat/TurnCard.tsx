@@ -3,14 +3,14 @@
  *
  * 显示 AI 的回复，包括：
  * - 响应文本（支持 Markdown）
- * - 工具调用（V2）
- * - Thinking indicator（V3）
- *
- * V1 简化版：只显示响应文本
+ * - 工具调用活动列表
+ * - Thinking indicator
  */
 
 import type { AssistantTurn } from './turn-utils';
 import { deriveTurnPhase } from './turn-utils';
+import { ToolActivityRow } from './ToolActivityRow';
+import { Markdown } from './markdown/Markdown';
 
 interface TurnCardProps {
   turn: AssistantTurn;
@@ -20,9 +20,9 @@ export function TurnCard({ turn }: TurnCardProps) {
   const { response, activities } = turn;
   const phase = deriveTurnPhase(turn);
 
-  // V1: 简化版只显示响应文本
   const isStreaming = phase === 'streaming' || phase === 'pending' || phase === 'awaiting';
   const hasContent = response && response.text.length > 0;
+  const hasActivities = activities && activities.length > 0;
 
   return (
     <div className="group">
@@ -48,6 +48,28 @@ export function TurnCard({ turn }: TurnCardProps) {
         )}
       </div>
 
+      {/* 工具调用活动列表 */}
+      {hasActivities && (
+        <div className="pl-8 mb-2">
+          <div className="
+            bg-[var(--bg-secondary)] rounded-lg
+            border border-[var(--border-light)]
+            overflow-hidden
+          ">
+            {activities.map((activity) => (
+              <ToolActivityRow
+                key={activity.id}
+                activity={activity}
+                onClick={() => {
+                  // TODO: 打开 activity 详情（Overlay）
+                  console.log('Activity clicked:', activity);
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 响应内容 */}
       <div
         className="
@@ -57,8 +79,8 @@ export function TurnCard({ turn }: TurnCardProps) {
         "
       >
         {hasContent ? (
-          <div className="whitespace-pre-wrap break-words">
-            {response.text}
+          <div>
+            <Markdown content={response.text} />
             {isStreaming && (
               <span className="inline-block w-2 h-4 ml-0.5 bg-current animate-pulse" />
             )}
