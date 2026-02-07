@@ -6,6 +6,7 @@
 看下方「产品开发 TODO」，找到当前要做的 Phase。
 
 ### 2. 读 SPEC 文档
+> ‼️这是核心规格文档
 - 路径：`/Users/godcorn/cursor/craft-agents-oss-main/docs/`
   - `SPEC.md` + Phase 标注的 `SPEC_*.md`
 - 重点读 SPEC 中的「需求列表」，[x] 项是要实现的功能
@@ -16,10 +17,11 @@
 - 如果执行量大，可只完成 Phase 的部分功能，不必一次做完
 - 确认本次工作量，跟我口头对齐本次需求范围，和完成后预期会得到什么新体验
 
-### 4. 原子化实现
-循环执行：实现一个小功能 → 自检（lint/typecheck/test）→ 提交
-- 不要攒一大堆再检验和提交
-- 每个 commit 只做一件事
+### 4. 原子化拆分和实现
+- 拆分为原子化to-do，vertical slice端到端的方式，逐步开发逐步验证，让用户能体验到不断在推进
+- 循环执行：实现一个小功能 → 检验（lint/typecheck/test/跑测）→ 提交
+  - 不要攒一大堆再检验和提交
+  - 每个 commit 只做一件事
 
 ### 5. 通知验收
 告知用户「Phase X 已完成（或部分完成）」，列出手动验收点。
@@ -72,6 +74,7 @@
 
 ### Phase 2: 对话功能（最难，先攻克）
 > 📖 SPEC_ChatArea.md + SPEC_InputToolbar.md + SPEC.md §5.7/§8
+> 由于对话功能很大，所以拆分任务道 @PHASE2_CHAT_TODO.md
 
 - [ ] ChatArea 模块
 - [ ] InputToolbar 模块
