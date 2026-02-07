@@ -199,9 +199,10 @@ bun run dev
 - `apps/electron/src/renderer/components/chat/ThinkingIndicator.tsx`（新建）
 
 ### 完成后体验
-- [ ] 发送消息后立即看到 "Thinking..." 动画
-- [ ] 工具调用之间的空隙也显示 "Thinking..."
-- [ ] 响应文本达到一定长度/结构后才显示（智能缓冲）
+- [x] 发送消息后立即看到 "Thinking..." 动画
+- [x] 工具调用之间的空隙也显示 "Thinking..."
+- [-] 响应文本达到一定长度/结构后才显示（智能缓冲）
+> 智能缓冲需求价值不高，暂时删减
 
 ### 验收命令
 ```bash
