@@ -139,6 +139,15 @@ export class DeskhandAgent {
         );
 
         for (const event of events) {
+          // Maintain activeParentTools for Task subagent nesting
+          // When Task starts, add its toolUseId so child tools can be nested under it
+          // When Task completes, remove it from the active set
+          if (event.type === 'tool_start' && event.toolName === 'Task' && event.toolUseId) {
+            activeParentTools.add(event.toolUseId);
+          }
+          if (event.type === 'tool_result' && event.toolName === 'Task' && event.toolUseId) {
+            activeParentTools.delete(event.toolUseId);
+          }
           emit(event);
         }
       }

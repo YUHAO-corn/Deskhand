@@ -131,6 +131,9 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           toolInput: event.input,
           toolStatus: 'executing',
           turnId: event.turnId,
+          toolIntent: event.intent,
+          toolDisplayName: event.displayName,
+          parentToolUseId: event.parentToolUseId,
         };
         setMessages((prev) => [...prev, toolMessage]);
         break;
