@@ -67,9 +67,9 @@ bun run dev
 ```
 
 ### 完成后体验
-- [ ] 用户消息能正确显示
-- [ ] AI 文本响应能显示（哪怕是纯文本）
-- [ ] 没有 React key 警告
+- [x] 用户消息能正确显示
+- [x] AI 文本响应能显示（哪怕是纯文本）
+- [x] 没有 React key 警告
 
 ### 可能遇到的问题
 | 现象 | 可能原因 | 解决方案 |
@@ -119,8 +119,8 @@ bun run dev
 - `apps/electron/src/renderer/components/markdown/Markdown.tsx`（新建）
 
 ### 完成后体验
-- [ ] AI 响应中的 **粗体**、*斜体*、列表、链接正确渲染
-- [ ] 代码块显示为灰色背景（暂无语法高亮）
+- [x] AI 响应中的 **粗体**、*斜体*、列表、链接正确渲染
+- [x] 代码块显示为灰色背景（暂无语法高亮）
 
 ### 验收命令
 ```bash
@@ -143,8 +143,8 @@ bun run dev
 - `apps/electron/src/renderer/components/input/InputToolbar.tsx`（可选位置）
 
 ### 完成后体验
-- [ ] AI 响应时，发送按钮变成停止按钮（或旁边出现停止按钮）
-- [ ] 点击停止后，AI 停止输出
+- [x] AI 响应时，发送按钮变成停止按钮（或旁边出现停止按钮）
+- [x] 点击停止后，AI 停止输出
 
 ### 验收命令
 ```bash
@@ -170,8 +170,10 @@ bun run dev
 - `packages/shared/src/agent/deskhand-agent.ts`
 
 ### 完成后体验
-- [ ] 在 ModelSelector 选择 "Haiku"，发送消息后响应明显更快
-- [ ] 在 ReasoningPopup 选择 "Max"，AI 响应前有更长的思考时间
+- [x] 在 ModelSelector 选择 "Haiku"，发送消息后响应明显更快
+- [ ] 在 ReasoningPopup 选择 "Max"，AI 响应前有更长的思考时间（需要进一步实现 SDK 参数映射）
+
+>当前跑测遗留问题（非阻塞，后面回来弄）： 1. 选择reasoning后未出现思考 2.使用opus4.5 模型进行对话后，UI切换到haiku模型后，对话里回复说它依然是原来opus，不确定是未实现切换，还是不支持对话中切换
 
 ### 验收命令
 ```bash
