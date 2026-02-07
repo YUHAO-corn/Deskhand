@@ -128,7 +128,9 @@ export function TurnCard({ turn }: TurnCardProps) {
             {/* 步骤数量 Badge */}
             <span className="
               shrink-0 px-1.5 py-0.5
-              rounded bg-[var(--bg-tertiary)]
+              rounded
+              bg-[var(--bg-tertiary)]
+              border border-[var(--border-light)]
               text-xs font-medium tabular-nums
             ">
               {activities.length}
