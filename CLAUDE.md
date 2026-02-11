@@ -79,10 +79,11 @@
 > 📖 SPEC_ChatArea.md + SPEC_InputToolbar.md + SPEC.md §5.7/§8
 > 由于对话功能很大，所以拆分任务道 @PHASE2_CHAT_TODO.md
 
-- [ ] ChatArea 模块
-- [ ] InputToolbar 模块
-- [ ] Agent 调用 + 流式响应
-- 验收：SPEC 中 [x] 项全部实现 + 手动验收流式对话
+- [x] ChatArea 模块
+- [x] InputToolbar 模块
+- [x] Agent 调用 + 流式响应
+- [x] 权限系统（ask/allow-all 模式 + 内联确认 UI）
+- 验收：核心对话功能已跑通，剩余优化项（Shiki 高亮、错误提示、Token 统计、动画）见 PHASE2_CHAT_TODO.md
 
 ### Phase 3: 会话管理
 > 📖 SPEC_SessionSidebar.md
