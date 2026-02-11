@@ -15,7 +15,7 @@ import { SessionSidebar } from './components/app-shell/SessionSidebar';
 import { ChatArea } from './components/chat/ChatArea';
 import { ArtifactPanel } from './components/artifact/ArtifactPanel';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { settingsOpenAtom, activeSessionIdAtom, workingDirectoryAtom } from './atoms/sessions';
+import { settingsOpenAtom, activeSessionIdAtom, workingDirectoryAtom, skillsAtom, disabledSkillIdsAtom } from './atoms/sessions';
 
 type AppState = 'loading' | 'onboarding' | 'ready';
 
@@ -25,6 +25,8 @@ function AppContent() {
   const [settingsOpen] = useAtom(settingsOpenAtom);
   const setActiveSessionId = useSetAtom(activeSessionIdAtom);
   const setWorkingDirectory = useSetAtom(workingDirectoryAtom);
+  const setSkills = useSetAtom(skillsAtom);
+  const setDisabledSkillIds = useSetAtom(disabledSkillIdsAtom);
 
   useEffect(() => {
     const initialize = async () => {
@@ -38,6 +40,13 @@ function AppContent() {
         if (config?.lastWorkingDirectory) {
           setWorkingDirectory(config.lastWorkingDirectory);
         }
+        if (config?.disabledSkillIds) {
+          setDisabledSkillIds(config.disabledSkillIds);
+        }
+
+        // Load skills from disk
+        const skills = await window.electronAPI.loadSkills();
+        setSkills(skills);
 
         const needs = await window.electronAPI.getSetupNeeds();
         setSetupNeeds(needs);
@@ -55,7 +64,7 @@ function AppContent() {
     };
 
     initialize();
-  }, [setActiveSessionId, setWorkingDirectory]);
+  }, [setActiveSessionId, setWorkingDirectory, setSkills, setDisabledSkillIds]);
 
   // Loading state
   if (appState === 'loading') {
