@@ -31,6 +31,7 @@ import {
   generateSessionId,
 } from '@deskhand/shared/sessions';
 import { DeskhandAgent } from '@deskhand/shared/agent';
+import { loadSkills } from '@deskhand/shared/skills';
 
 // ============ Agent Instance Management ============
 
@@ -109,6 +110,9 @@ export const IPC_CHANNELS = {
 
   // Directory
   SELECT_DIRECTORY: 'directory:select',
+
+  // Skills
+  LOAD_SKILLS: 'skills:load',
 } as const;
 
 // ============ Register Handlers ============
@@ -250,5 +254,11 @@ export function registerIpcHandlers(): void {
 
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
+  });
+
+  // ===== Skills =====
+
+  ipcMain.handle(IPC_CHANNELS.LOAD_SKILLS, async () => {
+    return loadSkills();
   });
 }

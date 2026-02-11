@@ -16,7 +16,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
+import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel, Skill } from '@deskhand/core';
 
 // ============ Chat Config ============
 
@@ -50,6 +50,9 @@ export interface ElectronAPI {
 
   // Directory
   selectDirectory: () => Promise<string | null>;
+
+  // Skills
+  loadSkills: () => Promise<Skill[]>;
 }
 
 // ============ IPC Channels ============
@@ -68,6 +71,7 @@ const IPC_CHANNELS = {
   AGENT_PERMISSION_RESPONSE: 'agent:permission-response',
   AGENT_EVENT: 'agent:event',
   SELECT_DIRECTORY: 'directory:select',
+  LOAD_SKILLS: 'skills:load',
 } as const;
 
 // ============ Expose API ============
@@ -102,6 +106,9 @@ const electronAPI: ElectronAPI = {
 
   // Directory
   selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY),
+
+  // Skills
+  loadSkills: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_SKILLS),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
