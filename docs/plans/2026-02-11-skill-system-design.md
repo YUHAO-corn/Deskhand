@@ -123,6 +123,23 @@ craft-agent 的做法：
 - ToolActivityRow 的 ToolIcon 添加 `Skill` case（扳手图标）
 - getToolDescription 添加 `Skill` case（显示 skill 名称）
 
+## Q8: Claude Code 已有 skills 是否自动兼容？
+
+**结论：是。零配置自动兼容，这是 SDK plugin 方案的天然副产品。**
+
+发现：切换到 SDK plugin 机制（Q6）后，Deskhand 扫描 `~/.claude/skills/` 目录——这和 Claude Code CLI 使用的是同一个路径。
+
+效果：
+- 用户在 Claude Code 中已配置的 skills，打开 Deskhand 后直接可用
+- 无需任何迁移、导入或重新配置
+- SkillsPopup 中会自动列出这些 skills
+- Claude 在对话中会按需激活它们（三阶段机制不变）
+
+为什么值得记录：
+- 对从 Claude Code 迁移过来的用户，体验是无缝的
+- 降低了产品的上手门槛——"装了就能用"
+- 这不是刻意设计的功能，而是选择正确架构（复用 SDK plugin 系统）的自然结果
+
 ---
 
 ## ~~最小链路实现（v1 - 已废弃）~~
