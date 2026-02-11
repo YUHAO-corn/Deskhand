@@ -10,6 +10,7 @@
 - 路径：`/Users/godcorn/cursor/craft-agents-oss-main/docs/`
   - `SPEC.md` + Phase 标注的 `SPEC_*.md`
 - 重点读 SPEC 中的「需求列表」，[x] 项是要实现的功能
+- ⚠️ 如果某个 feature 已经过 brainstorm 并产出了设计文档（在 `docs/plans/` 下），则该文档优先于 SPEC 中的对应描述。SPEC 仍作为架构级参考。
 
 ### 3. 读目标文件 & 拆解任务
 - 找到要改的文件，读懂现有代码和 TODO 注释
