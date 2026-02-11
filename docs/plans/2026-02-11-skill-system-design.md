@@ -73,9 +73,61 @@
 - 体验明显好于仅启动加载（用户新装技能不用重启）
 - 比 fs.watch 简单得多，YAGNI
 
+## Q6: 技能内容注入方式需要修正吗？
+
+**结论：是。从手动拼接改为 SDK plugin 机制。**
+
+原实现（Q2 的结论）：
+- 启动时加载所有 skill 完整内容到 renderer
+- 每次发消息时，把所有启用 skill 的 content 拼到 prompt 前面
+- 问题：每条消息都带全部 skill 内容，浪费 token；且不符合官方设计
+
+官方 Claude Code Skills 的三阶段机制：
+1. **发现**：启动时只加载 name + description 元数据
+2. **激活**：用户请求匹配 skill 描述时，Claude 自己决定调用 Skill tool
+3. **执行**：此时才加载 SKILL.md 完整内容
+
+craft-agent 的做法：
+- 把目录作为 plugin 传给 SDK：`plugins: [{ type: 'local', path: workspaceRoot }]`
+- SDK 内置 Skill tool，自动处理发现→激活→执行
+- craft-agent 自己不做任何 skill 内容加载/注入
+
+修正方案：
+- 在 DeskhandAgent 的 SDK options 中添加 `plugins`，传入 `~/.claude/` 和 `~/.deskhand/`
+- 如果用户选了 workspace，也传入 workspace 路径
+- 删除 InputToolbar 中的 prompt 拼接逻辑
+- 删除 `disabledSkillIdsAtom` 和相关持久化（SDK 管理激活，不需要手动开关）
+- 保留 `loadSkills()` IPC 和 `skillsAtom` 用于 UI 展示（SkillsPopup 显示可用技能列表）
+
+理由：
+- 符合官方设计，按需加载节省 token
+- 复用 SDK 内置能力，不造轮子
+- Skill 调用会作为 tool_start/tool_result 事件出现在消息流中
+
+## Q7: 如何让用户知道 skill 被使用了？
+
+**结论：在 activity tree 中展示，和其他 tool 一样。**
+
+讨论过的方案：
+- A: 在 activity tree 中展示（和 Read/Write/Bash 等工具一样）
+- B: 单独的 skill 激活通知
+- C: 在消息气泡中标注
+
+选择 A，理由：
+- SDK 的 Skill tool 调用会产生 `tool_start` 和 `tool_result` 事件
+- 现有的 ToolActivityRow 已经支持渲染任意工具调用
+- 只需添加 Skill 的图标和描述提取逻辑
+- 用户体验一致：所有 agent 行为都在同一个 activity tree 中可见
+
+实现：
+- ToolActivityRow 的 ToolIcon 添加 `Skill` case（扳手图标）
+- getToolDescription 添加 `Skill` case（显示 skill 名称）
+
 ---
 
-## 最小链路实现
+## ~~最小链路实现（v1 - 已废弃）~~
+
+> 以下为 Q2 时的设计，已被 Q6 修正。保留作为决策记录。
 
 **端到端流程：**
 
