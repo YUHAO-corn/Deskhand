@@ -105,9 +105,19 @@ export function InputToolbar() {
     // 3. 清空输入框
     setInputValue('');
 
-    // 4. 调用 IPC 发送消息（传递模型和思考级别配置）
+    // 4. 构建带技能上下文的 prompt
+    const enabledSkills = skills.filter((s) => !disabledSkillIds.includes(s.id));
+    let prompt = trimmedInput;
+    if (enabledSkills.length > 0) {
+      const skillContext = enabledSkills
+        .map((s) => `<skill name="${s.name}">\n${s.content}\n</skill>`)
+        .join('\n\n');
+      prompt = `${skillContext}\n\n${trimmedInput}`;
+    }
+
+    // 5. 调用 IPC 发送消息（传递模型和思考级别配置）
     try {
-      await window.electronAPI?.chat(activeSessionId, trimmedInput, {
+      await window.electronAPI?.chat(activeSessionId, prompt, {
         model: selectedModel,
         thinkingLevel,
         workingDirectory: workingDirectory ?? undefined,
@@ -117,7 +127,7 @@ export function InputToolbar() {
       console.error('[InputToolbar] chat error:', error);
       // Error will be handled by useAgentEvents via error event
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode, skills, disabledSkillIds]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

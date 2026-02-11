@@ -154,11 +154,12 @@ export function SkillsPopup({ isOpen }: SkillsPopupProps) {
   if (isOpen !== lastOpen) setLastOpen(isOpen);
 
   const toggleSkill = (skillId: string) => {
-    setDisabledSkillIds((prev) =>
-      prev.includes(skillId)
-        ? prev.filter((id) => id !== skillId)
-        : [...prev, skillId]
-    );
+    const newDisabled = disabledSkillIds.includes(skillId)
+      ? disabledSkillIds.filter((id) => id !== skillId)
+      : [...disabledSkillIds, skillId];
+    setDisabledSkillIds(newDisabled);
+    // Persist to config
+    window.electronAPI?.saveConfig({ disabledSkillIds: newDisabled });
   };
 
   return (
