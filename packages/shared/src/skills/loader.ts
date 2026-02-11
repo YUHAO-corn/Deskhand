@@ -26,6 +26,23 @@ export function getSkillDirs(): string[] {
   ];
 }
 
+/**
+ * Get plugin paths for SDK plugin system.
+ * SDK expects directories that contain `skills/` subdirectories.
+ * Only returns paths where the skills/ directory actually exists.
+ */
+export function getPluginPaths(workingDirectory?: string): Array<{ type: 'local'; path: string }> {
+  const candidates = [
+    path.join(os.homedir(), '.claude'),
+    path.join(os.homedir(), '.deskhand'),
+    ...(workingDirectory ? [workingDirectory] : []),
+  ];
+
+  return candidates
+    .filter(dir => fs.existsSync(path.join(dir, 'skills')))
+    .map(dir => ({ type: 'local' as const, path: dir }));
+}
+
 // ============ Skill Loading ============
 
 /**

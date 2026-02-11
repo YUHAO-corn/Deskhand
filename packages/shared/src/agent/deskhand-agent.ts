@@ -16,6 +16,7 @@
 import type { AgentEvent, PermissionMode, ThinkingLevel } from '@deskhand/core';
 import { query, AbortError, type Query } from '@anthropic-ai/claude-agent-sdk';
 import { ToolIndex, extractToolStarts, extractToolResults, type ContentBlock } from './tool-matching';
+import { getPluginPaths } from '../skills/loader';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -116,6 +117,8 @@ export class DeskhandAgent {
       allowDangerouslySkipPermissions: true,
       // Resume from previous session if we have one
       ...(this.sdkSessionId ? { resume: this.sdkSessionId } : {}),
+      // Skills: pass skill directories as plugins for SDK's Skill tool
+      plugins: getPluginPaths(this.options.workingDirectory),
       // Custom permission hook
       hooks: {
         PreToolUse: [{

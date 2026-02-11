@@ -6,6 +6,7 @@
 
 export {
   getSkillDirs,
+  getPluginPaths,
   loadSkills,
   getSkillContent,
 } from './loader.ts';
