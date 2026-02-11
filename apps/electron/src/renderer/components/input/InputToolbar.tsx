@@ -113,6 +113,16 @@ export function InputToolbar() {
         .map((s) => `<skill name="${s.name}">\n${s.content}\n</skill>`)
         .join('\n\n');
       prompt = `${skillContext}\n\n${trimmedInput}`;
+
+      // Show which skills are active as an info message
+      const skillNames = enabledSkills.map((s) => s.name).join(', ');
+      const skillInfoMessage: Message = {
+        id: generateMessageId(),
+        role: 'info',
+        content: `Using skills: ${skillNames}`,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, skillInfoMessage]);
     }
 
     // 5. 调用 IPC 发送消息（传递模型和思考级别配置）
