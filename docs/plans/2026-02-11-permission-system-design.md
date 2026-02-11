@@ -91,3 +91,57 @@ Agent (PreToolUse hook)
 3. `apps/electron/src/renderer/components/chat/PermissionRequest.tsx` — 实现 IPC 调用
 4. `apps/electron/src/main/ipc.ts` — 添加 respondToPermission handler
 5. `apps/electron/src/preload/index.ts` — 暴露 respondToPermission API
+
+---
+
+## 迭代：加回 allow-all 模式（2026-02-11 补充）
+
+> 背景：实现完 ask-only 后，重新讨论认为技术用户需要快捷模式。
+
+### Q6: 是否需要 allow-all 模式？
+
+**结论：需要。加回 allow-all 模式。**
+
+原始决策（Q1）是只做 ask 模式，理由是 YAGNI + 非技术用户安全。
+但实际考虑后，技术用户对速度的需求很强，每次 Edit/Write 都弹窗会严重打断心流。
+
+修正后的模式：
+- **ask**（默认）：Bash/Edit/Write 全部弹窗确认
+- **allow-all**：大部分操作自动放行，仅明确的删除命令仍弹窗
+
+### Q7: allow-all 模式下哪些操作仍需拦截？
+
+**结论：只拦截明确的删除类 bash 命令。**
+
+检测方式：提取 bash 命令的第一个词（base command），匹配删除命令黑名单：
+- `rm`、`rmdir`、`unlink`、`shred`
+
+Edit/Write 在 allow-all 下全部放行（修改文件 ≠ 删除文件）。
+
+已知局限：
+- `find . -delete`、`git clean -f`、`xargs rm` 等间接删除无法检测
+- V1 先覆盖 90% 场景，后续可加更多模式匹配
+
+### Q8: 模式切换入口在哪？
+
+**结论：放在 InputToolbar 的 toolbar 上。**
+
+类似现有的 model selector，用户可以随时切换。默认 ask 模式。
+
+### 两种模式行为对比
+
+| 操作 | ask 模式 | allow-all 模式 |
+|------|----------|---------------|
+| Read/Glob/Grep | 自动通过 | 自动通过 |
+| WebFetch/WebSearch | 自动通过 | 自动通过 |
+| Edit | 弹窗确认 | 自动通过 |
+| Write | 弹窗确认 | 自动通过 |
+| Bash（普通命令） | 弹窗确认 | 自动通过 |
+| Bash（删除命令） | 弹窗确认 | 弹窗确认 |
+
+### 新增涉及文件
+1. `packages/shared/src/agent/deskhand-agent.ts` — PreToolUse hook 增加 allow-all 逻辑
+2. `apps/electron/src/renderer/atoms/sessions.ts` — 恢复 permissionModeAtom
+3. `apps/electron/src/renderer/components/input/InputToolbar.tsx` — 添加模式切换 UI
+4. `apps/electron/src/main/ipc.ts` — chat 接收 permissionMode 参数
+5. `apps/electron/src/preload/index.ts` — ChatConfig 增加 permissionMode
