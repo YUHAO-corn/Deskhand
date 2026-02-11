@@ -25,6 +25,8 @@ import {
   thinkingLevelAtom,
   workingDirectoryAtom,
   permissionModeAtom,
+  skillsAtom,
+  disabledSkillIdsAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -56,6 +58,11 @@ export function InputToolbar() {
 
   // 权限模式
   const [permissionMode, setPermissionMode] = useAtom(permissionModeAtom);
+
+  // Skills
+  const [skills] = useAtom(skillsAtom);
+  const [disabledSkillIds] = useAtom(disabledSkillIdsAtom);
+  const enabledSkillCount = skills.filter((s) => !disabledSkillIds.includes(s.id)).length;
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
@@ -221,10 +228,9 @@ export function InputToolbar() {
               </svg>
             </ToolbarButton>
 
-            {/* 功能：Skills 选择
-                TODO: 实现 SkillsPopup */}
+            {/* 功能：Skills 选择 */}
             <ToolbarButton
-              badge="4"
+              badge={enabledSkillCount > 0 ? String(enabledSkillCount) : undefined}
               active={activePopup === 'skills'}
               onClick={() => togglePopup('skills')}
               title="Skills"

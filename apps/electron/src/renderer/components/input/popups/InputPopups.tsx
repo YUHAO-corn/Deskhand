@@ -12,11 +12,14 @@
  * - ModelSelectorPopup: 模型选择
  */
 
+import { useState } from 'react';
 import { useAtom } from 'jotai';
 import {
   thinkingLevelAtom,
   selectedModelAtom,
   workingDirectoryAtom,
+  skillsAtom,
+  disabledSkillIdsAtom,
 } from '../../../atoms/sessions';
 import type { ThinkingLevel } from '@deskhand/core';
 
@@ -140,20 +143,44 @@ interface SkillsPopupProps {
 }
 
 export function SkillsPopup({ isOpen }: SkillsPopupProps) {
-  // TODO: 从 skillsAtom 加载 Skills 列表
-  const skills = [
-    { title: 'seereal', desc: '通过代码分析揭示 AI 产品真实能力...' },
-    { title: 'wechat-article-formatter', desc: '将Markdown文章转换为美化的HTML格式...' },
-  ];
+  const [skills, setSkills] = useAtom(skillsAtom);
+  const [disabledSkillIds, setDisabledSkillIds] = useAtom(disabledSkillIdsAtom);
+
+  // Refresh skills from disk when popup opens
+  const [lastOpen, setLastOpen] = useState(false);
+  if (isOpen && !lastOpen) {
+    window.electronAPI?.loadSkills().then(setSkills);
+  }
+  if (isOpen !== lastOpen) setLastOpen(isOpen);
+
+  const toggleSkill = (skillId: string) => {
+    setDisabledSkillIds((prev) =>
+      prev.includes(skillId)
+        ? prev.filter((id) => id !== skillId)
+        : [...prev, skillId]
+    );
+  };
 
   return (
     <PopupContainer isOpen={isOpen} position="left-[80px]" minWidth={300}>
       <PopupHeader title="Skills" icon={<WrenchIcon />} />
 
       <div className="p-2 max-h-80 overflow-y-auto">
-        {skills.map((skill) => (
-          <CheckboxItem key={skill.title} title={skill.title} desc={skill.desc} />
-        ))}
+        {skills.length === 0 ? (
+          <div className="p-4 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            No skills found. Add skills to ~/.deskhand/skills/
+          </div>
+        ) : (
+          skills.map((skill) => (
+            <CheckboxItem
+              key={skill.id}
+              title={skill.name}
+              desc={skill.description}
+              checked={!disabledSkillIds.includes(skill.id)}
+              onChange={() => toggleSkill(skill.id)}
+            />
+          ))
+        )}
       </div>
     </PopupContainer>
   );
