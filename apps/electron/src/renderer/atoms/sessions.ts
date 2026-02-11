@@ -7,7 +7,7 @@
 
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
-import type { Session, SessionMeta, Message, ThinkingLevel } from '@deskhand/core';
+import type { Session, SessionMeta, Message, ThinkingLevel, Skill } from '@deskhand/core';
 
 // ============ Session Atoms ============
 
@@ -92,3 +92,11 @@ export const selectedModelAtom = atom<string>('claude-sonnet-4-20250514');
 
 /** Working directory (null = not selected, uses app default) */
 export const workingDirectoryAtom = atom<string | null>(null);
+
+// ============ Skills Atoms ============
+
+/** All loaded skills */
+export const skillsAtom = atom<Skill[]>([]);
+
+/** Disabled skill IDs (default: all enabled, this tracks which are turned off) */
+export const disabledSkillIdsAtom = atom<string[]>([]);
