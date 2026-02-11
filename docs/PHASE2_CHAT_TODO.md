@@ -421,9 +421,9 @@ bun run dev
 - `apps/electron/src/renderer/components/chat/ActivityTree.tsx`（新建）
 
 ### 完成后体验
-- [ ] Task 子代理的工具调用显示为缩进的子树
-- [ ] 有树形连接线（├─ └─）
-- [ ] 可以折叠/展开子代理活动
+- [x] Task 子代理的工具调用显示为缩进的子树
+- [x] 有树形连接线（├─ └─）
+- [x] 可以折叠/展开子代理活动
 
 ### 验收命令
 ```bash
