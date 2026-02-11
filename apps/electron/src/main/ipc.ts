@@ -12,7 +12,7 @@
  * - Main handles via: ipcMain.handle('channel', handler)
  */
 
-import { ipcMain, BrowserWindow, app } from 'electron';
+import { ipcMain, BrowserWindow, app, dialog } from 'electron';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
@@ -41,7 +41,7 @@ const agents = new Map<string, DeskhandAgent>();
 const sdkSessionIds = new Map<string, string>();
 
 // Get or create agent for a session
-async function getOrCreateAgent(sessionId: string): Promise<DeskhandAgent | null> {
+async function getOrCreateAgent(sessionId: string, workingDirectory?: string): Promise<DeskhandAgent | null> {
   if (agents.has(sessionId)) {
     return agents.get(sessionId)!;
   }
@@ -68,6 +68,7 @@ async function getOrCreateAgent(sessionId: string): Promise<DeskhandAgent | null
   const agent = new DeskhandAgent({
     apiKey,
     pathToClaudeCodeExecutable: cliPath,
+    workingDirectory: workingDirectory || undefined,
     // Callback to persist SDK session ID when captured
     onSdkSessionIdUpdate: (sdkSessionId: string) => {
       console.log('[ipc] SDK session ID captured for', sessionId, ':', sdkSessionId);
@@ -105,6 +106,9 @@ export const IPC_CHANNELS = {
   AGENT_CHAT: 'agent:chat',
   AGENT_STOP: 'agent:stop',
   AGENT_PERMISSION_RESPONSE: 'agent:permission-response',
+
+  // Directory
+  SELECT_DIRECTORY: 'directory:select',
 } as const;
 
 // ============ Register Handlers ============
@@ -179,7 +183,7 @@ export function registerIpcHandlers(): void {
     event,
     sessionId: string,
     message: string,
-    config?: { model?: string; thinkingLevel?: ThinkingLevel }
+    config?: { model?: string; thinkingLevel?: ThinkingLevel; workingDirectory?: string }
   ) => {
     // 实现步骤：
     // 1. 获取或创建该 session 的 agent 实例
@@ -189,7 +193,7 @@ export function registerIpcHandlers(): void {
     // 4. 聊天完成后，更新 session 的 lastMessageAt
     console.log('[IPC] agent:chat', sessionId, message, config);
 
-    const agent = await getOrCreateAgent(sessionId);
+    const agent = await getOrCreateAgent(sessionId, config?.workingDirectory);
     if (!agent) {
       event.sender.send('agent:event', sessionId, {
         type: 'error',
@@ -230,5 +234,20 @@ export function registerIpcHandlers(): void {
     if (agent) {
       await agent.respondToPermission(requestId, response);
     }
+  });
+
+  // ===== Directory =====
+
+  ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async (): Promise<string | null> => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (!win) return null;
+
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory'],
+      title: 'Select Working Directory',
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
   });
 }

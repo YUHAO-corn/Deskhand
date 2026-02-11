@@ -15,7 +15,7 @@ import { SessionSidebar } from './components/app-shell/SessionSidebar';
 import { ChatArea } from './components/chat/ChatArea';
 import { ArtifactPanel } from './components/artifact/ArtifactPanel';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { settingsOpenAtom, activeSessionIdAtom } from './atoms/sessions';
+import { settingsOpenAtom, activeSessionIdAtom, workingDirectoryAtom } from './atoms/sessions';
 
 type AppState = 'loading' | 'onboarding' | 'ready';
 
@@ -24,6 +24,7 @@ function AppContent() {
   const [setupNeeds, setSetupNeeds] = useState<SetupNeeds | null>(null);
   const [settingsOpen] = useAtom(settingsOpenAtom);
   const setActiveSessionId = useSetAtom(activeSessionIdAtom);
+  const setWorkingDirectory = useSetAtom(workingDirectoryAtom);
 
   useEffect(() => {
     const initialize = async () => {
@@ -32,6 +33,12 @@ function AppContent() {
       setActiveSessionId(defaultSessionId);
 
       try {
+        // Restore last working directory from config
+        const config = await window.electronAPI.getConfig();
+        if (config?.lastWorkingDirectory) {
+          setWorkingDirectory(config.lastWorkingDirectory);
+        }
+
         const needs = await window.electronAPI.getSetupNeeds();
         setSetupNeeds(needs);
 
@@ -48,7 +55,7 @@ function AppContent() {
     };
 
     initialize();
-  }, [setActiveSessionId]);
+  }, [setActiveSessionId, setWorkingDirectory]);
 
   // Loading state
   if (appState === 'loading') {

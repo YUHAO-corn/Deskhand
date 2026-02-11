@@ -19,6 +19,9 @@ export interface AppConfig {
   defaultThinkingLevel?: ThinkingLevel;   // Default thinking level
   defaultPermissionMode?: PermissionMode; // Default permission mode
 
+  // Workspace
+  lastWorkingDirectory?: string;     // Last selected working directory (persisted)
+
   // Window state
   windowBounds?: {
     x: number;

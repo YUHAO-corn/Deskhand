@@ -16,6 +16,7 @@ import { useAtom } from 'jotai';
 import {
   thinkingLevelAtom,
   selectedModelAtom,
+  workingDirectoryAtom,
 } from '../../../atoms/sessions';
 import type { ThinkingLevel } from '@deskhand/core';
 
@@ -28,11 +29,18 @@ interface WorkspacePopupProps {
 }
 
 export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
-  // TODO: 从配置加载工作目录列表
-  const workspaces = [
-    { name: 'Deskhand', path: '/Users/godcorn/cursor/Deskhand' },
-    { name: 'workany-dev', path: '/Users/godcorn/cursor/workany-dev' },
-  ];
+  const [workingDirectory, setWorkingDirectory] = useAtom(workingDirectoryAtom);
+
+  const handleSelectDirectory = async () => {
+    const path = await window.electronAPI?.selectDirectory();
+    if (path) {
+      setWorkingDirectory(path);
+      // Persist to config
+      window.electronAPI?.saveConfig({ lastWorkingDirectory: path });
+    }
+  };
+
+  const dirName = workingDirectory ? workingDirectory.split('/').pop() : null;
 
   return (
     <PopupContainer isOpen={isOpen} position="left-[14px]">
@@ -42,30 +50,23 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
         description="All tool operations will use this directory as working directory"
       />
 
-      {/* 工作目录列表 */}
-      <div className="p-2 max-h-80 overflow-y-auto">
-        {workspaces.map((ws, index) => (
-          <div
-            key={ws.path}
-            className={`
-              flex items-start gap-3 p-2.5
-              rounded-[var(--radius-md)] cursor-pointer
-              ${index === 0 ? 'bg-[var(--accent-bg)]' : 'hover:bg-[var(--hover-bg)]'}
-            `}
-          >
+      <div className="p-2">
+        {/* Current directory */}
+        {workingDirectory && (
+          <div className="flex items-start gap-3 p-2.5 rounded-[var(--radius-md)] bg-[var(--accent-bg)]">
             <FolderIcon />
             <div className="flex-1 min-w-0">
               <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-                {ws.name}
+                {dirName}
               </div>
-              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight">
-                {ws.path}
+              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight truncate">
+                {workingDirectory}
               </div>
             </div>
           </div>
-        ))}
+        )}
 
-        {/* 选择目录按钮 */}
+        {/* Select directory button */}
         <button
           className="
             flex items-center gap-2 w-full p-2.5
@@ -74,10 +75,10 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
             text-[var(--font-size-sm)] text-[var(--text-secondary)]
             hover:bg-[var(--hover-bg)]
           "
-          // TODO: onClick → 打开目录选择对话框
+          onClick={handleSelectDirectory}
         >
           <PlusIcon />
-          Select Directory...
+          {workingDirectory ? 'Change Directory...' : 'Select Directory...'}
         </button>
       </div>
     </PopupContainer>

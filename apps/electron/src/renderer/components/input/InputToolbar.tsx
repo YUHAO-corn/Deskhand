@@ -23,6 +23,7 @@ import {
   sessionProcessingFamily,
   selectedModelAtom,
   thinkingLevelAtom,
+  workingDirectoryAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -48,6 +49,9 @@ export function InputToolbar() {
   // 模型和思考级别配置
   const [selectedModel] = useAtom(selectedModelAtom);
   const [thinkingLevel] = useAtom(thinkingLevelAtom);
+
+  // 工作目录
+  const [workingDirectory] = useAtom(workingDirectoryAtom);
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
@@ -95,12 +99,13 @@ export function InputToolbar() {
       await window.electronAPI?.chat(activeSessionId, trimmedInput, {
         model: selectedModel,
         thinkingLevel,
+        workingDirectory: workingDirectory ?? undefined,
       });
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
       // Error will be handled by useAgentEvents via error event
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -186,13 +191,12 @@ export function InputToolbar() {
               </svg>
             </ToolbarButton>
 
-            {/* 功能：工作目录选择
-                TODO: 实现 WorkspacePopup */}
+            {/* 功能：工作目录选择 */}
             <ToolbarButton
-              badge="7"
+              badge={workingDirectory ? workingDirectory.split('/').pop() : undefined}
               active={activePopup === 'workspace'}
               onClick={() => togglePopup('workspace')}
-              title="Working directory"
+              title={workingDirectory ? `Working directory: ${workingDirectory}` : 'Select working directory'}
             >
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />

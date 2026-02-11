@@ -23,6 +23,7 @@ import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentE
 export interface ChatConfig {
   model?: string;
   thinkingLevel?: ThinkingLevel;
+  workingDirectory?: string;
 }
 
 // ============ API Definition ============
@@ -45,6 +46,9 @@ export interface ElectronAPI {
   stopAgent: (sessionId: string) => Promise<void>;
   respondToPermission: (sessionId: string, requestId: string, response: 'allow' | 'deny') => Promise<void>;
   onAgentEvent: (callback: (sessionId: string, event: AgentEvent) => void) => () => void;
+
+  // Directory
+  selectDirectory: () => Promise<string | null>;
 }
 
 // ============ IPC Channels ============
@@ -62,6 +66,7 @@ const IPC_CHANNELS = {
   AGENT_STOP: 'agent:stop',
   AGENT_PERMISSION_RESPONSE: 'agent:permission-response',
   AGENT_EVENT: 'agent:event',
+  SELECT_DIRECTORY: 'directory:select',
 } as const;
 
 // ============ Expose API ============
@@ -93,6 +98,9 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on(IPC_CHANNELS.AGENT_EVENT, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_EVENT, handler);
   },
+
+  // Directory
+  selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
