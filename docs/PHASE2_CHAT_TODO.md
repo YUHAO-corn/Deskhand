@@ -343,10 +343,10 @@ bun run dev
 - `packages/shared/src/agent/deskhand-agent.ts`
 
 ### 完成后体验
-- [ ] AI 要执行 Bash 命令时弹出权限确认
-- [ ] 显示要执行的命令内容
-- [ ] 点击 Allow 后命令执行
-- [ ] 点击 Deny 后 AI 知道被拒绝
+- [x] AI 要执行 Bash 命令时弹出权限确认
+- [x] 显示要执行的命令内容
+- [x] 点击 Allow 后命令执行
+- [x] 点击 Deny 后 AI 知道被拒绝
 
 ### 验收命令
 ```bash
@@ -395,9 +395,9 @@ bun run dev
 - `apps/electron/src/main/ipc.ts`
 
 ### 完成后体验
-- [ ] 点击目录选择按钮打开系统目录选择器
-- [ ] 选择后显示在 Popup 中
-- [ ] AI 的文件操作基于选择的目录
+- [x] 点击目录选择按钮打开系统目录选择器
+- [x] 选择后显示在 Popup 中
+- [x] AI 的文件操作基于选择的目录
 
 ### 验收命令
 ```bash
