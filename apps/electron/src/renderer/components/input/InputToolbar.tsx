@@ -26,7 +26,6 @@ import {
   workingDirectoryAtom,
   permissionModeAtom,
   skillsAtom,
-  disabledSkillIdsAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -61,8 +60,6 @@ export function InputToolbar() {
 
   // Skills
   const [skills] = useAtom(skillsAtom);
-  const [disabledSkillIds] = useAtom(disabledSkillIdsAtom);
-  const enabledSkillCount = skills.filter((s) => !disabledSkillIds.includes(s.id)).length;
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
@@ -105,29 +102,10 @@ export function InputToolbar() {
     // 3. 清空输入框
     setInputValue('');
 
-    // 4. 构建带技能上下文的 prompt
-    const enabledSkills = skills.filter((s) => !disabledSkillIds.includes(s.id));
-    let prompt = trimmedInput;
-    if (enabledSkills.length > 0) {
-      const skillContext = enabledSkills
-        .map((s) => `<skill name="${s.name}">\n${s.content}\n</skill>`)
-        .join('\n\n');
-      prompt = `${skillContext}\n\n${trimmedInput}`;
-
-      // Show which skills are active as an info message
-      const skillNames = enabledSkills.map((s) => s.name).join(', ');
-      const skillInfoMessage: Message = {
-        id: generateMessageId(),
-        role: 'info',
-        content: `Using skills: ${skillNames}`,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, skillInfoMessage]);
-    }
-
-    // 5. 调用 IPC 发送消息（传递模型和思考级别配置）
+    // 4. 调用 IPC 发送消息（传递模型和思考级别配置）
+    // Skills are handled by the SDK's plugin system (lazy loading via Skill tool)
     try {
-      await window.electronAPI?.chat(activeSessionId, prompt, {
+      await window.electronAPI?.chat(activeSessionId, trimmedInput, {
         model: selectedModel,
         thinkingLevel,
         workingDirectory: workingDirectory ?? undefined,
@@ -137,7 +115,7 @@ export function InputToolbar() {
       console.error('[InputToolbar] chat error:', error);
       // Error will be handled by useAgentEvents via error event
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode, skills, disabledSkillIds]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -250,7 +228,7 @@ export function InputToolbar() {
 
             {/* 功能：Skills 选择 */}
             <ToolbarButton
-              badge={enabledSkillCount > 0 ? String(enabledSkillCount) : undefined}
+              badge={skills.length > 0 ? String(skills.length) : undefined}
               active={activePopup === 'skills'}
               onClick={() => togglePopup('skills')}
               title="Skills"

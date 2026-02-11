@@ -109,12 +109,3 @@ async function loadSkillFromDir(dir: string): Promise<Skill | null> {
     return null;
   }
 }
-
-/**
- * Get skill content for injection into system prompt
- */
-export function getSkillContent(skill: Skill): string {
-  return `<skill name="${skill.name}">
-${skill.content}
-</skill>`;
-}

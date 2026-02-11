@@ -95,8 +95,5 @@ export const workingDirectoryAtom = atom<string | null>(null);
 
 // ============ Skills Atoms ============
 
-/** All loaded skills */
+/** All loaded skills (for UI display in SkillsPopup) */
 export const skillsAtom = atom<Skill[]>([]);
-
-/** Disabled skill IDs (default: all enabled, this tracks which are turned off) */
-export const disabledSkillIdsAtom = atom<string[]>([]);

@@ -22,9 +22,6 @@ export interface AppConfig {
   // Workspace
   lastWorkingDirectory?: string;     // Last selected working directory (persisted)
 
-  // Skills
-  disabledSkillIds?: string[];       // Skill IDs that user has disabled (default: all enabled)
-
   // Window state
   windowBounds?: {
     x: number;

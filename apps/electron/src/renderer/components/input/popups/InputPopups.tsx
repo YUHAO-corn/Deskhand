@@ -19,7 +19,6 @@ import {
   selectedModelAtom,
   workingDirectoryAtom,
   skillsAtom,
-  disabledSkillIdsAtom,
 } from '../../../atoms/sessions';
 import type { ThinkingLevel } from '@deskhand/core';
 
@@ -144,7 +143,6 @@ interface SkillsPopupProps {
 
 export function SkillsPopup({ isOpen }: SkillsPopupProps) {
   const [skills, setSkills] = useAtom(skillsAtom);
-  const [disabledSkillIds, setDisabledSkillIds] = useAtom(disabledSkillIdsAtom);
 
   // Refresh skills from disk when popup opens
   const [lastOpen, setLastOpen] = useState(false);
@@ -153,18 +151,13 @@ export function SkillsPopup({ isOpen }: SkillsPopupProps) {
   }
   if (isOpen !== lastOpen) setLastOpen(isOpen);
 
-  const toggleSkill = (skillId: string) => {
-    const newDisabled = disabledSkillIds.includes(skillId)
-      ? disabledSkillIds.filter((id) => id !== skillId)
-      : [...disabledSkillIds, skillId];
-    setDisabledSkillIds(newDisabled);
-    // Persist to config
-    window.electronAPI?.saveConfig({ disabledSkillIds: newDisabled });
-  };
-
   return (
     <PopupContainer isOpen={isOpen} position="left-[80px]" minWidth={300}>
-      <PopupHeader title="Skills" icon={<WrenchIcon />} />
+      <PopupHeader
+        title="Skills"
+        icon={<WrenchIcon />}
+        description="Skills are activated automatically when your request matches."
+      />
 
       <div className="p-2 max-h-80 overflow-y-auto">
         {skills.length === 0 ? (
@@ -173,13 +166,19 @@ export function SkillsPopup({ isOpen }: SkillsPopupProps) {
           </div>
         ) : (
           skills.map((skill) => (
-            <CheckboxItem
+            <div
               key={skill.id}
-              title={skill.name}
-              desc={skill.description}
-              checked={!disabledSkillIds.includes(skill.id)}
-              onChange={() => toggleSkill(skill.id)}
-            />
+              className="flex items-start gap-3 p-2.5 rounded-[var(--radius-md)]"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
+                  {skill.name}
+                </div>
+                <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight">
+                  {skill.description}
+                </div>
+              </div>
+            </div>
           ))
         )}
       </div>
