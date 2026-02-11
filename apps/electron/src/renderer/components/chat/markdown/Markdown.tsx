@@ -7,6 +7,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { isValidElement, Children } from 'react';
 import type { Components } from 'react-markdown';
 
 interface MarkdownProps {
@@ -61,8 +62,14 @@ const components: Components = {
     );
   },
 
-  // 段落
+  // 段落 — 如果子元素包含块级元素（如代码块的 div），用 div 代替 p 避免 DOM 嵌套警告
   p({ children }) {
+    const hasBlockChild = Children.toArray(children).some(
+      (child) => isValidElement(child) && typeof child.type === 'string' && ['div', 'pre'].includes(child.type)
+    );
+    if (hasBlockChild) {
+      return <div className="mb-3 last:mb-0">{children}</div>;
+    }
     return <p className="mb-3 last:mb-0">{children}</p>;
   },
 
