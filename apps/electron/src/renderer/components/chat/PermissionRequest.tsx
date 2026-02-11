@@ -1,120 +1,78 @@
 /**
  * 权限请求弹窗
  *
- * 📐 SPEC: docs/SPEC_ChatArea.md (权限请求部分)
- * 🎨 原型: deskhand-prototype/src/components/PermissionRequest.tsx
- *
- * 职责：
- * - 显示 Agent 请求执行的命令/操作
- * - 提供允许/拒绝选项
- * - 显示并允许切换权限模式
+ * 当 Agent 要执行危险操作（Bash/Edit/Write）时弹出，
+ * 显示操作内容，让用户选择允许或拒绝。
  */
 
 import { useAtom } from 'jotai';
-import { permissionRequestAtom, permissionModeAtom } from '../../atoms/sessions';
-import type { PermissionMode } from '@deskhand/core';
+import { permissionRequestAtom, activeSessionIdAtom } from '../../atoms/sessions';
 
 export function PermissionRequest() {
   const [request, setRequest] = useAtom(permissionRequestAtom);
-  const [permissionMode, setPermissionMode] = useAtom(permissionModeAtom);
+  const [activeSessionId] = useAtom(activeSessionIdAtom);
 
   if (!request?.isOpen) return null;
 
-  const handleClose = () => {
+  const handleAllow = () => {
+    if (activeSessionId && request.requestId) {
+      window.electronAPI.respondToPermission(activeSessionId, request.requestId, 'allow');
+    }
     setRequest(null);
   };
 
-  const handleReject = () => {
-    // TODO: 调用 IPC 发送 reject 响应给 Agent
-    handleClose();
+  const handleDeny = () => {
+    if (activeSessionId && request.requestId) {
+      window.electronAPI.respondToPermission(activeSessionId, request.requestId, 'deny');
+    }
+    setRequest(null);
   };
 
-  const handleAllowOnce = () => {
-    // TODO: 调用 IPC 发送 allow-once 响应给 Agent
-    handleClose();
-  };
-
-  const handleAllow = () => {
-    // TODO: 调用 IPC 发送 allow 响应给 Agent
-    handleClose();
+  // Tool name → display label
+  const toolLabel: Record<string, string> = {
+    Bash: 'Terminal',
+    Edit: 'Edit File',
+    Write: 'Write File',
   };
 
   return (
     <div
       className="fixed inset-0 z-[400] flex items-center justify-center bg-black/35"
-      onClick={handleClose}
+      onClick={handleDeny}
     >
       <div
         className="w-[480px] bg-[var(--bg-secondary)] rounded-[var(--radius-lg)] shadow-[var(--shadow-popup)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ============================================
-            区域：Header
-            ============================================ */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-color)]">
-          <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
-            Permission Required
-          </h3>
-          <button
-            onClick={handleClose}
-            className="
-              w-7 h-7 border-none bg-transparent
-              rounded-[var(--radius-md)] cursor-pointer
-              flex items-center justify-center
-              text-[var(--text-muted)]
-              transition-all duration-[var(--transition-fast)]
-              hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
-            "
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
-          </button>
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
+              Permission Required
+            </h3>
+          </div>
+          <span className="text-xs px-2 py-0.5 rounded bg-[var(--hover-bg)] text-[var(--text-muted)]">
+            {toolLabel[request.toolName] || request.toolName}
+          </span>
         </div>
 
-        {/* ============================================
-            区域：Content
-            ============================================ */}
+        {/* Content */}
         <div className="p-5">
-          <p className="text-[var(--font-size-sm)] mb-3 text-[var(--text-muted)]">
-            Agent wants to execute:
+          <p className="text-[var(--font-size-sm)] mb-2 text-[var(--text-muted)]">
+            {request.description}
           </p>
-          <div className="font-mono text-[var(--font-size-xs)] overflow-x-auto px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] rounded-[var(--radius-md)] mb-5">
-            <code>$ {request.command}</code>
-          </div>
-
-          {/* 模式选择器 - Claude.ai 风格 */}
-          <div className="p-4 bg-[var(--hover-bg)] rounded-[var(--radius-md)]">
-            <p className="text-[var(--font-size-xs)] font-medium mb-3 text-[var(--text-secondary)]">
-              Current Mode:
-            </p>
-            <div className="flex items-center bg-white rounded-[var(--radius-md)] p-[3px] shadow-sm">
-              <ModeButton
-                label="Explore"
-                isActive={permissionMode === 'explore'}
-                onClick={() => setPermissionMode('explore')}
-              />
-              <ModeButton
-                label="Ask"
-                isActive={permissionMode === 'ask'}
-                onClick={() => setPermissionMode('ask')}
-              />
-              <ModeButton
-                label="Auto"
-                isActive={permissionMode === 'auto'}
-                onClick={() => setPermissionMode('auto')}
-              />
-            </div>
+          <div className="font-mono text-[var(--font-size-xs)] overflow-x-auto px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] rounded-[var(--radius-md)]">
+            <code>{request.toolName === 'Bash' ? '$ ' : ''}{request.command}</code>
           </div>
         </div>
 
-        {/* ============================================
-            区域：Actions
-            ============================================ */}
+        {/* Actions */}
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-color)] bg-[var(--hover-bg)]">
           <button
-            onClick={handleReject}
+            onClick={handleDeny}
             className="
               px-4 py-2
               bg-transparent border border-red-200
@@ -124,20 +82,7 @@ export function PermissionRequest() {
               hover:bg-red-50
             "
           >
-            Reject
-          </button>
-          <button
-            onClick={handleAllowOnce}
-            className="
-              px-4 py-2
-              bg-white border border-[var(--border-color)]
-              rounded-[var(--radius-md)] cursor-pointer
-              text-[var(--font-size-sm)] font-medium text-[var(--text-secondary)]
-              transition-all duration-[var(--transition-fast)]
-              hover:bg-[var(--bg-secondary)]
-            "
-          >
-            Allow Once
+            Deny
           </button>
           <button
             onClick={handleAllow}
@@ -155,35 +100,5 @@ export function PermissionRequest() {
         </div>
       </div>
     </div>
-  );
-}
-
-// ============================================
-// ModeButton - 模式切换按钮
-// ============================================
-
-interface ModeButtonProps {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-function ModeButton({ label, isActive, onClick }: ModeButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        flex-1 px-3 py-2
-        border-none rounded-[var(--radius-sm)]
-        text-[var(--font-size-xs)] font-medium cursor-pointer
-        transition-all duration-[var(--transition-fast)]
-        ${isActive
-          ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
-          : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-        }
-      `}
-    >
-      {label}
-    </button>
   );
 }

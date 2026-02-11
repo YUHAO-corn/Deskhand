@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useAtom } from 'jotai';
 import type { ActivityItem } from './turn-utils';
 import {
   groupActivitiesByParent,
@@ -15,6 +16,7 @@ import {
   type ActivityGroup,
 } from './turn-utils';
 import { ToolActivityRow } from './ToolActivityRow';
+import { permissionRequestAtom, activeSessionIdAtom } from '../../atoms/sessions';
 
 interface ActivityTreeProps {
   activities: ActivityItem[];
@@ -168,6 +170,29 @@ function ActivityTreeRow({
   showConnector,
   taskOutputData,
 }: ActivityTreeRowProps) {
+  // Check if this activity has a pending permission request
+  const [permissionRequest, setPermissionRequest] = useAtom(permissionRequestAtom);
+  const [activeSessionId] = useAtom(activeSessionIdAtom);
+
+  const hasPendingPermission =
+    permissionRequest?.isOpen &&
+    activity.toolUseId &&
+    permissionRequest.requestId === `perm-${activity.toolUseId}`;
+
+  const handleAllow = () => {
+    if (activeSessionId && permissionRequest?.requestId) {
+      window.electronAPI.respondToPermission(activeSessionId, permissionRequest.requestId, 'allow');
+    }
+    setPermissionRequest(null);
+  };
+
+  const handleDeny = () => {
+    if (activeSessionId && permissionRequest?.requestId) {
+      window.electronAPI.respondToPermission(activeSessionId, permissionRequest.requestId, 'deny');
+    }
+    setPermissionRequest(null);
+  };
+
   // 缩进样式
   const paddingLeft = depth * 24;
 
@@ -191,6 +216,47 @@ function ActivityTreeRow({
           hasChildren={hasChildren}
           taskOutputData={taskOutputData}
         />
+
+        {/* 内联权限确认 */}
+        {hasPendingPermission && (
+          <div className="mx-2 mb-1 p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span className="text-xs text-amber-700 dark:text-amber-400">
+                {permissionRequest.description}
+              </span>
+            </div>
+            <div className="font-mono text-xs px-2.5 py-1.5 bg-[#1e1e1e] text-[#d4d4d4] rounded mb-2.5 overflow-x-auto">
+              <code>{permissionRequest.toolName === 'Bash' ? '$ ' : ''}{permissionRequest.command}</code>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={handleDeny}
+                className="
+                  px-3 py-1 rounded-md text-xs font-medium
+                  border border-red-200 text-red-600 bg-transparent
+                  hover:bg-red-50 cursor-pointer
+                  transition-colors
+                "
+              >
+                Deny
+              </button>
+              <button
+                onClick={handleAllow}
+                className="
+                  px-3 py-1 rounded-md text-xs font-medium
+                  border-none text-white bg-[var(--accent-color)]
+                  hover:opacity-90 cursor-pointer
+                  transition-colors
+                "
+              >
+                Allow
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -158,7 +158,10 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       case 'permission_request': {
         setPermissionRequest({
           isOpen: true,
+          requestId: event.requestId,
+          toolName: event.toolName,
           command: event.command,
+          description: event.description,
         });
         break;
       }

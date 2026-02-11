@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { useAtom } from 'jotai';
-import { settingsOpenAtom, permissionModeAtom } from '../../atoms/sessions';
+import { settingsOpenAtom } from '../../atoms/sessions';
 import type { PermissionMode, Skill } from '@deskhand/core';
 
 // 导航项类型
@@ -29,7 +29,7 @@ interface NavItem {
 export function SettingsPage() {
   const [, setSettingsOpen] = useAtom(settingsOpenAtom);
   const [activeSection, setActiveSection] = useState<NavItemId>('general');
-  const [permissionMode, setPermissionMode] = useAtom(permissionModeAtom);
+  const [permissionMode, setPermissionMode] = useState<PermissionMode>('ask');
 
   // TODO: 从配置加载
   const [toolModel, setToolModel] = useState('claude-haiku-4-5-20251001');

@@ -40,6 +40,7 @@ export interface ChatOptions {
   skills?: string[];                 // Enabled skill IDs
   model?: string;                    // Override model for this chat
   thinkingLevel?: ThinkingLevel;     // Override thinking level for this chat
+  permissionMode?: 'ask' | 'allow-all'; // Permission mode for this chat
   onEvent?: (event: AgentEvent) => void;
 }
 
@@ -96,17 +97,88 @@ export class DeskhandAgent {
       console.log('[DeskhandAgent] Thinking level requested:', options.thinkingLevel);
     }
 
+    // Permission mode: 'ask' = confirm all dangerous ops, 'allow-all' = only confirm destructive bash
+    const permMode = options?.permissionMode || 'ask';
+
+    // Tools that modify the filesystem (used in 'ask' mode)
+    const DANGEROUS_TOOLS = new Set(['Bash', 'Edit', 'Write']);
+
+    // Bash commands that are explicitly destructive
+    const DESTRUCTIVE_COMMANDS = new Set(['rm', 'rmdir', 'unlink', 'shred']);
+
     const sdkOptions = {
       model: effectiveModel,
       cwd: this.options.workingDirectory || process.cwd(),
       abortController: this.abortController,
-      // Path to the SDK's cli.js - required for subprocess spawning
       pathToClaudeCodeExecutable: this.options.pathToClaudeCodeExecutable,
-      // Bypass SDK permissions - we handle permissions ourselves
+      // Bypass SDK's built-in permissions — we implement our own via PreToolUse hook
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
       // Resume from previous session if we have one
       ...(this.sdkSessionId ? { resume: this.sdkSessionId } : {}),
+      // Custom permission hook
+      hooks: {
+        PreToolUse: [{
+          hooks: [async (input: Record<string, unknown>) => {
+            if (input.hook_event_name !== 'PreToolUse') {
+              return { continue: true };
+            }
+
+            const toolName = input.tool_name as string;
+            const toolInput = input.tool_input as Record<string, unknown>;
+
+            // Determine if this operation needs permission
+            let needsPermission = false;
+
+            if (permMode === 'ask') {
+              // Ask mode: all dangerous tools need confirmation
+              needsPermission = DANGEROUS_TOOLS.has(toolName);
+            } else {
+              // Allow-all mode: only destructive bash commands need confirmation
+              if (toolName === 'Bash') {
+                const cmd = String(toolInput.command || '').trim();
+                const baseCommand = cmd.split(/[\s;|&]/)[0]?.split('/').pop() || '';
+                needsPermission = DESTRUCTIVE_COMMANDS.has(baseCommand);
+              }
+            }
+
+            if (!needsPermission) {
+              return { continue: true };
+            }
+
+            // Build human-readable command and description
+            const { command, description } = this.buildPermissionDisplay(toolName, toolInput);
+
+            const requestId = `perm-${input.tool_use_id as string}`;
+
+            // Create a Promise that blocks until user responds
+            const permissionPromise = new Promise<boolean>((resolve) => {
+              this.pendingPermissions.set(requestId, { resolve });
+            });
+
+            // Emit permission_request event to UI
+            emit({
+              type: 'permission_request',
+              requestId,
+              toolName,
+              command,
+              description,
+            });
+
+            // Wait for user response
+            const allowed = await permissionPromise;
+            if (!allowed) {
+              return {
+                continue: false,
+                decision: 'block' as const,
+                reason: 'User denied permission',
+              };
+            }
+
+            return { continue: true };
+          }],
+        }],
+      },
     };
 
     // ─── Step 2: 调用 SDK query ───
@@ -301,6 +373,30 @@ export class DeskhandAgent {
     }
 
     return events;
+  }
+
+  /**
+   * Build human-readable command and description for permission popup
+   */
+  private buildPermissionDisplay(toolName: string, toolInput: Record<string, unknown>): { command: string; description: string } {
+    switch (toolName) {
+      case 'Bash': {
+        const cmd = String(toolInput.command || '');
+        // Use model-provided description if available
+        const desc = toolInput.description ? String(toolInput.description) : 'Execute command';
+        return { command: cmd, description: desc };
+      }
+      case 'Edit': {
+        const filePath = String(toolInput.file_path || '');
+        return { command: `edit ${filePath}`, description: 'Edit file' };
+      }
+      case 'Write': {
+        const filePath = String(toolInput.file_path || '');
+        return { command: `write ${filePath}`, description: 'Create/overwrite file' };
+      }
+      default:
+        return { command: toolName, description: 'Tool operation' };
+    }
   }
 
   /**

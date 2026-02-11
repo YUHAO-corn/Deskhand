@@ -24,6 +24,7 @@ import {
   selectedModelAtom,
   thinkingLevelAtom,
   workingDirectoryAtom,
+  permissionModeAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -52,6 +53,9 @@ export function InputToolbar() {
 
   // 工作目录
   const [workingDirectory] = useAtom(workingDirectoryAtom);
+
+  // 权限模式
+  const [permissionMode, setPermissionMode] = useAtom(permissionModeAtom);
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
@@ -100,12 +104,13 @@ export function InputToolbar() {
         model: selectedModel,
         thinkingLevel,
         workingDirectory: workingDirectory ?? undefined,
+        permissionMode,
       });
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
       // Error will be handled by useAgentEvents via error event
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -241,6 +246,30 @@ export function InputToolbar() {
                 <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
               </svg>
             </ToolbarButton>
+
+            {/* 功能：权限模式切换 */}
+            <button
+              onClick={() => setPermissionMode(permissionMode === 'ask' ? 'allow-all' : 'ask')}
+              title={permissionMode === 'ask' ? 'Ask mode: confirms dangerous operations' : 'Auto mode: only confirms delete commands'}
+              className={`
+                flex items-center gap-1.5
+                px-2.5 py-1.5 ml-1
+                bg-transparent border-none rounded-[var(--radius-md)]
+                cursor-pointer
+                text-[var(--font-size-xs)] font-medium
+                transition-colors duration-[var(--transition-fast)]
+                hover:bg-[var(--hover-bg)]
+                ${permissionMode === 'allow-all'
+                  ? 'text-amber-600'
+                  : 'text-[var(--text-secondary)]'
+                }
+              `}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              {permissionMode === 'ask' ? 'Ask' : 'Auto'}
+            </button>
 
             {/* 功能：模型选择器
                 TODO: 实现 ModelSelectorPopup */}

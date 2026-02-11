@@ -183,7 +183,7 @@ export function registerIpcHandlers(): void {
     event,
     sessionId: string,
     message: string,
-    config?: { model?: string; thinkingLevel?: ThinkingLevel; workingDirectory?: string }
+    config?: { model?: string; thinkingLevel?: ThinkingLevel; workingDirectory?: string; permissionMode?: 'ask' | 'allow-all' }
   ) => {
     // 实现步骤：
     // 1. 获取或创建该 session 的 agent 实例
@@ -205,6 +205,7 @@ export function registerIpcHandlers(): void {
     await agent.chat(message, {
       model: config?.model,
       thinkingLevel: config?.thinkingLevel,
+      permissionMode: config?.permissionMode,
       onEvent: (agentEvent: AgentEvent) => {
         // Forward event to renderer
         event.sender.send('agent:event', sessionId, agentEvent);

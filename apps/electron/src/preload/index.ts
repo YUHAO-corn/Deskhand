@@ -24,6 +24,7 @@ export interface ChatConfig {
   model?: string;
   thinkingLevel?: ThinkingLevel;
   workingDirectory?: string;
+  permissionMode?: 'ask' | 'allow-all';
 }
 
 // ============ API Definition ============
