@@ -412,6 +412,59 @@ Slice C（未读基础设施）──→ Slice D（手动 insight）──→ Sl
 
 A/B 和 C 可以并行开发，互不依赖。
 
+## Q12: 内置哪些 Skills？
+
+**结论：4 个内置 skill，覆盖"不会表达→不会找→不会建→常见刚需"四个层次。**
+
+### 选择过程
+
+分析了 skills.sh 榜单 Top 10（总安装量 39K+），发现榜单用户群体是开发者，Top 10 几乎全是开发向（React、Remotion、Vercel 等）。需要结合 Deskhand 非技术用户的需求筛选。
+
+排除的：
+- vercel-react-best-practices、remotion-best-practices、vercel-composition-patterns、vercel-react-native-skills — 框架/平台专用，非技术用户用不上
+- agent-browser、browser-use — 需要浏览器自动化基础设施，Deskhand 暂不支持
+- web-design-guidelines — 和 frontend-design 重叠度高
+
+### 最终选择（4 个）
+
+核心原则：一切尽可能 AI Native，不需要 UI 操作，用户直接跟 AI 讲就行。
+
+**1. playground**（来源：Anthropic 官方插件）
+- 解决的问题：用户不知道如何表达需求 → AI 用可交互的可视化工具帮你表达
+- 生成自包含 HTML 文件，有控件、实时预览、prompt 输出
+- 内置多种模板（设计、数据、概念图、文档评审等）
+- 来源：`anthropics/skills` 官方插件系统
+
+**2. find-skills**（来源：vercel-labs/skills）
+- 解决的问题：用户不需要学习如何寻找 skill → 直接跟 AI 说"帮我找个做 XX 的"
+- 搜索 skills.sh 生态，展示结果，用户确认后安装
+- 已在 Q9 中确定作为 Slice B
+- 来源：https://github.com/vercel-labs/skills/blob/main/skills/find-skills/
+
+**3. skill-creator**（来源：Anthropic 官方）
+- 解决的问题：用户不需要学习如何创建 skill、看晦涩文档 → 直接跟 AI 描述需求
+- 提供完整的 skill 创建指南，包括初始化、编辑、打包流程
+- 和 Slice E（Skill Insight Agent 的自动创建能力）天然对齐
+- 来源：https://github.com/anthropics/skills/blob/main/skills/skill-creator/
+
+**4. frontend-design**（来源：Anthropic 官方插件）
+- 解决的问题：非技术用户做网页的刚需（落地页、简历页、小商家网站等）
+- 强调避免"AI 味"设计，生成有设计感的前端代码
+- 来源：`anthropics/skills` 官方插件系统
+
+### 设计哲学
+
+这 4 个 skill 构成了一个完整的"AI Native 能力层"：
+
+```
+用户不会表达 ──→ playground 帮你可视化表达
+用户不会找 skill ──→ find-skills 帮你搜索安装
+用户不会建 skill ──→ skill-creator 帮你创建
+用户要做网页 ──→ frontend-design 帮你设计
+```
+
+用户不需要知道"skill"这个概念的存在，只需要自然地和 AI 对话，内置 skill 会在合适的时机被 SDK 自动激活。
+
 ---
 
 ## ~~最小链路实现（v1 - 已废弃）~~
