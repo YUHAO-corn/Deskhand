@@ -343,6 +343,75 @@ Claude Code 内置了 `/insights` 命令，功能与我们的 Skill Insight Agen
       → 确认后生成 skill，存到 ~/.deskhand/skills/
 ```
 
+## Q11: 实现的 Vertical Slice 切分
+
+**结论：6 个 slice，A/B 独立先行，C 是 D-F 的前置，D 先手动后 F 自动化。**
+
+### 已完成
+
+- Q6: SDK plugin 集成 ✅
+- Q7: Skill tool 在 activity tree 展示 ✅
+- Q8: Claude Code skills 自动兼容 ✅
+
+### Slice A：内置精选 Skills
+
+- 来源：Q9 方案 1
+- 做什么：打包几个通用 SKILL.md，首次启动复制到 `~/.deskhand/skills/`
+- 端到端验证：用户装完 app，不做任何配置，对话中 AI 自然使用内置 skill
+- 依赖：无
+- 复杂度：低
+
+### Slice B：find-skills 作为默认 skill
+
+- 来源：Q9 方案 3
+- 做什么：将 find-skills 的 SKILL.md 作为内置 skill 之一（Slice A 的一部分）
+- 端到端验证：用户说"帮我找个做 XX 的 skill"→ agent 搜索 → 展示结果 → 安装
+- 依赖：Slice A（复用内置 skill 的分发机制）
+- 复杂度：低
+
+### Slice C：Session 未读基础设施
+
+- 来源：Q9 5+6 的前置 + Phase 3（会话管理）
+- 做什么：实现 `hasUnread` 持久化 + `sessions:update-meta` IPC + 侧边栏未读标记 UI
+- 端到端验证：后台创建一个 session → 侧边栏出现未读标记 → 点击后标记消失
+- 依赖：无（但与 Phase 3 SessionSidebar 有交叉）
+- 复杂度：中
+
+### Slice D：手动触发 Insight（先手动，后自动）
+
+- 来源：Q9 5+6 + Q10
+- 做什么：手动触发版本，验证分析质量。实现 facet 提取 + 缓存 + 多维度并行分析 + 在新 session 里展示工作分析报告
+- 端到端验证：用户触发分析 → 新 session 出现（带未读标记）→ 里面有工作分析报告 → 可以对话互动
+- 依赖：Slice C
+- 为什么先手动：先验证分析质量再自动化，避免自动推送低质量内容损害信任
+- 复杂度：高
+
+### Slice E：Skill 推荐 + 创建
+
+- 来源：Q9 5+6
+- 做什么：在 Slice D 的报告基础上，增加 skill 搜索推荐（高精准度）和自动创建能力（先描述再创建）
+- 端到端验证：报告后 agent 建议 skill → 用户确认/修改 → skill 安装/创建到 `~/.deskhand/skills/` → 下次对话自动可用
+- 依赖：Slice D + Slice B（搜索用 find-skills）
+- 复杂度：中
+
+### Slice F：定期自动触发
+
+- 来源：Q9 5+6 触发条件
+- 做什么：把 Slice D 从手动改为定期自动 + 质量门槛（没有有价值的发现就不出声）
+- 端到端验证：用户什么都不做 → 一段时间后收到未读提醒 → 打开是分析报告 + 建议
+- 依赖：Slice D + Slice E
+- 复杂度：中
+
+### 依赖关系
+
+```
+Slice A（内置 skills）──→ Slice B（find-skills）──→ Slice E（推荐+创建）
+                                                        ↑
+Slice C（未读基础设施）──→ Slice D（手动 insight）──→ Slice E ──→ Slice F（自动触发）
+```
+
+A/B 和 C 可以并行开发，互不依赖。
+
 ---
 
 ## ~~最小链路实现（v1 - 已废弃）~~
