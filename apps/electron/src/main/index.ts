@@ -15,6 +15,7 @@ import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
 import { registerIpcHandlers } from './ipc.ts';
 import { loadWindowState, saveWindowState } from './window-state.ts';
+import { ensureBuiltinSkills } from '@deskhand/shared/skills';
 
 // ============ Window Management ============
 
@@ -67,6 +68,9 @@ function createWindow(): void {
 // ============ App Lifecycle ============
 
 app.whenReady().then(() => {
+  // Copy built-in skills to ~/.deskhand/skills/ on first launch
+  ensureBuiltinSkills(join(__dirname, 'builtin-skills'));
+
   registerIpcHandlers();
   createWindow();
 

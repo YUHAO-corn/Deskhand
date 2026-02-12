@@ -4,7 +4,7 @@
  */
 
 import { spawn, type Subprocess } from "bun";
-import { existsSync, rmSync, mkdirSync, statSync } from "fs";
+import { existsSync, rmSync, mkdirSync, statSync, cpSync } from "fs";
 import { join } from "path";
 import * as esbuild from "esbuild";
 
@@ -180,6 +180,14 @@ async function main(): Promise<void> {
   ]);
 
   console.log("✅ Initial build complete\n");
+
+  // Copy builtin-skills to dist/
+  const builtinSrc = join(ELECTRON_DIR, "resources", "builtin-skills");
+  const builtinDest = join(DIST_DIR, "builtin-skills");
+  if (existsSync(builtinSrc)) {
+    cpSync(builtinSrc, builtinDest, { recursive: true });
+    console.log("📦 Copied builtin-skills to dist/\n");
+  }
 
   // Start dev servers
   console.log("📡 Starting dev servers...\n");

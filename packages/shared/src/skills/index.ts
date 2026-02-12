@@ -8,4 +8,5 @@ export {
   getSkillDirs,
   getPluginPaths,
   loadSkills,
+  ensureBuiltinSkills,
 } from './loader.ts';

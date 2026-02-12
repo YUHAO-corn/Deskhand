@@ -43,6 +43,59 @@ export function getPluginPaths(workingDirectory?: string): Array<{ type: 'local'
     .map(dir => ({ type: 'local' as const, path: dir }));
 }
 
+// ============ Built-in Skills ============
+
+/**
+ * Copy built-in skills to ~/.deskhand/skills/ on first launch.
+ * Only copies skills that don't already exist (won't overwrite user modifications).
+ *
+ * @param builtinSkillsDir - Path to the bundled builtin-skills directory (e.g. dist/builtin-skills)
+ */
+export function ensureBuiltinSkills(builtinSkillsDir: string): void {
+  if (!fs.existsSync(builtinSkillsDir)) {
+    return;
+  }
+
+  const targetDir = path.join(os.homedir(), '.deskhand', 'skills');
+
+  // Ensure ~/.deskhand/skills/ exists
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  // List built-in skill directories
+  const entries = fs.readdirSync(builtinSkillsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const skillName = entry.name;
+    const targetSkillDir = path.join(targetDir, skillName);
+
+    // Skip if skill already exists (don't overwrite user modifications)
+    if (fs.existsSync(targetSkillDir)) continue;
+
+    // Recursively copy skill directory
+    copyDirRecursive(path.join(builtinSkillsDir, skillName), targetSkillDir);
+  }
+}
+
+/** Recursively copy a directory */
+function copyDirRecursive(src: string, dest: string): void {
+  fs.mkdirSync(dest, { recursive: true });
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 // ============ Skill Loading ============
 
 /**
