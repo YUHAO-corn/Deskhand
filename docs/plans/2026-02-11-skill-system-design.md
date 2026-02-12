@@ -284,6 +284,65 @@ agent 搜索现成 skill 时必须高精准度匹配。反例：用户只是写�
       → 确认后生成 skill，存到 ~/.deskhand/skills/
 ```
 
+## Q10: Claude Code /insights 命令的启发
+
+**结论：借鉴其多阶段 pipeline 架构，并在此基础上增加"静态报告→skill 推荐"的两步流程。**
+
+### 发现
+
+Claude Code 内置了 `/insights` 命令，功能与我们的 Skill Insight Agent 高度相关。通过探查其实现，梳理出完整流程：
+
+1. 读取 `~/.claude/` 下的所有历史会话数据
+2. 对每个 session 提取元数据（工具调用次数、token 用量、语言分布、git 操作、响应时间等）——纯本地计算
+3. 用 Claude 模型对每个 session 做 facet extraction——让模型判断用户目标、满意度、摩擦点、session 类型等，输出结构化 JSON
+4. 汇总所有 session 的统计数据
+5. 把汇总数据分发给多个并行的 prompt（project_areas、interaction_style、what_works、friction_analysis、suggestions、on_the_horizon、fun_ending 等维度），每个维度用一个独立的 Claude API 调用生成分析
+6. 最后跑一个 at_a_glance 汇总 prompt，把前面所有维度的结果综合成简短摘要
+7. 所有结果拼装成 HTML 报告，写到 `~/.claude/usage-data/report.html`
+
+本质上是一个多阶段 AI pipeline：本地统计 → 逐 session AI 提取（带缓存）→ 汇总 → 多维度并行分析 → 最终摘要。
+
+### 我们可以借鉴什么？
+
+**facet 提取 + 缓存机制**：先对每个 session 做结构化提取，缓存结果，再做跨 session 的模式分析。比直接把所有对话丢给 AI 分析高效得多。
+
+**多维度并行分析**：不同分析维度用独立的 prompt 并行跑，最后汇总。这个架构可以直接复用。
+
+### 我们比它更进一步的地方
+
+| 维度 | Claude Code /insights | Deskhand Skill Insight Agent |
+|------|----------------------|------------------------------|
+| 触发方式 | 手动（用户输入 /insights） | 定期自动触发 |
+| 输出形式 | 静态 HTML 报告 | 可交互的 session 对话 |
+| 后续动作 | 建议用户自己改 CLAUDE.md | 直接帮用户创建/安装 skill |
+| 目标用户 | 技术用户（需理解 CLAUDE.md） | 非技术用户（自然语言对话） |
+
+### 关键补充：静态报告作为前置步骤
+
+讨论后决定：Skill Insight Agent 的 session 应该先输出一份工作分析报告，再进行 skill 推荐/创建。
+
+理由：
+- 报告是"诊断"，skill 推荐是"处方"——先让用户看到"我了解你的工作模式"，建立信任和上下文
+- 用户看到分析后可能自己就有想法："对，这个事情我确实经常做，能不能帮我优化？"
+- 报告本身就有价值，即使用户不需要新 skill
+
+### 更新后的完整流程
+
+```
+定期后台分析用户对话历史
+  → 阶段 1：facet 提取（逐 session，带缓存）
+  → 阶段 2：跨 session 模式分析（多维度并行）
+  → 发现有价值的行为模式？
+    → 否：不出声
+    → 是：创建新 session + 未读提醒
+      → 先展示工作分析报告（你最近在做什么、怎么做的、哪里有摩擦）
+      → 基于分析，提出 skill 建议：
+        → 搜索匹配的现成 skill（高精准度）→ 推荐
+        → 没有匹配的 → 用自然语言描述打算创建的 skill
+      → 用户在对话中确认/修改/拒绝
+      → 确认后生成 skill，存到 ~/.deskhand/skills/
+```
+
 ---
 
 ## ~~最小链路实现（v1 - 已废弃）~~
