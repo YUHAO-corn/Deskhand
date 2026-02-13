@@ -29,6 +29,9 @@ export const activeSessionIdAtom = atom<string | null>(null);
 /** Set of loaded session IDs (for lazy loading) */
 export const loadedSessionsAtom = atom<Set<string>>(new Set());
 
+/** Set of memory-only session IDs (not yet persisted to disk) */
+export const memoryOnlySessionsAtom = atom<Set<string>>(new Set());
+
 // ============ Per-Session Atoms ============
 
 /** Messages by session ID */

@@ -15,7 +15,7 @@
 import { ipcMain, BrowserWindow, app, dialog } from 'electron';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
+import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, StoredMessage, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
 import {
   loadConfig,
   saveConfig,
@@ -29,6 +29,8 @@ import {
   createSession,
   deleteSession,
   generateSessionId,
+  appendMessage,
+  updateSessionMeta,
 } from '@deskhand/shared/sessions';
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import { loadSkills } from '@deskhand/shared/skills';
@@ -102,6 +104,8 @@ export const IPC_CHANNELS = {
   GET_SESSION: 'sessions:get',
   CREATE_SESSION: 'sessions:create',
   DELETE_SESSION: 'sessions:delete',
+  APPEND_MESSAGE: 'sessions:append-message',
+  UPDATE_SESSION_META: 'sessions:update-meta',
 
   // Agent
   AGENT_CHAT: 'agent:chat',
@@ -179,6 +183,14 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.DELETE_SESSION, async (_, sessionId: string): Promise<void> => {
     await deleteSession(sessionId);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.APPEND_MESSAGE, async (_, sessionId: string, message: StoredMessage): Promise<void> => {
+    await appendMessage(sessionId, message);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.UPDATE_SESSION_META, async (_, sessionId: string, updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount'>>): Promise<void> => {
+    await updateSessionMeta(sessionId, updates);
   });
 
   // ===== Agent =====

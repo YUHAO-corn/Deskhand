@@ -16,7 +16,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, Session, AgentEvent, ThinkingLevel, Skill } from '@deskhand/core';
+import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, StoredMessage, Session, AgentEvent, ThinkingLevel, Skill } from '@deskhand/core';
 
 // ============ Chat Config ============
 
@@ -41,6 +41,8 @@ export interface ElectronAPI {
   getSession: (sessionId: string) => Promise<StoredSession | null>;
   createSession: (session: Session) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
+  appendMessage: (sessionId: string, message: StoredMessage) => Promise<void>;
+  updateSessionMeta: (sessionId: string, updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount'>>) => Promise<void>;
 
   // Agent
   chat: (sessionId: string, message: string, config?: ChatConfig) => Promise<void>;
@@ -66,6 +68,8 @@ const IPC_CHANNELS = {
   GET_SESSION: 'sessions:get',
   CREATE_SESSION: 'sessions:create',
   DELETE_SESSION: 'sessions:delete',
+  APPEND_MESSAGE: 'sessions:append-message',
+  UPDATE_SESSION_META: 'sessions:update-meta',
   AGENT_CHAT: 'agent:chat',
   AGENT_STOP: 'agent:stop',
   AGENT_PERMISSION_RESPONSE: 'agent:permission-response',
@@ -88,6 +92,8 @@ const electronAPI: ElectronAPI = {
   getSession: (sessionId) => ipcRenderer.invoke(IPC_CHANNELS.GET_SESSION, sessionId),
   createSession: (session) => ipcRenderer.invoke(IPC_CHANNELS.CREATE_SESSION, session),
   deleteSession: (sessionId) => ipcRenderer.invoke(IPC_CHANNELS.DELETE_SESSION, sessionId),
+  appendMessage: (sessionId, message) => ipcRenderer.invoke(IPC_CHANNELS.APPEND_MESSAGE, sessionId, message),
+  updateSessionMeta: (sessionId, updates) => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_SESSION_META, sessionId, updates),
 
   // Agent
   chat: (sessionId, message, config) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_CHAT, sessionId, message, config),

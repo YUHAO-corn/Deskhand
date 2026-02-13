@@ -13,4 +13,6 @@ export {
   appendMessage,
   listSessions,
   deleteSession,
+  updateSessionMeta,
+  generateSessionId,
 } from './storage.ts';

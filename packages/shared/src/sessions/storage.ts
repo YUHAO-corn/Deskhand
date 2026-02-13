@@ -163,7 +163,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
  */
 export async function updateSessionMeta(
   sessionId: string,
-  updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview'>>
+  updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount'>>
 ): Promise<void> {
   // 实现步骤：
   // 1. 读取完整的 session.jsonl
@@ -177,7 +177,7 @@ export async function updateSessionMeta(
   const updatedSession: Session = {
     id: session.id,
     createdAt: session.createdAt,
-    messageCount: session.messageCount,
+    messageCount: updates.messageCount ?? session.messageCount,
     name: updates.name ?? session.name,
     lastMessageAt: updates.lastMessageAt ?? session.lastMessageAt,
     preview: updates.preview ?? session.preview,
