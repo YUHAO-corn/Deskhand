@@ -10,12 +10,21 @@
 import { useState, useEffect } from 'react';
 import { Provider, useAtom, useSetAtom } from 'jotai';
 import type { SetupNeeds } from '@deskhand/core';
+import { generateSessionId } from '@deskhand/core';
 import { TitleBar } from './components/app-shell/TitleBar';
 import { SessionSidebar } from './components/app-shell/SessionSidebar';
 import { ChatArea } from './components/chat/ChatArea';
 import { ArtifactPanel } from './components/artifact/ArtifactPanel';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { settingsOpenAtom, activeSessionIdAtom, workingDirectoryAtom, skillsAtom } from './atoms/sessions';
+import {
+  settingsOpenAtom,
+  activeSessionIdAtom,
+  workingDirectoryAtom,
+  skillsAtom,
+  sessionMetaMapAtom,
+  sessionIdsAtom,
+  memoryOnlySessionsAtom,
+} from './atoms/sessions';
 
 type AppState = 'loading' | 'onboarding' | 'ready';
 
@@ -26,14 +35,34 @@ function AppContent() {
   const setActiveSessionId = useSetAtom(activeSessionIdAtom);
   const setWorkingDirectory = useSetAtom(workingDirectoryAtom);
   const setSkills = useSetAtom(skillsAtom);
+  const setSessionMetaMap = useSetAtom(sessionMetaMapAtom);
+  const setSessionIds = useSetAtom(sessionIdsAtom);
+  const setMemoryOnlySessions = useSetAtom(memoryOnlySessionsAtom);
 
   useEffect(() => {
     const initialize = async () => {
-      // Create default session for Phase 2 testing
-      const defaultSessionId = crypto.randomUUID();
-      setActiveSessionId(defaultSessionId);
-
       try {
+        // Load sessions from disk
+        const metas = await window.electronAPI.listSessions();
+
+        if (metas.length > 0) {
+          // Populate atoms with existing sessions
+          const metaMap = new Map(metas.map((m) => [m.id, m]));
+          const ids = metas.map((m) => m.id);
+          setSessionMetaMap(metaMap);
+          setSessionIds(ids);
+          // Select the most recent session
+          setActiveSessionId(ids[0]!);
+        } else {
+          // No existing sessions — create an in-memory session
+          const newId = generateSessionId();
+          const now = Date.now();
+          setSessionMetaMap(new Map([[newId, { id: newId, createdAt: now }]]));
+          setSessionIds([newId]);
+          setActiveSessionId(newId);
+          setMemoryOnlySessions(new Set([newId]));
+        }
+
         // Restore last working directory from config
         const config = await window.electronAPI.getConfig();
         if (config?.lastWorkingDirectory) {
@@ -54,13 +83,12 @@ function AppContent() {
         }
       } catch (error) {
         console.error('Failed to initialize:', error);
-        // For Phase 0.5: Skip to ready state to test UI
         setAppState('ready');
       }
     };
 
     initialize();
-  }, [setActiveSessionId, setWorkingDirectory, setSkills]);
+  }, [setActiveSessionId, setWorkingDirectory, setSkills, setSessionMetaMap, setSessionIds, setMemoryOnlySessions]);
 
   // Loading state
   if (appState === 'loading') {
