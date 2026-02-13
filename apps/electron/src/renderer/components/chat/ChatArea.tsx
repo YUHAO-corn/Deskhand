@@ -13,13 +13,14 @@
  */
 
 import { useMemo, useEffect, useRef } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import {
   activeSessionIdAtom,
   artifactPanelOpenAtom,
   artifactActiveTabAtom,
   sessionMessagesFamily,
   sessionProcessingFamily,
+  loadedSessionsAtom,
 } from '../../atoms/sessions';
 import { groupMessagesByTurn, type Turn, type AssistantTurn } from './turn-utils';
 
@@ -49,11 +50,56 @@ export function ChatArea() {
 
   // 获取消息列表 - 使用固定的 atom key 避免 hooks 规则问题
   const messagesAtom = sessionMessagesFamily(activeSessionId ?? '__empty__');
-  const [messages] = useAtom(messagesAtom);
+  const [messages, setMessages] = useAtom(messagesAtom);
 
   // 获取处理状态
   const processingAtom = sessionProcessingFamily(activeSessionId ?? '__empty__');
   const [isProcessing] = useAtom(processingAtom);
+
+  // Lazy loading state
+  const [loadedSessions, setLoadedSessions] = useAtom(loadedSessionsAtom);
+
+  // Lazy load messages when switching to an existing session
+  useEffect(() => {
+    if (!activeSessionId) return;
+    if (loadedSessions.has(activeSessionId)) return;
+
+    const loadMessages = async () => {
+      try {
+        const stored = await window.electronAPI?.getSession(activeSessionId);
+        if (stored?.messages?.length) {
+          // Convert StoredMessage[] to Message[]
+          const msgs = stored.messages.map((sm) => ({
+            id: sm.id,
+            role: sm.type,
+            content: sm.content,
+            timestamp: sm.timestamp ?? 0,
+            toolName: sm.toolName,
+            toolUseId: sm.toolUseId,
+            toolInput: sm.toolInput,
+            toolResult: sm.toolResult,
+            toolStatus: sm.toolStatus,
+            toolDuration: sm.toolDuration,
+            isIntermediate: sm.isIntermediate,
+            turnId: sm.turnId,
+            attachments: sm.attachments,
+            planPath: sm.planPath,
+            errorCode: sm.errorCode,
+            errorTitle: sm.errorTitle,
+            errorDetails: sm.errorDetails,
+            errorCanRetry: sm.errorCanRetry,
+          }) as import('@deskhand/core').Message[]);
+          setMessages(msgs);
+        }
+      } catch (err) {
+        console.error('[ChatArea] Failed to load session messages:', err);
+      }
+      // Mark as loaded regardless (avoid retry loops)
+      setLoadedSessions((prev) => new Set([...prev, activeSessionId]));
+    };
+
+    loadMessages();
+  }, [activeSessionId, loadedSessions, setLoadedSessions, setMessages]);
 
   // ============================================
   // 打开 Artifact 面板到指定 Tab
