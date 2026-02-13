@@ -144,6 +144,9 @@ function SessionItem({ session, isActive, onClick }: SessionItemProps) {
   // 获取显示名称：优先用户自定义名称 > 首条消息预览 > 默认
   const displayName = session.name || session.preview || 'New Chat';
 
+  // 相对时间
+  const timeAgo = formatRelativeTime(session.lastMessageAt ?? session.createdAt);
+
   return (
     <div
       onClick={onClick}
@@ -152,16 +155,37 @@ function SessionItem({ session, isActive, onClick }: SessionItemProps) {
         text-[var(--font-size-sm)] font-medium
         px-[14px] py-[10px] mb-1
         transition-colors duration-[var(--transition-fast)]
-        whitespace-nowrap overflow-hidden text-ellipsis
+        flex items-center justify-between gap-2
         ${isActive
           ? 'bg-[var(--selected-bg)] text-[var(--text-primary)]'
           : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
         }
       `}
     >
-      {/* TODO: 处理中时左侧显示 Spinner */}
-      {/* TODO: 有未读消息时显示未读标记 */}
-      {displayName}
+      <span className="whitespace-nowrap overflow-hidden text-ellipsis flex-1">
+        {displayName}
+      </span>
+      {timeAgo && (
+        <span className="text-[var(--font-size-xs)] text-[var(--text-muted)] whitespace-nowrap flex-shrink-0">
+          {timeAgo}
+        </span>
+      )}
     </div>
   );
+}
+
+/** Format timestamp to relative time (2m / 1h / 3d) */
+function formatRelativeTime(timestamp?: number): string {
+  if (!timestamp) return '';
+  const diff = Date.now() - timestamp;
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d`;
+  const months = Math.floor(days / 30);
+  return `${months}mo`;
 }

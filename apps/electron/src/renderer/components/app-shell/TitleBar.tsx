@@ -12,17 +12,36 @@
  * - 显示当前会话信息（标题、消息数、工作目录）
  */
 
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
+import { generateSessionId } from '@deskhand/core';
 import {
   sidebarOpenAtom,
   activeSessionIdAtom,
   sessionMetaMapAtom,
+  sessionIdsAtom,
+  memoryOnlySessionsAtom,
 } from '../../atoms/sessions';
 
 export function TitleBar() {
   const [sidebarOpen, setSidebarOpen] = useAtom(sidebarOpenAtom);
-  const [activeSessionId] = useAtom(activeSessionIdAtom);
-  const [sessionMetaMap] = useAtom(sessionMetaMapAtom);
+  const [activeSessionId, setActiveSessionId] = useAtom(activeSessionIdAtom);
+  const [sessionMetaMap, setSessionMetaMap] = useAtom(sessionMetaMapAtom);
+  const setSessionIds = useSetAtom(sessionIdsAtom);
+  const setMemoryOnlySessions = useSetAtom(memoryOnlySessionsAtom);
+
+  // 新建会话
+  const handleNewChat = () => {
+    const newId = generateSessionId();
+    const now = Date.now();
+    setSessionMetaMap((prev) => {
+      const next = new Map(prev);
+      next.set(newId, { id: newId, createdAt: now });
+      return next;
+    });
+    setSessionIds((prev) => [newId, ...prev]);
+    setActiveSessionId(newId);
+    setMemoryOnlySessions((prev) => new Set([...prev, newId]));
+  };
 
   // 获取当前会话元数据
   const currentSession = activeSessionId
@@ -80,13 +99,9 @@ export function TitleBar() {
           </svg>
         </TitleBarButton>
 
-        {/* 功能：新建会话
-            事件：onClick → 调用 window.electronAPI.createSession()
-            TODO: 实现新建会话 */}
+        {/* 功能：新建会话 */}
         <TitleBarButton
-          onClick={() => {
-            // TODO: 调用 window.electronAPI.createSession()
-          }}
+          onClick={handleNewChat}
           title="New chat"
         >
           <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
