@@ -11,13 +11,16 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useSetAtom } from 'jotai';
+import { useSetAtom, useAtomValue } from 'jotai';
 import type { AgentEvent, Message } from '@deskhand/core';
-import { generateMessageId } from '@deskhand/core';
+import { generateMessageId, messageToStored } from '@deskhand/core';
 import {
   sessionMessagesFamily,
   sessionProcessingFamily,
   permissionRequestAtom,
+  sessionMetaMapAtom,
+  sessionIdsAtom,
+  memoryOnlySessionsAtom,
 } from '../atoms/sessions';
 
 /**
@@ -36,9 +39,44 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
   const setMessages = useSetAtom(sessionMessagesFamily(sessionId));
   const setProcessing = useSetAtom(sessionProcessingFamily(sessionId));
   const setPermissionRequest = useSetAtom(permissionRequestAtom);
+  const setSessionMetaMap = useSetAtom(sessionMetaMapAtom);
+  const setSessionIds = useSetAtom(sessionIdsAtom);
+  const memoryOnlySessions = useAtomValue(memoryOnlySessionsAtom);
 
   // Track the current streaming message ID
   const streamingMessageIdRef = useRef<string | null>(null);
+
+  // ─── Persistence helper ───
+  const persistMessage = useCallback((msg: Message) => {
+    // Don't persist for memory-only sessions (not yet on disk)
+    if (memoryOnlySessions.has(sessionId)) return;
+    window.electronAPI?.appendMessage(sessionId, messageToStored(msg)).catch((err) => {
+      console.error('[useAgentEvents] persist error:', err);
+    });
+  }, [sessionId, memoryOnlySessions]);
+
+  const updateMeta = useCallback((updates: { lastMessageAt?: number; preview?: string }) => {
+    if (memoryOnlySessions.has(sessionId)) return;
+    // Update atoms
+    setSessionMetaMap((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(sessionId);
+      if (existing) {
+        next.set(sessionId, { ...existing, ...updates });
+      }
+      return next;
+    });
+    // Move to top of list
+    setSessionIds((prev) => {
+      if (prev[0] === sessionId) return prev;
+      const filtered = prev.filter((id) => id !== sessionId);
+      return [sessionId, ...filtered];
+    });
+    // Persist to disk
+    window.electronAPI?.updateSessionMeta(sessionId, updates).catch((err) => {
+      console.error('[useAgentEvents] updateMeta error:', err);
+    });
+  }, [sessionId, memoryOnlySessions, setSessionMetaMap, setSessionIds]);
 
   // ─── 事件处理器 ───
   const handleEvent = useCallback((eventSessionId: string, event: AgentEvent) => {
@@ -98,6 +136,8 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
               isIntermediate: event.isIntermediate,
               turnId: event.turnId,
             };
+            // Persist the complete message
+            persistMessage(newMessage);
             return [...prev, newMessage];
           }
 
@@ -113,6 +153,9 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
                 }
               : m
           );
+          // Persist the finalized message
+          const finalMsg = updated.find((m) => m.id === messageId);
+          if (finalMsg) persistMessage(finalMsg);
           streamingMessageIdRef.current = null;
           return updated;
         });
@@ -136,6 +179,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           parentToolUseId: event.parentToolUseId,
         };
         setMessages((prev) => [...prev, toolMessage]);
+        persistMessage(toolMessage);
         break;
       }
 
@@ -220,6 +264,8 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       case 'complete': {
         setProcessing(false);
         streamingMessageIdRef.current = null;
+        // Update session metadata with latest timestamp
+        updateMeta({ lastMessageAt: Date.now() });
         break;
       }
 
@@ -239,7 +285,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       default:
         console.log('[useAgentEvents] unknown event type:', (event as { type: string }).type);
     }
-  }, [sessionId, setMessages, setProcessing, setPermissionRequest]);
+  }, [sessionId, setMessages, setProcessing, setPermissionRequest, persistMessage, updateMeta]);
 
   // ─── 订阅 IPC 事件 ───
   useEffect(() => {

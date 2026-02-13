@@ -14,13 +14,16 @@
 
 import { useState, useCallback } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-import type { Message } from '@deskhand/core';
-import { generateMessageId } from '@deskhand/core';
+import type { Message, Session } from '@deskhand/core';
+import { generateMessageId, messageToStored } from '@deskhand/core';
 import {
   activeSessionIdAtom,
   sessionInputFamily,
   sessionMessagesFamily,
   sessionProcessingFamily,
+  sessionMetaMapAtom,
+  sessionIdsAtom,
+  memoryOnlySessionsAtom,
   selectedModelAtom,
   thinkingLevelAtom,
   workingDirectoryAtom,
@@ -47,6 +50,11 @@ export function InputToolbar() {
   // 消息和处理状态
   const setMessages = useSetAtom(sessionMessagesFamily(sessionKey));
   const [isProcessing, setProcessing] = useAtom(sessionProcessingFamily(sessionKey));
+
+  // Session persistence state
+  const [sessionMetaMap, setSessionMetaMap] = useAtom(sessionMetaMapAtom);
+  const [sessionIds, setSessionIds] = useAtom(sessionIdsAtom);
+  const [memoryOnlySessions, setMemoryOnlySessions] = useAtom(memoryOnlySessionsAtom);
 
   // 模型和思考级别配置
   const [selectedModel] = useAtom(selectedModelAtom);
@@ -102,8 +110,56 @@ export function InputToolbar() {
     // 3. 清空输入框
     setInputValue('');
 
-    // 4. 调用 IPC 发送消息（传递模型和思考级别配置）
-    // Skills are handled by the SDK's plugin system (lazy loading via Skill tool)
+    // 4. 持久化：如果是 memory-only session，先创建到磁盘
+    const isMemoryOnly = memoryOnlySessions.has(activeSessionId);
+    const now = Date.now();
+    const preview = trimmedInput.slice(0, 50);
+
+    try {
+      if (isMemoryOnly) {
+        const session: Session = {
+          id: activeSessionId,
+          createdAt: sessionMetaMap.get(activeSessionId)?.createdAt ?? now,
+          messageCount: 1,
+          lastMessageAt: now,
+          preview,
+        };
+        await window.electronAPI?.createSession(session);
+        // Remove from memory-only set
+        setMemoryOnlySessions((prev) => {
+          const next = new Set(prev);
+          next.delete(activeSessionId);
+          return next;
+        });
+      }
+
+      // Persist user message to disk
+      await window.electronAPI?.appendMessage(activeSessionId, messageToStored(userMessage));
+
+      // Update session metadata in atoms
+      setSessionMetaMap((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(activeSessionId);
+        next.set(activeSessionId, {
+          ...existing,
+          id: activeSessionId,
+          lastMessageAt: now,
+          preview: existing?.preview ?? preview,
+          messageCount: (existing?.messageCount ?? 0) + 1,
+        });
+        return next;
+      });
+
+      // Move session to top of list
+      setSessionIds((prev) => {
+        const filtered = prev.filter((id) => id !== activeSessionId);
+        return [activeSessionId, ...filtered];
+      });
+    } catch (error) {
+      console.error('[InputToolbar] persistence error:', error);
+    }
+
+    // 5. 调用 IPC 发送消息
     try {
       await window.electronAPI?.chat(activeSessionId, trimmedInput, {
         model: selectedModel,
@@ -113,9 +169,8 @@ export function InputToolbar() {
       });
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
-      // Error will be handled by useAgentEvents via error event
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode, memoryOnlySessions, setMemoryOnlySessions, sessionMetaMap, setSessionMetaMap, setSessionIds]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
