@@ -42,7 +42,7 @@ export interface ElectronAPI {
   createSession: (session: Session) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
   appendMessage: (sessionId: string, message: StoredMessage) => Promise<void>;
-  updateSessionMeta: (sessionId: string, updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount' | 'hidden'>>) => Promise<void>;
+  updateSessionMeta: (sessionId: string, updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount' | 'hidden' | 'hasUnread'>>) => Promise<void>;
 
   // Agent
   chat: (sessionId: string, message: string, config?: ChatConfig) => Promise<void>;

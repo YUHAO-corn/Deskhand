@@ -163,7 +163,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
  */
 export async function updateSessionMeta(
   sessionId: string,
-  updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount' | 'hidden'>>
+  updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount' | 'hidden' | 'hasUnread'>>
 ): Promise<void> {
   // 实现步骤：
   // 1. 读取完整的 session.jsonl
@@ -182,6 +182,7 @@ export async function updateSessionMeta(
     lastMessageAt: updates.lastMessageAt ?? session.lastMessageAt,
     preview: updates.preview ?? session.preview,
     hidden: updates.hidden ?? session.hidden,
+    hasUnread: updates.hasUnread ?? session.hasUnread,
   };
 
   // Rewrite the file

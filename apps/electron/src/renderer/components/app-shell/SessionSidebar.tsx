@@ -44,6 +44,21 @@ export function SessionSidebar() {
 
   // ─── Actions ───
 
+  const handleSessionClick = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    // Clear unread indicator
+    const meta = sessionMetaMap.get(sessionId);
+    if (meta?.hasUnread) {
+      setSessionMetaMap((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(sessionId);
+        if (existing) next.set(sessionId, { ...existing, hasUnread: false });
+        return next;
+      });
+      window.electronAPI?.updateSessionMeta(sessionId, { hasUnread: false });
+    }
+  };
+
   const handleRename = async (sessionId: string, newName: string) => {
     setRenamingId(null);
     if (!newName.trim()) return;
@@ -136,7 +151,7 @@ export function SessionSidebar() {
                 isRenaming={session.id === renamingId}
                 isMenuOpen={session.id === menuOpenId}
                 isDeleting={session.id === deletingId}
-                onClick={() => setActiveSessionId(session.id)}
+                onClick={() => handleSessionClick(session.id)}
                 onMenuToggle={() => setMenuOpenId(menuOpenId === session.id ? null : session.id)}
                 onMenuClose={() => setMenuOpenId(null)}
                 onRenameStart={() => { setMenuOpenId(null); setRenamingId(session.id); }}
@@ -292,6 +307,10 @@ function SessionItem({
         }
       `}
     >
+      {/* Unread indicator */}
+      {session.hasUnread && (
+        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+      )}
       <span className="whitespace-nowrap overflow-hidden text-ellipsis flex-1">
         {displayName}
       </span>

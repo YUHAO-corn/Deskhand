@@ -189,7 +189,7 @@ export function registerIpcHandlers(): void {
     await appendMessage(sessionId, message);
   });
 
-  ipcMain.handle(IPC_CHANNELS.UPDATE_SESSION_META, async (_, sessionId: string, updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount' | 'hidden'>>): Promise<void> => {
+  ipcMain.handle(IPC_CHANNELS.UPDATE_SESSION_META, async (_, sessionId: string, updates: Partial<Pick<Session, 'name' | 'lastMessageAt' | 'preview' | 'messageCount' | 'hidden' | 'hasUnread'>>): Promise<void> => {
     await updateSessionMeta(sessionId, updates);
   });
 
