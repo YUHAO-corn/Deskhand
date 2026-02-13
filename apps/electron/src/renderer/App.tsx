@@ -16,6 +16,7 @@ import { SessionSidebar } from './components/app-shell/SessionSidebar';
 import { ChatArea } from './components/chat/ChatArea';
 import { ArtifactPanel } from './components/artifact/ArtifactPanel';
 import { SettingsPage } from './pages/settings/SettingsPage';
+import { useBackgroundSessionEvents } from './hooks/useBackgroundSessionEvents';
 import {
   settingsOpenAtom,
   activeSessionIdAtom,
@@ -89,6 +90,9 @@ function AppContent() {
 
     initialize();
   }, [setActiveSessionId, setWorkingDirectory, setSkills, setSessionMetaMap, setSessionIds, setMemoryOnlySessions]);
+
+  // Global listener for non-active session events (persistence + unread marking)
+  useBackgroundSessionEvents();
 
   // Loading state
   if (appState === 'loading') {
