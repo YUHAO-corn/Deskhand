@@ -12,13 +12,15 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom, useStore } from 'jotai';
 import type { AgentEvent, Message } from '@deskhand/core';
 import { generateMessageId, messageToStored } from '@deskhand/core';
 import {
   activeSessionIdAtom,
   sessionMetaMapAtom,
   sessionIdsAtom,
+  sessionProcessingFamily,
+  loadedSessionsAtom,
   memoryOnlySessionsAtom,
 } from '../atoms/sessions';
 
@@ -26,7 +28,9 @@ export function useBackgroundSessionEvents() {
   const activeSessionId = useAtomValue(activeSessionIdAtom);
   const setSessionMetaMap = useSetAtom(sessionMetaMapAtom);
   const setSessionIds = useSetAtom(sessionIdsAtom);
+  const setLoadedSessions = useSetAtom(loadedSessionsAtom);
   const memoryOnlySessions = useAtomValue(memoryOnlySessionsAtom);
+  const store = useStore();
 
   // Track streaming message per background session
   const streamingIdsRef = useRef<Map<string, string>>(new Map());
@@ -80,13 +84,21 @@ export function useBackgroundSessionEvents() {
       case 'complete': {
         streamingIdsRef.current.delete(eventSessionId);
         const now = Date.now();
-        // Mark as unread
+        // Clear processing state via store
+        store.set(sessionProcessingFamily(eventSessionId), false);
+        // Mark as unread + update metadata
         setSessionMetaMap((prev) => {
           const next = new Map(prev);
           const existing = next.get(eventSessionId);
           if (existing) {
-            next.set(eventSessionId, { ...existing, hasUnread: true, lastMessageAt: now });
+            next.set(eventSessionId, { ...existing, hasUnread: true, lastMessageAt: now, isProcessing: false });
           }
+          return next;
+        });
+        // Remove from loadedSessions to force reload when user switches back
+        setLoadedSessions((prev) => {
+          const next = new Set(prev);
+          next.delete(eventSessionId);
           return next;
         });
         // Move to top
@@ -100,7 +112,7 @@ export function useBackgroundSessionEvents() {
         break;
       }
     }
-  }, [activeSessionId, memoryOnlySessions, setSessionMetaMap, setSessionIds]);
+  }, [activeSessionId, memoryOnlySessions, setSessionMetaMap, setSessionIds, setLoadedSessions, store]);
 
   useEffect(() => {
     const unsubscribe = window.electronAPI?.onAgentEvent(handleEvent);
