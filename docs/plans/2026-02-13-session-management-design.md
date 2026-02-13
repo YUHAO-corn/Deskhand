@@ -229,3 +229,61 @@ Agent 事件到达
 - 分类/标签/收藏
 - 虚拟滚动
 - 多窗口
+
+---
+
+## 实现 Vertical Slices
+
+### Slice 1：Session 持久化链路（地基）
+
+- 做什么：
+  - App 启动 → `listSessions()` 加载元数据 → 写入 atoms → sidebar 显示真实数据
+  - 当前的临时 session 改为：没有已有 session 时自动创建一个
+  - 用户发消息 → `createSession()` + `appendMessage()` 写入磁盘
+  - Agent 事件到达 → `appendMessage()` 写入磁盘 + 更新 metadata
+- 端到端验证：发消息 → 关闭 app → 重新打开 → sidebar 显示会话 → 点进去消息还在
+- 依赖：无
+- 复杂度：高（核心链路，涉及多层改动）
+
+### Slice 2：新建会话 + 切换
+
+- 做什么：
+  - TitleBar 的 New Chat 按钮 → 创建内存态空 session → 切换过去
+  - 点击 sidebar 项 → 切换 active session → 懒加载消息
+  - SessionItem 显示名称（preview 截断）+ 相对时间
+- 端到端验证：创建多个会话 → 来回切换 → 各自消息独立 → 最近的在最上面
+- 依赖：Slice 1
+- 复杂度：中
+
+### Slice 3：会话操作菜单
+
+- 做什么：
+  - Hover 时显示 `···` 按钮
+  - 点击弹出菜单：Rename / Archive / Delete
+  - Rename → inline 编辑名称
+  - Archive → 设置 `hidden: true`，从列表消失
+  - Delete → 确认框 → 删除文件 + 从 atoms 移除
+- 端到端验证：三个操作各自正常工作
+- 依赖：Slice 2
+- 复杂度：中
+
+### Slice 4：未读标记（= Skill 系统 Slice C）
+
+- 做什么：
+  - `hasUnread: boolean` 持久化到 session metadata
+  - SessionItem 显示蓝色圆点
+  - 点击进入后自动消除（`updateSessionMeta({ hasUnread: false })`）
+  - 提供 `sessions:update-meta` IPC 供后台创建 session 时使用
+- 端到端验证：手动创建一个 `hasUnread: true` 的 session → 蓝色圆点出现 → 点击后消失
+- 依赖：Slice 1
+- 复杂度：低
+
+### 依赖关系
+
+```
+Slice 1（持久化链路）──→ Slice 2（新建+切换）──→ Slice 3（操作菜单）
+         │
+         └──→ Slice 4（未读标记 = Skill Slice C）
+```
+
+Slice 1 是地基，完成后 Slice 2/4 可以并行。Slice 3 依赖 Slice 2（需要多个会话才能测试操作）。
