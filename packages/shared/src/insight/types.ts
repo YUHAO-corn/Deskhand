@@ -33,6 +33,28 @@ export interface RepeatedPattern {
   skillOpportunity: string;
 }
 
+/** Result from searching skills.sh for a matching skill */
+export interface SkillSearchResult {
+  /** Whether a matching skill was found */
+  found: boolean;
+  /** Skill name (e.g., "weekly-report") */
+  skillName?: string;
+  /** Skill description */
+  skillDescription?: string;
+  /** Install command (e.g., "npx skills add weekly-report") */
+  installCommand?: string;
+}
+
+/** Action button embedded in an insight report message */
+export interface InsightAction {
+  /** Button label (natural language, no technical terms) */
+  label: string;
+  /** Preset message to auto-send when clicked */
+  presetMessage: string;
+  /** Button style */
+  style: 'primary' | 'secondary';
+}
+
 /** Result of cross-session pattern analysis */
 export interface InsightResult {
   /** Whether valuable patterns were found (quality gate) */
@@ -41,4 +63,8 @@ export interface InsightResult {
   patterns: RepeatedPattern[];
   /** Human-readable summary report (markdown) */
   report: string;
+  /** Skill search result for the top pattern (Stage 3) */
+  skillSearch?: SkillSearchResult;
+  /** Action buttons to embed in the report message */
+  actions?: InsightAction[];
 }

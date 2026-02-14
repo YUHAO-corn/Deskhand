@@ -130,6 +130,19 @@ export interface Message {
 
   // Artifact association (Deskhand-specific)
   artifacts?: Artifact[];
+
+  // Insight action buttons (embedded in insight report messages)
+  actions?: MessageAction[];
+}
+
+/** Action button embedded in a message (e.g., insight report recommendations) */
+export interface MessageAction {
+  /** Button label (natural language) */
+  label: string;
+  /** Preset message to auto-send when clicked */
+  presetMessage: string;
+  /** Button style */
+  style: 'primary' | 'secondary';
 }
 
 /**
@@ -175,9 +188,10 @@ export interface StoredMessage {
   errorTitle?: string;
   errorDetails?: string[];
   errorCanRetry?: boolean;
-}
 
-// ============ Helper ============
+  // Insight action buttons
+  actions?: MessageAction[];
+}
 
 /** Generate a unique message ID */
 export function generateMessageId(): string {

@@ -27,6 +27,7 @@ export type {
   StoredAttachment,
   Message,
   StoredMessage,
+  MessageAction,
 } from './message.ts';
 export { generateMessageId } from './message.ts';
 
