@@ -9,12 +9,14 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { useSetAtom } from 'jotai';
 import { ChevronRight } from 'lucide-react';
 import type { AssistantTurn } from './turn-utils';
 import { deriveTurnPhase, shouldShowThinkingIndicator, getTurnIntent } from './turn-utils';
 import { ActivityTree } from './ActivityTree';
 import { Markdown } from './markdown/Markdown';
 import { ProcessingIndicator } from './ProcessingIndicator';
+import { pendingActionMessageAtom } from '../../atoms/sessions';
 
 interface TurnCardProps {
   turn: AssistantTurn;
@@ -57,6 +59,7 @@ function getPreviewText(
 export function TurnCard({ turn }: TurnCardProps) {
   const { response, activities, timestamp } = turn;
   const phase = deriveTurnPhase(turn);
+  const setPendingAction = useSetAtom(pendingActionMessageAtom);
 
   // Activity Header 展开/折叠状态（默认展开）
   const [isExpanded, setIsExpanded] = useState(true);
@@ -190,6 +193,28 @@ export function TurnCard({ turn }: TurnCardProps) {
             {isResponseStreaming && (
               <span className="inline-block w-2 h-4 ml-0.5 bg-current animate-pulse" />
             )}
+          </div>
+        )}
+
+        {/* Action buttons (e.g., insight report recommendations) */}
+        {response?.actions && response.actions.length > 0 && !isResponseStreaming && (
+          <div className="flex items-center gap-2 mt-4">
+            {response.actions.map((action, i) => (
+              <button
+                key={i}
+                onClick={() => setPendingAction(action.presetMessage)}
+                className={`
+                  px-4 py-2 rounded-lg text-sm font-medium
+                  transition-colors duration-150
+                  ${action.style === 'primary'
+                    ? 'bg-[var(--accent-color)] text-white hover:opacity-90'
+                    : 'border border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'
+                  }
+                `}
+              >
+                {action.label}
+              </button>
+            ))}
           </div>
         )}
       </div>

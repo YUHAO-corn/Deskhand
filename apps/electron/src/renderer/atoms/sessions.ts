@@ -100,3 +100,6 @@ export const workingDirectoryAtom = atom<string | null>(null);
 
 /** All loaded skills (for UI display in SkillsPopup) */
 export const skillsAtom = atom<Skill[]>([]);
+
+/** Pending action message to auto-send (set by action buttons, consumed by InputToolbar) */
+export const pendingActionMessageAtom = atom<string | null>(null);

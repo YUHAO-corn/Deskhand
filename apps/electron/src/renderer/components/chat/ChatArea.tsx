@@ -88,6 +88,7 @@ export function ChatArea() {
             errorTitle: sm.errorTitle,
             errorDetails: sm.errorDetails,
             errorCanRetry: sm.errorCanRetry,
+            actions: sm.actions,
           }) as import('@deskhand/core').Message[]);
           setMessages(msgs);
         }

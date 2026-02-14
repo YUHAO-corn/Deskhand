@@ -77,4 +77,6 @@ export interface ResponseContent {
   streamStartTime?: number;
   /** 是否为计划（使用计划变体渲染） */
   isPlan?: boolean;
+  /** Action buttons embedded in the message (e.g., insight recommendations) */
+  actions?: import('@deskhand/core').MessageAction[];
 }

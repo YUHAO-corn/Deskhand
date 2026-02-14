@@ -12,7 +12,7 @@
  * - 提供发送按钮
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import type { Message, Session } from '@deskhand/core';
 import { generateMessageId, messageToStored } from '@deskhand/core';
@@ -29,6 +29,7 @@ import {
   workingDirectoryAtom,
   permissionModeAtom,
   skillsAtom,
+  pendingActionMessageAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -91,8 +92,8 @@ export function InputToolbar() {
   // ============================================
   // 发送消息
   // ============================================
-  const handleSend = useCallback(async () => {
-    const trimmedInput = inputValue.trim();
+  const handleSend = useCallback(async (overrideMessage?: string) => {
+    const trimmedInput = (overrideMessage ?? inputValue).trim();
     if (!trimmedInput || !activeSessionId) return;
 
     // 1. 添加用户消息到 atoms
@@ -107,8 +108,10 @@ export function InputToolbar() {
     // 2. 设置处理状态
     setProcessing(true);
 
-    // 3. 清空输入框
-    setInputValue('');
+    // 3. 清空输入框（only when sending from input, not from action buttons）
+    if (!overrideMessage) {
+      setInputValue('');
+    }
 
     // 4. 持久化：如果是 memory-only session，先创建到磁盘
     const isMemoryOnly = memoryOnlySessions.has(activeSessionId);
@@ -178,6 +181,15 @@ export function InputToolbar() {
       handleSend();
     }
   };
+
+  // Watch for pending action messages (from insight report action buttons)
+  const [pendingAction, setPendingAction] = useAtom(pendingActionMessageAtom);
+  useEffect(() => {
+    if (pendingAction) {
+      setPendingAction(null);
+      handleSend(pendingAction);
+    }
+  }, [pendingAction, setPendingAction, handleSend]);
 
   // ============================================
   // 停止生成
