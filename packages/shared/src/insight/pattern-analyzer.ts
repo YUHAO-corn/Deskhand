@@ -8,7 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { SessionFacet, InsightResult } from './types.ts';
 
-const SONNET_MODEL = 'claude-sonnet-4-20250514';
+const SONNET_MODEL = 'claude-sonnet-4-5';
 
 const PATTERN_ANALYSIS_PROMPT = `You are analyzing structured summaries of a user's conversation history with an AI assistant.
 Your goal: find REPEATED behavioral patterns that could be automated as reusable "skills" (templates/workflows).
