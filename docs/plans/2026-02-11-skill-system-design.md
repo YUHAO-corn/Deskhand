@@ -465,6 +465,115 @@ A/B 和 C 可以并行开发，互不依赖。
 
 用户不需要知道"skill"这个概念的存在，只需要自然地和 AI 对话，内置 skill 会在合适的时机被 SDK 自动激活。
 
+## Q13: Skill Insight Agent 的上下文问题怎么解决？
+
+**结论：Map-Reduce 模式，原始消息永远不会全部进入同一个上下文窗口。**
+
+核心问题：如果把所有 session 的消息历史灌给一个 Agent，上下文肯定炸。
+
+解决方案：
+
+```
+Stage 1 (Map): 逐 session 独立提取 facet
+  → 每个 session 单独一次 AI 调用，输出结构化 JSON（约 200-300 tokens）
+  → 结果缓存，已分析过的不重复跑
+
+Stage 2 (Reduce): 只把提取出的 facet 汇总
+  → 50 个 facet × ~300 tokens ≈ 1.5 万 tokens，一个上下文窗口轻松装下
+  → 找出跨 session 的重复模式，而不是每个 session 单独推荐
+```
+
+关键洞察：50 个 session 不是推荐 50 个 skill。只有**重复出现**的模式才有价值——"用户过去一个月写了 8 次周报，结构都一样"才值得变成 skill，偶尔做一次的事不值得。
+
+## Q14: 单个 Session 的 Facet 提取方式？
+
+**结论：每个 session 一次 API 调用，完整消息直接喂给 AI。**
+
+讨论过的方案：
+- A: 一次调用 — 把单个 session 的完整消息喂给 AI，输出结构化 facet JSON（用户目标、任务类型、重复模式、摩擦点）。大部分 session 几十轮对话，token 量可控。极少数超长 session 做智能截断。
+- B: 两次调用 — 先用便宜模型压缩摘要，再用主模型从摘要中提取 facet。省 token 但多一轮调用，且压缩过程可能丢失对 skill 发现有价值的细节。
+
+选择 A，理由：
+- 大部分 session 一次调用就够
+- 信息无损，不会因为压缩丢失 skill 发现线索
+- 超长 session 是边缘 case，截断处理即可
+
+注意：facet 提取的目标是"发现用户反复做的事，推荐或创建 skill"，不是做使用统计。消息数量、工具调用次数、时长等指标对 skill 发现毫无帮助，需要的是语义理解。
+
+## Q15: 跨 Session 分析的维度？
+
+**结论：单一 prompt，不做多维度并行。**
+
+讨论过的方案：
+- A: 单一 prompt — 一个 prompt 搞定，让 AI 自己判断哪些模式值得提取
+- B: 多维度并行 — 像 Claude Code /insights 那样拆成几个独立 prompt 并行跑
+
+选择 A，理由：
+- 我们的目标很聚焦（找 skill 机会），不像 Claude Code 的 /insights 要做全面画像
+- 一个精心设计的 prompt 就够了，不需要多维度并行的复杂度
+
+## Q16: 手动触发的入口？
+
+**结论：Dev-only，不加 UI。**
+
+手动触发只是开发阶段验证分析质量用的，不上线。直接用 IPC 调用或 devtools console 触发即可。Slice F（自动触发）上线后这个入口就不重要了。
+
+## Q17: Facet 缓存存哪？
+
+**结论：每个 session 目录下存 `.facet.json`。**
+
+讨论过的方案：
+- A: 每个 session 目录下存 `.facet.json` — 和 session 数据放一起，session 删了缓存自然跟着删
+- B: 统一存到 `~/.deskhand/cache/facets/` — 集中管理，和 session 数据解耦
+
+选择 A，理由：
+- 缓存跟着 session 走，生命周期一致，零维护成本
+
+## Q18: Facet 提取和跨 Session 分析分别用什么模型？
+
+**结论：Haiku 提 facet，Sonnet 做跨 session 分析。**
+
+讨论过的方案：
+- A: Haiku — 最便宜最快，适合批量处理。facet 提取是结构化任务，Haiku 够用
+- B: Sonnet — 贵一点但理解力更强
+
+选择 A（facet 提取用 Haiku），理由：
+- facet 提取是相对简单的结构化提取任务，Haiku 性价比最高
+- Stage 2 的跨 session 模式分析用 Sonnet（需要更强的推理能力，但只有一次调用）
+
+## Q19: Insight Session 的报告怎么生成？用户回复怎么处理？
+
+**结论：预生成报告存为第一条 assistant 消息，用户回复走正常 agent 对话。**
+
+报告生成：
+- A: 预生成 — Stage 2 的输出直接作为新 session 的第一条 assistant 消息存入。用户打开就能看到，不需要再调 AI。
+- B: 实时生成 — 创建空 session，让 agent 实时生成报告。多一次 AI 调用且内容本质一样。
+
+选择 A，理由：分析结果已经有了，没必要再让 AI 重新说一遍。
+
+用户回复处理：
+- A: 不做特殊处理 — 正常 agent 对话，报告作为历史消息自然提供上下文
+- B: 注入额外 system context — 给 agent 额外注入角色提示
+
+选择 A，理由：Slice D 的目标是验证分析质量，不是做完整的互动体验。角色注入是 Slice E/F 的优化项。
+
+## Slice D 完整 Pipeline
+
+```
+触发（dev-only，IPC 或 console）
+  → 读取所有 session 列表
+  → Stage 1 (Map): 逐 session facet 提取
+    → 每个 session 完整消息 → Haiku → 结构化 JSON
+    → 结果缓存到 session 目录下 .facet.json
+    → 已有缓存的跳过
+  → Stage 2 (Reduce): 所有 facet 汇总 → 单一 prompt → Sonnet
+    → 找出跨 session 的重复模式
+  → 质量门槛：无有价值模式 → 静默退出
+  → 通过 → 创建新 session（hasUnread: true）
+  → Stage 2 分析报告存为第一条 assistant 消息
+  → 用户打开 → 看到报告 → 可正常对话互动
+```
+
 ---
 
 ## ~~最小链路实现（v1 - 已废弃）~~
