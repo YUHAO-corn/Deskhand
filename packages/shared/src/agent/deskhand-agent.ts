@@ -90,7 +90,7 @@ export class DeskhandAgent {
     // - ANTHROPIC_BASE_URL
 
     // Model priority: runtime options > agent options > env var > default
-    const effectiveModel = options?.model || this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+    const effectiveModel = options?.model || this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
 
     // TODO: thinkingLevel needs to be mapped to SDK parameters (e.g., budget_tokens)
     // For now, we log it but don't apply it until we understand the SDK's API
