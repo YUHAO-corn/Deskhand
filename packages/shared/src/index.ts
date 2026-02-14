@@ -15,3 +15,4 @@ export * from './agent/index.ts';
 export * from './config/index.ts';
 export * from './sessions/index.ts';
 export * from './skills/index.ts';
+export * from './insight/index.ts';
