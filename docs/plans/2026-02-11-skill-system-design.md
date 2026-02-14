@@ -673,15 +673,107 @@ Agent 从 insight 分析中已有足够信息生成完整的 SKILL.md（frontmat
 
 ## Slice E 完整流程
 
+> ⚠️ 以下为 v2 架构（Q26-Q28 修正后）。v1 的 Stage 2+3+硬编码方案已废弃。
+
+### 架构修正背景（Q26-Q28）
+
+v1 实现中发现的问题：
+1. Stage 2（Sonnet 分析）和 Stage 3（npx skills find）是割裂的，Stage 2 写报告时不知道搜索结果
+2. `buildRecommendation()` 硬编码推荐文案，和 AI 生成的报告语气不一致
+3. 报告列出多个 pattern 但推荐只针对一个，用户不知道在解决哪个问题
+4. 推荐的 skill 只有名字没有描述，用户不敢装
+
+### Q26: 报告聚焦范围？
+
+**结论：只聚焦最高频的一个 pattern。**
+
+- A: 只讲一个 pattern，从分析到推荐一条线贯穿 ✅
+- B: 展示所有 pattern，推荐部分标注针对哪个
+
+选择 A，理由：信息不分散，用户不会困惑"你到底在解决哪个问题"。
+
+### Q27: 分析 + 搜索 + 报告生成的架构？
+
+**结论：合并为单个 Agent 调用，用 DeskhandAgent + find-skills skill。**
+
+v1 流程（已废弃）：
 ```
-Slice D 的 Pipeline 完成后：
-  → Stage 3: 对最高频 pattern 跑 `npx skills find`
-    → 找到匹配 → 报告里展示"有现成方案" + 内嵌"帮我装上"按钮
-    → 没找到 → 报告里展示"可以帮你记住偏好" + 内嵌"帮我设置"按钮
-  → 用户点击按钮
-    → "帮我装上" → 自动发送预设消息 → agent 用 Bash 执行 npx skills add
-    → "帮我设置" → 自动发送预设消息 → agent 创建 skill 目录 + SKILL.md
-  → 完成后追加状态消息
+Stage 2: Sonnet 分析 patterns → 生成 report（不知道搜索结果）
+Stage 3: 代码调用 npx skills find（AI 不参与）
+buildRecommendation(): 硬编码拼接推荐文案
+```
+
+v2 流程：
+```
+Stage 1: Haiku 逐 session 提取 facet（不变，批量预处理 + 缓存）
+Stage 2: 创建 insight session → DeskhandAgent 接收 facets + prompt
+  → Agent 自己分析模式（聚焦最高频的一个）
+  → Agent 自然调用 find-skills 搜索匹配的 skill
+  → Agent 评估搜索结果是否真的匹配
+  → Agent 写出完整报告 + 推荐
+  → 报告末尾输出结构化 JSON 标记推荐动作
+  → 我们解析 JSON → 转为 UI action 按钮
+```
+
+理由：
+- AI 全程有上下文，报告自然连贯
+- 不需要 pattern-analyzer.ts、skill-searcher.ts、buildRecommendation()
+- find-skills 已是内置 skill，agent 直接可用
+- 用户回复时 agent 已有完整分析记忆
+
+### Q28: Agent 中间过程是否对用户可见？
+
+**结论：可见。Activity Tree 里展示搜索步骤。**
+
+- A: 只看到最终报告
+- B: 能看到完整过程（Activity Tree 里有 find-skills 搜索步骤）✅
+
+选择 B，理由：用户能看到"AI 搜索了什么、找到了什么"，增加透明度和信任感。
+
+### Action 按钮实现
+
+Agent 的 prompt 约定：报告末尾输出一个 `[ACTIONS]...[/ACTIONS]` JSON 块，标记推荐动作。Pipeline 后处理：
+1. 从 agent 最终回复中提取 `[ACTIONS]` 块
+2. 解析为 `MessageAction[]`
+3. 从显示内容中去掉 `[ACTIONS]` 块
+4. 将 actions 附加到消息的 `actions` 字段
+
+### 后台运行
+
+- 创建 session 到磁盘但不通知 renderer
+- Agent 在后台跑完整个分析流程
+- 完成后才发 `sessions:refresh`
+- 用户感知：突然出现新 session + 未读标记（和 Slice D 体验一致）
+
+### 要删除的代码
+
+- `packages/shared/src/insight/pattern-analyzer.ts` — Sonnet 独立分析（被 agent 替代）
+- `packages/shared/src/insight/skill-searcher.ts` — npx skills find 封装（被 find-skills skill 替代）
+- `insight-pipeline.ts` 中的 `buildRecommendation()` — 硬编码推荐文案（被 agent 自然语言替代）
+
+### 要新增/修改的代码
+
+- 新增 `insight-agent.ts` — Agent prompt + facets 组装 + action 解析
+- 修改 `insight-pipeline.ts` — 简化为 Stage 1 → insight-agent → 后处理
+- 保留 action 按钮 UI（TurnCard 渲染 + pendingActionAtom 机制）
+
+### 完整端到端流程
+
+```
+触发（dev-only 或定期自动）
+  → Stage 1: Haiku 逐 session 提取 facet（带缓存）
+  → 创建 insight session（不通知 renderer）
+  → DeskhandAgent.chat(facets + prompt)
+    → Agent 分析最高频模式
+    → Agent 调用 find-skills 搜索
+    → Agent 写报告 + [ACTIONS] JSON
+  → 后处理：解析 [ACTIONS] → MessageAction[]
+  → 通知 renderer（sessions:refresh）
+  → 用户打开 session
+    → 看到完整过程（Activity Tree）+ 报告 + 按钮
+    → 点击"帮我装上" → 自动发送预设消息 → agent 执行安装
+    → 点击"帮我设置" → 自动发送预设消息 → agent 创建 SKILL.md
+    → 点击"先不用了" → 发送感谢消息
 ```
 
 ---
