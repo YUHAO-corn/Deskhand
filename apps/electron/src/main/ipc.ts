@@ -34,7 +34,7 @@ import {
 } from '@deskhand/shared/sessions';
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import { loadSkills } from '@deskhand/shared/skills';
-import { runInsightPipeline } from '@deskhand/shared/insight';
+import { runInsightPipeline, type InsightPipelineConfig } from '@deskhand/shared/insight';
 
 // ============ Agent Instance Management ============
 
@@ -285,7 +285,23 @@ export function registerIpcHandlers(): void {
     if (!apiKey) {
       return { created: false, error: 'No API key configured' };
     }
-    const result = await runInsightPipeline(apiKey);
+
+    // Resolve CLI path (same logic as getOrCreateAgent)
+    const basePath = app.isPackaged ? app.getAppPath() : process.cwd();
+    const cliPath = join(basePath, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
+
+    const pipelineConfig: InsightPipelineConfig = {
+      apiKey,
+      pathToClaudeCodeExecutable: cliPath,
+    };
+
+    const result = await runInsightPipeline(pipelineConfig);
+
+    // Store SDK session ID for conversation continuity
+    if (result.created && result.sessionId && result.sdkSessionId) {
+      sdkSessionIds.set(result.sessionId, result.sdkSessionId);
+    }
+
     // Notify renderer to refresh session list
     if (result.created) {
       event.sender.send('sessions:refresh');
