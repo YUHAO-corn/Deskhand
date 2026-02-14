@@ -34,6 +34,7 @@ import {
 } from '@deskhand/shared/sessions';
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import { loadSkills } from '@deskhand/shared/skills';
+import { runInsightPipeline } from '@deskhand/shared/insight';
 
 // ============ Agent Instance Management ============
 
@@ -117,6 +118,9 @@ export const IPC_CHANNELS = {
 
   // Skills
   LOAD_SKILLS: 'skills:load',
+
+  // Insight (dev-only)
+  TRIGGER_INSIGHT: 'insight:trigger',
 } as const;
 
 // ============ Register Handlers ============
@@ -272,5 +276,20 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.LOAD_SKILLS, async () => {
     return loadSkills();
+  });
+
+  // ===== Insight (dev-only) =====
+
+  ipcMain.handle(IPC_CHANNELS.TRIGGER_INSIGHT, async (event) => {
+    const apiKey = process.env.ANTHROPIC_API_KEY || await getApiKey();
+    if (!apiKey) {
+      return { created: false, error: 'No API key configured' };
+    }
+    const result = await runInsightPipeline(apiKey);
+    // Notify renderer to refresh session list
+    if (result.created) {
+      event.sender.send('sessions:refresh');
+    }
+    return result;
   });
 }

@@ -55,6 +55,12 @@ export interface ElectronAPI {
 
   // Skills
   loadSkills: () => Promise<Skill[]>;
+
+  // Insight (dev-only)
+  triggerInsight: () => Promise<{ created: boolean; sessionId?: string; error?: string }>;
+
+  // Events
+  onSessionsRefresh: (callback: () => void) => () => void;
 }
 
 // ============ IPC Channels ============
@@ -76,6 +82,7 @@ const IPC_CHANNELS = {
   AGENT_EVENT: 'agent:event',
   SELECT_DIRECTORY: 'directory:select',
   LOAD_SKILLS: 'skills:load',
+  TRIGGER_INSIGHT: 'insight:trigger',
 } as const;
 
 // ============ Expose API ============
@@ -115,6 +122,16 @@ const electronAPI: ElectronAPI = {
 
   // Skills
   loadSkills: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_SKILLS),
+
+  // Insight (dev-only)
+  triggerInsight: () => ipcRenderer.invoke(IPC_CHANNELS.TRIGGER_INSIGHT),
+
+  // Events
+  onSessionsRefresh: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('sessions:refresh', handler);
+    return () => ipcRenderer.removeListener('sessions:refresh', handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

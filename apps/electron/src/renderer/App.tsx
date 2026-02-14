@@ -94,6 +94,18 @@ function AppContent() {
   // Global listener for non-active session events (persistence + unread marking)
   useBackgroundSessionEvents();
 
+  // Listen for session list refresh events (e.g., after insight pipeline creates a session)
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.onSessionsRefresh(async () => {
+      const metas = await window.electronAPI.listSessions();
+      const metaMap = new Map(metas.map((m) => [m.id, m]));
+      const ids = metas.map((m) => m.id);
+      setSessionMetaMap(metaMap);
+      setSessionIds(ids);
+    });
+    return unsubscribe;
+  }, [setSessionMetaMap, setSessionIds]);
+
   // Loading state
   if (appState === 'loading') {
     return (
