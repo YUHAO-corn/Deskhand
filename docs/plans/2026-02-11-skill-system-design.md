@@ -730,6 +730,93 @@ Stage 2: 创建 insight session → DeskhandAgent 接收 facets + prompt
 
 选择 B，理由：用户能看到"AI 搜索了什么、找到了什么"，增加透明度和信任感。
 
+## Slice F: 定期自动触发
+
+### Q29: 触发的时机用什么方式？
+
+**结论：每次对话结束后检查。**
+
+讨论过的方案：
+- A: 每次对话结束后检查 — agent.chat() 完成后，检查是否满足触发条件。自然嵌入现有流程，不需要额外定时器。
+- B: 定时器轮询 — app 启动时 setInterval，每 24 小时检查一次。时间精确但用户不用 app 时白跑。
+- C: App 启动时检查 — 每次打开 app 时检查。简单但用户一直不关 app 就永远不触发。
+
+选择 A，理由：
+- 不引入新的定时器机制，复用现有对话流程
+- 触发频率自然跟用户活跃度挂钩——用得多分析得多，不用就不打扰
+- 实现最简单，在 ipc.ts 的 AGENT_CHAT handler 末尾加一个异步检查即可
+
+### Q30: 触发的阈值用什么？
+
+**结论：对话次数，每 20 次新对话触发一次。**
+
+讨论过的方案：
+- A: 对话次数 — 每完成 N 次对话后触发。跟用户实际使用频率挂钩。
+- B: 时间间隔 — 距离上次 insight 超过 N 天。节奏固定但可能数据量不够。
+- C: 两者结合 — 至少 N 次对话 AND 至少间隔 M 天。
+
+选择 A，N=20，理由：
+- 20 个对话里出现 3+ 次的模式比 10 个里出现 2 次的更可信
+- 普通用户大概 1-2 周触发一次，重度用户 3-5 天一次，都不算打扰
+- 加上质量门槛（没发现有价值的模式就不出声），实际推送频率更低
+
+为什么不是 10：用户提出了 skill 膨胀问题——如果推送太频繁，长期积累下来 skill 越来越多（10 个、20 个），反而成为负担。20 次的间隔在"数据充足"和"不打扰"之间取得更好的平衡。
+
+### Q31: 如何避免重复推荐同一个模式？
+
+**结论：只分析上次 insight 之后的新 session。**
+
+讨论过的方案：
+- A: 只分析新对话 — 每次 insight 只看 `lastInsightAt` 之后的新 session。同一个模式不会被反复发现。
+- B: 记录已推荐的模式 — 维护"已推荐列表"，下次分析时排除。更精确但多一层状态管理。
+- C: 设上限 — 自动创建的 skill 最多 N 个，到上限后停止推送。
+
+选择 A，理由：
+- 如果上次发现了重复模式，用户接受了 → 再推荐没意义
+- 如果用户不接受 → 再推荐也没意义
+- 自然避免重复推荐，不需要额外的状态管理
+- 如果老模式在新对话中又出现，说明用户没采纳上次建议，不该再烦他
+
+### Q32: "上次 insight"的状态存哪？
+
+**结论：存到 config 文件，加 `lastInsightAt` 字段。**
+
+讨论过的方案：
+- A: 存到 config 文件 — 复用现有 `~/.deskhand/config.json`，加一个 `lastInsightAt` 时间戳字段。
+- B: 存到独立文件 — `~/.deskhand/insight-state.json`，专门记录 insight 相关状态。
+
+选择 A，理由：
+- 复用现有持久化机制，零额外基础设施
+- 只需要一个时间戳字段，不值得单独开文件
+
+### Slice F 完整流程
+
+```
+用户完成一次对话（agent.chat() 返回）
+  → 异步检查触发条件（不阻塞当前对话）
+    → 从 config 读 lastInsightAt（默认 0）
+    → 统计 createdAt > lastInsightAt 的用户 session 数量（排除 Skill Insight session）
+    → 数量 < 20 → 不触发，退出
+    → 数量 >= 20 → 检查 insightRunning 锁
+      → 已在运行 → 退出
+      → 未运行 → 设锁，开始 pipeline
+        → Stage 1: Haiku 逐 session 提取 facet（只处理新 session，带缓存）
+        → Stage 2: DeskhandAgent 分析 + 搜索 + 写报告
+        → 质量门槛：无有价值模式 → 静默退出
+        → 通过 → 创建 insight session + 未读标记
+        → 更新 config.lastInsightAt = Date.now()
+        → 通知 renderer（sessions:refresh）
+        → 释放锁
+```
+
+### 要修改的代码
+
+- `ipc.ts` AGENT_CHAT handler — 末尾加异步触发检查
+- `insight-pipeline.ts` — 接受 `sinceTimestamp` 参数，只分析该时间之后的 session
+- `facet-extractor.ts` — `extractAllFacets()` 接受时间过滤参数
+- `config` 类型 — 添加 `lastInsightAt?: number` 字段
+- `ipc.ts` — 添加 `insightRunning` 锁变量
+
 ### Action 按钮实现
 
 Agent 的 prompt 约定：报告末尾输出一个 `[ACTIONS]...[/ACTIONS]` JSON 块，标记推荐动作。Pipeline 后处理：
