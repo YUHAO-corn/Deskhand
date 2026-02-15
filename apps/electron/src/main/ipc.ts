@@ -44,6 +44,15 @@ const agents = new Map<string, DeskhandAgent>();
 // Map of sessionId -> SDK session ID (for conversation continuity)
 const sdkSessionIds = new Map<string, string>();
 
+// Insight pipeline lock (prevent concurrent runs)
+let insightRunning = false;
+
+/** Resolve path to the Claude Agent SDK cli.js */
+function getCliPath(): string {
+  const basePath = app.isPackaged ? app.getAppPath() : process.cwd();
+  return join(basePath, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
+}
+
 // Get or create agent for a session
 async function getOrCreateAgent(sessionId: string, workingDirectory?: string): Promise<DeskhandAgent | null> {
   if (agents.has(sessionId)) {
@@ -54,16 +63,10 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
   const apiKey = process.env.ANTHROPIC_API_KEY || await getApiKey();
   if (!apiKey) return null;
 
-  // Resolve the path to the SDK's cli.js
-  // In development: use process.cwd() (project root)
-  // In packaged app: use app.getAppPath()
-  const basePath = app.isPackaged ? app.getAppPath() : process.cwd();
-  const sdkRelativePath = join('node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
-  let cliPath = join(basePath, sdkRelativePath);
+  const cliPath = getCliPath();
 
   // For monorepos, try root level if not found locally
   if (!existsSync(cliPath) && !app.isPackaged) {
-    // We're already at project root in dev mode, so this should work
     console.log('[ipc] SDK cli.js not found at:', cliPath);
   }
 
@@ -89,6 +92,63 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
 
   agents.set(sessionId, agent);
   return agent;
+}
+
+// ============ Insight Auto-Trigger ============
+
+const INSIGHT_THRESHOLD = 20; // Trigger after N new conversations
+
+/**
+ * Check if insight pipeline should run, and run it if conditions are met.
+ * Called asynchronously after each agent.chat() completes.
+ * Does not block the caller.
+ */
+async function maybeRunInsight(sender: Electron.WebContents): Promise<void> {
+  if (insightRunning) return;
+
+  try {
+    const config = await loadConfig();
+    const lastInsightAt = config?.lastInsightAt ?? 0;
+
+    // Count user sessions created after last insight (exclude Skill Insight sessions)
+    const sessions = await listSessions();
+    const newSessionCount = sessions.filter(
+      (s) => s.name !== 'Skill Insight' && s.createdAt && s.createdAt > lastInsightAt,
+    ).length;
+
+    if (newSessionCount < INSIGHT_THRESHOLD) return;
+
+    const apiKey = process.env.ANTHROPIC_API_KEY || await getApiKey();
+    if (!apiKey) return;
+
+    insightRunning = true;
+    console.log(`[Insight] Auto-trigger: ${newSessionCount} new sessions since last insight`);
+
+    const result = await runInsightPipeline({
+      apiKey,
+      pathToClaudeCodeExecutable: getCliPath(),
+      sinceTimestamp: lastInsightAt,
+    });
+
+    // Store SDK session ID for conversation continuity
+    if (result.created && result.sessionId && result.sdkSessionId) {
+      sdkSessionIds.set(result.sessionId, result.sdkSessionId);
+    }
+
+    // Update lastInsightAt in config
+    await saveConfig({ ...config, lastInsightAt: Date.now() });
+
+    // Notify renderer
+    if (result.created) {
+      sender.send('sessions:refresh');
+    }
+
+    console.log(`[Insight] Auto-trigger complete: created=${result.created}`);
+  } catch (error) {
+    console.error('[Insight] Auto-trigger failed:', error);
+  } finally {
+    insightRunning = false;
+  }
 }
 
 // ============ IPC Channel Names ============
@@ -231,6 +291,9 @@ export function registerIpcHandlers(): void {
         event.sender.send('agent:event', sessionId, agentEvent);
       },
     });
+
+    // Auto-trigger insight check (async, non-blocking)
+    maybeRunInsight(event.sender).catch(() => {});
   });
 
   ipcMain.handle(IPC_CHANNELS.AGENT_STOP, async (_, sessionId: string) => {
@@ -286,13 +349,9 @@ export function registerIpcHandlers(): void {
       return { created: false, error: 'No API key configured' };
     }
 
-    // Resolve CLI path (same logic as getOrCreateAgent)
-    const basePath = app.isPackaged ? app.getAppPath() : process.cwd();
-    const cliPath = join(basePath, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
-
     const pipelineConfig: InsightPipelineConfig = {
       apiKey,
-      pathToClaudeCodeExecutable: cliPath,
+      pathToClaudeCodeExecutable: getCliPath(),
     };
 
     const result = await runInsightPipeline(pipelineConfig);

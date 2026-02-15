@@ -119,12 +119,18 @@ export async function extractSessionFacet(
 /**
  * Extract facets from all sessions.
  * Skips sessions that already have cached facets.
+ * @param sinceTimestamp - Only process sessions created after this timestamp (0 = all)
  */
-export async function extractAllFacets(client: Anthropic): Promise<SessionFacet[]> {
+export async function extractAllFacets(client: Anthropic, sinceTimestamp = 0): Promise<SessionFacet[]> {
   const sessions = await listSessions();
   const facets: SessionFacet[] = [];
 
   for (const session of sessions) {
+    // Skip insight sessions (created by the pipeline itself)
+    if (session.name === 'Skill Insight') continue;
+    // Skip sessions before the cutoff
+    if (sinceTimestamp && session.createdAt && session.createdAt <= sinceTimestamp) continue;
+
     const facet = await extractSessionFacet(client, session.id);
     if (facet) facets.push(facet);
   }

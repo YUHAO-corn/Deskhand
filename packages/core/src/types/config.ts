@@ -29,6 +29,9 @@ export interface AppConfig {
     width: number;
     height: number;
   };
+
+  // Insight
+  lastInsightAt?: number;            // Timestamp of last insight pipeline run
 }
 
 // ============ Auth State ============

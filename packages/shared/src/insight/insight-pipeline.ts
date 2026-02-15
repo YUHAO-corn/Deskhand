@@ -17,6 +17,8 @@ export interface InsightPipelineConfig {
   apiKey: string;
   pathToClaudeCodeExecutable: string;
   workingDirectory?: string;
+  /** Only analyze sessions created after this timestamp (0 = all) */
+  sinceTimestamp?: number;
 }
 
 interface InsightPipelineResult {
@@ -39,9 +41,9 @@ interface InsightPipelineResult {
 export async function runInsightPipeline(config: InsightPipelineConfig): Promise<InsightPipelineResult> {
   const client = new Anthropic({ apiKey: config.apiKey });
 
-  // Stage 1: Extract facets
+  // Stage 1: Extract facets (only new sessions if sinceTimestamp provided)
   console.log('[InsightPipeline] Stage 1: Extracting facets...');
-  const facets = await extractAllFacets(client);
+  const facets = await extractAllFacets(client, config.sinceTimestamp ?? 0);
   console.log(`[InsightPipeline] Extracted ${facets.length} facets`);
 
   if (facets.length < 2) {
