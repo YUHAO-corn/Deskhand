@@ -126,7 +126,7 @@ export function ChatArea() {
   }, [messages]);
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--bg-primary)] relative">
+    <div className="flex-1 flex flex-col bg-[var(--bg-primary)] relative" style={{ minWidth: 400 }}>
       {/* ============================================
           区域：消息列表
           功能：渲染所有 Turn（用户消息 + AI 回复）

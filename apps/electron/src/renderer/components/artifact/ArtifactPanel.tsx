@@ -4,10 +4,11 @@
  * Agent 产出物的渲染查看器。
  * 自动捕获 Write/Edit 工具操作的文件，以渲染效果展示给用户。
  *
- * 布局：左侧 artifact 列表（200px）+ 右侧预览区域
+ * 布局：toolbar（含文件切换 dropdown）+ 全宽预览区域
+ * 宽度：比例制，默认占可用空间 50%，对话区最小 400px
  */
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   artifactPanelOpenAtom,
@@ -47,6 +48,41 @@ export function ArtifactPanel() {
   const [fileBase64, setFileBase64] = useState<string | undefined>();
   const [fileExists, setFileExists] = useState(true);
   const isDragging = useRef(false);
+
+  const CHAT_MIN_WIDTH = 400;
+  const PANEL_MIN_WIDTH = 320;
+
+  // Calculate available space for ChatArea + ArtifactPanel
+  const getAvailableSpace = useCallback(() => {
+    const mainContent = document.querySelector('.main-content') as HTMLElement;
+    if (!mainContent) return 1000;
+    const sidebar = mainContent.querySelector('aside');
+    const sidebarWidth = sidebar?.getBoundingClientRect().width ?? 0;
+    return mainContent.getBoundingClientRect().width - sidebarWidth;
+  }, []);
+
+  // Calculate effective width: if 0 (auto), use 50% of available space
+  const effectiveWidth = useMemo(() => {
+    if (width === 0) {
+      const available = getAvailableSpace();
+      return Math.max(PANEL_MIN_WIDTH, Math.floor(available * 0.5));
+    }
+    return width;
+  }, [width, getAvailableSpace]);
+
+  // Clamp panel width on window resize
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleResize = () => {
+      const available = getAvailableSpace();
+      const maxWidth = available - CHAT_MIN_WIDTH;
+      if (effectiveWidth > maxWidth && maxWidth >= PANEL_MIN_WIDTH) {
+        setWidth(maxWidth);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen, effectiveWidth, getAvailableSpace, setWidth]);
 
   // Restore artifacts from session metadata when switching sessions
   useEffect(() => {
@@ -90,7 +126,11 @@ export function ArtifactPanel() {
       const mainContent = document.querySelector('.main-content') as HTMLElement;
       if (!mainContent) return;
       const rect = mainContent.getBoundingClientRect();
-      const newWidth = Math.max(320, Math.min(800, rect.right - e.clientX));
+      const sidebar = mainContent.querySelector('aside');
+      const sidebarWidth = sidebar?.getBoundingClientRect().width ?? 0;
+      const available = rect.width - sidebarWidth;
+      const maxWidth = available - CHAT_MIN_WIDTH;
+      const newWidth = Math.max(PANEL_MIN_WIDTH, Math.min(maxWidth, rect.right - e.clientX));
       setWidth(newWidth);
     };
 
@@ -129,8 +169,8 @@ export function ArtifactPanel() {
       {/* Panel body */}
       <div
         style={{
-          width: isOpen ? width : 0,
-          minWidth: isOpen ? 320 : 0,
+          width: isOpen ? effectiveWidth : 0,
+          minWidth: isOpen ? PANEL_MIN_WIDTH : 0,
         }}
         className="
           bg-[var(--bg-secondary)]
@@ -140,7 +180,7 @@ export function ArtifactPanel() {
         "
       >
         <div
-          style={{ minWidth: 320, width }}
+          style={{ minWidth: PANEL_MIN_WIDTH, width: effectiveWidth }}
           className="h-full flex flex-col"
         >
           {/* Header */}

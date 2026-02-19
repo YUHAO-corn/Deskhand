@@ -63,8 +63,8 @@ export const settingsOpenAtom = atom<boolean>(false);
 /** Artifact panel open state */
 export const artifactPanelOpenAtom = atom<boolean>(false);
 
-/** Artifact panel width */
-export const artifactPanelWidthAtom = atom<number>(480);
+/** Artifact panel width (0 = auto, will be calculated as 50% of available space) */
+export const artifactPanelWidthAtom = atom<number>(0);
 
 /** Selected artifact file path */
 export const selectedArtifactAtom = atom<string | null>(null);
