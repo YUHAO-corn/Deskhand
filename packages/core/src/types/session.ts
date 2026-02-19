@@ -81,4 +81,5 @@ export interface SessionMeta {
   model?: string;
   tokenUsage?: TokenUsage;
   hidden?: boolean;
+  artifacts?: string[];              // File paths captured from agent Write/Edit operations
 }
