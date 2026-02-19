@@ -8,7 +8,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   artifactPanelOpenAtom,
   artifactPanelWidthAtom,
@@ -16,6 +16,7 @@ import {
   filePreviewModeAtom,
   sessionArtifactsFamily,
   activeSessionIdAtom,
+  sessionMetaMapAtom,
 } from '../../atoms/sessions';
 import { Markdown } from '../chat/markdown/Markdown';
 
@@ -38,12 +39,23 @@ export function ArtifactPanel() {
   const [width, setWidth] = useAtom(artifactPanelWidthAtom);
   const activeSessionId = useAtomValue(activeSessionIdAtom);
   const artifacts = useAtomValue(sessionArtifactsFamily(activeSessionId ?? ''));
+  const setArtifacts = useSetAtom(sessionArtifactsFamily(activeSessionId ?? ''));
+  const sessionMetaMap = useAtomValue(sessionMetaMapAtom);
   const [selectedArtifact, setSelectedArtifact] = useAtom(selectedArtifactAtom);
   const [viewMode, setViewMode] = useAtom(filePreviewModeAtom);
   const [fileContent, setFileContent] = useState<string>('');
   const [fileBase64, setFileBase64] = useState<string | undefined>();
   const [fileExists, setFileExists] = useState(true);
   const isDragging = useRef(false);
+
+  // Restore artifacts from session metadata when switching sessions
+  useEffect(() => {
+    if (!activeSessionId) return;
+    const meta = sessionMetaMap.get(activeSessionId);
+    if (meta?.artifacts && meta.artifacts.length > 0 && artifacts.length === 0) {
+      setArtifacts(meta.artifacts);
+    }
+  }, [activeSessionId, sessionMetaMap, artifacts.length, setArtifacts]);
 
   // Load file content when selected artifact changes
   const loadFileContent = useCallback(async (filePath: string) => {
