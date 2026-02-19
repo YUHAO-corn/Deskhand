@@ -21,6 +21,9 @@ import {
   sessionMetaMapAtom,
   sessionIdsAtom,
   memoryOnlySessionsAtom,
+  sessionArtifactsFamily,
+  artifactPanelOpenAtom,
+  selectedArtifactAtom,
 } from '../atoms/sessions';
 
 /**
@@ -42,6 +45,9 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
   const setSessionMetaMap = useSetAtom(sessionMetaMapAtom);
   const setSessionIds = useSetAtom(sessionIdsAtom);
   const memoryOnlySessions = useAtomValue(memoryOnlySessionsAtom);
+  const setArtifacts = useSetAtom(sessionArtifactsFamily(sessionId));
+  const setArtifactPanelOpen = useSetAtom(artifactPanelOpenAtom);
+  const setSelectedArtifact = useSetAtom(selectedArtifactAtom);
 
   // Track the current streaming message ID
   const streamingMessageIdRef = useRef<string | null>(null);
@@ -180,6 +186,19 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
         };
         setMessages((prev) => [...prev, toolMessage]);
         persistMessage(toolMessage);
+
+        // Capture file artifacts from Write/Edit tools
+        const toolNameLower = event.toolName?.toLowerCase() ?? '';
+        if ((toolNameLower === 'write' || toolNameLower === 'edit') && event.input?.file_path) {
+          const filePath = String(event.input.file_path);
+          setArtifacts((prev) => {
+            // Don't duplicate — move to end if already exists
+            const filtered = prev.filter((p) => p !== filePath);
+            return [...filtered, filePath];
+          });
+          setSelectedArtifact(filePath);
+          setArtifactPanelOpen(true);
+        }
         break;
       }
 
@@ -285,7 +304,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       default:
         console.log('[useAgentEvents] unknown event type:', (event as { type: string }).type);
     }
-  }, [sessionId, setMessages, setProcessing, setPermissionRequest, persistMessage, updateMeta]);
+  }, [sessionId, setMessages, setProcessing, setPermissionRequest, persistMessage, updateMeta, setArtifacts, setArtifactPanelOpen, setSelectedArtifact]);
 
   // ─── 订阅 IPC 事件 ───
   useEffect(() => {
