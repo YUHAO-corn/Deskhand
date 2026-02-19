@@ -63,17 +63,22 @@ export const settingsOpenAtom = atom<boolean>(false);
 /** Artifact panel open state */
 export const artifactPanelOpenAtom = atom<boolean>(false);
 
-/** Artifact panel active tab */
-export const artifactActiveTabAtom = atom<'files' | 'changes' | 'terminal' | 'preview'>('files');
-
 /** Artifact panel width */
 export const artifactPanelWidthAtom = atom<number>(480);
 
-/** Selected file path in Files tab */
-export const selectedFileAtom = atom<string | null>(null);
+/** Selected artifact file path */
+export const selectedArtifactAtom = atom<string | null>(null);
 
 /** File preview mode (code/preview) */
-export const filePreviewModeAtom = atom<'code' | 'preview'>('code');
+export const filePreviewModeAtom = atom<'code' | 'preview'>('preview');
+
+// ============ Per-Session Artifact Atoms ============
+
+/** Artifact file paths by session ID (ordered by capture time) */
+export const sessionArtifactsFamily = atomFamily(
+  (_sessionId: string) => atom<string[]>([]),
+  (a, b) => a === b
+);
 
 /** Permission mode */
 export const permissionModeAtom = atom<'ask' | 'allow-all'>('ask');

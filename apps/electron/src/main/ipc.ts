@@ -14,7 +14,7 @@
 
 import { ipcMain, BrowserWindow, app, dialog } from 'electron';
 import { join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, promises as fs } from 'fs';
 import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, StoredMessage, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
 import {
   loadConfig,
@@ -181,6 +181,9 @@ export const IPC_CHANNELS = {
 
   // Insight (dev-only)
   TRIGGER_INSIGHT: 'insight:trigger',
+
+  // Artifact
+  READ_FILE: 'artifact:read-file',
 } as const;
 
 // ============ Register Handlers ============
@@ -366,5 +369,16 @@ export function registerIpcHandlers(): void {
       event.sender.send('sessions:refresh');
     }
     return result;
+  });
+
+  // ===== Artifact =====
+
+  ipcMain.handle(IPC_CHANNELS.READ_FILE, async (_, filePath: string): Promise<{ content: string; exists: boolean }> => {
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      return { content, exists: true };
+    } catch {
+      return { content: '', exists: false };
+    }
   });
 }

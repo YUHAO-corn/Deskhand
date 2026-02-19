@@ -59,6 +59,9 @@ export interface ElectronAPI {
   // Insight (dev-only)
   triggerInsight: () => Promise<{ created: boolean; sessionId?: string; error?: string }>;
 
+  // Artifact
+  readFile: (filePath: string) => Promise<{ content: string; exists: boolean }>;
+
   // Events
   onSessionsRefresh: (callback: () => void) => () => void;
 }
@@ -83,6 +86,7 @@ const IPC_CHANNELS = {
   SELECT_DIRECTORY: 'directory:select',
   LOAD_SKILLS: 'skills:load',
   TRIGGER_INSIGHT: 'insight:trigger',
+  READ_FILE: 'artifact:read-file',
 } as const;
 
 // ============ Expose API ============
@@ -125,6 +129,9 @@ const electronAPI: ElectronAPI = {
 
   // Insight (dev-only)
   triggerInsight: () => ipcRenderer.invoke(IPC_CHANNELS.TRIGGER_INSIGHT),
+
+  // Artifact
+  readFile: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.READ_FILE, filePath),
 
   // Events
   onSessionsRefresh: (callback: () => void) => {
