@@ -61,6 +61,7 @@ export interface ElectronAPI {
 
   // Artifact
   readFile: (filePath: string) => Promise<{ content: string; exists: boolean; base64?: string }>;
+  showInFolder: (filePath: string) => Promise<void>;
 
   // Events
   onSessionsRefresh: (callback: () => void) => () => void;
@@ -87,6 +88,7 @@ const IPC_CHANNELS = {
   LOAD_SKILLS: 'skills:load',
   TRIGGER_INSIGHT: 'insight:trigger',
   READ_FILE: 'artifact:read-file',
+  SHOW_IN_FOLDER: 'artifact:show-in-folder',
 } as const;
 
 // ============ Expose API ============
@@ -132,6 +134,7 @@ const electronAPI: ElectronAPI = {
 
   // Artifact
   readFile: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.READ_FILE, filePath),
+  showInFolder: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHOW_IN_FOLDER, filePath),
 
   // Events
   onSessionsRefresh: (callback: () => void) => {

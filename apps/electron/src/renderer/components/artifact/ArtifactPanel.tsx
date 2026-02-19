@@ -183,26 +183,50 @@ export function ArtifactPanel() {
                     const name = filePath.split('/').pop() ?? filePath;
                     const dir = filePath.substring(0, filePath.lastIndexOf('/'));
                     const isSelected = selectedArtifact === filePath;
+                    const type = getFileType(filePath);
                     return (
-                      <button
+                      <div
                         key={filePath}
-                        onClick={() => setSelectedArtifact(filePath)}
                         className={`
-                          w-full text-left px-3 py-2 border-none cursor-pointer
+                          group flex items-start gap-2 px-3 py-2 cursor-pointer
                           transition-colors duration-[var(--transition-fast)]
                           ${isSelected
                             ? 'bg-[var(--hover-bg)]'
-                            : 'bg-transparent hover:bg-[var(--hover-bg)]'
+                            : 'hover:bg-[var(--hover-bg)]'
                           }
                         `}
+                        onClick={() => setSelectedArtifact(filePath)}
                       >
-                        <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">
-                          {name}
+                        <FileTypeIcon type={type} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">
+                            {name}
+                          </div>
+                          <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] truncate mt-0.5">
+                            {dir}
+                          </div>
                         </div>
-                        <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] truncate mt-0.5">
-                          {dir}
-                        </div>
-                      </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.electronAPI?.showInFolder(filePath);
+                          }}
+                          className="
+                            w-6 h-6 border-none bg-transparent rounded cursor-pointer
+                            flex items-center justify-center
+                            text-[var(--text-muted)] opacity-0 group-hover:opacity-100
+                            transition-all duration-[var(--transition-fast)]
+                            hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+                          "
+                          title="Show in Finder"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                          </svg>
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -412,4 +436,47 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
         </pre>
       );
   }
+}
+
+// ============================================
+// FileTypeIcon
+// ============================================
+
+function FileTypeIcon({ type }: { type: FileType }) {
+  const color = {
+    html: 'text-orange-500',
+    markdown: 'text-blue-500',
+    image: 'text-green-500',
+    text: 'text-[var(--text-muted)]',
+  }[type];
+
+  return (
+    <div className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`}>
+      {type === 'html' ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      ) : type === 'markdown' ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      ) : type === 'image' ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      )}
+    </div>
+  );
 }

@@ -12,7 +12,7 @@
  * - Main handles via: ipcMain.handle('channel', handler)
  */
 
-import { ipcMain, BrowserWindow, app, dialog } from 'electron';
+import { ipcMain, BrowserWindow, app, dialog, shell } from 'electron';
 import { join } from 'path';
 import { existsSync, promises as fs } from 'fs';
 import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, StoredMessage, Session, AgentEvent, ThinkingLevel } from '@deskhand/core';
@@ -184,6 +184,7 @@ export const IPC_CHANNELS = {
 
   // Artifact
   READ_FILE: 'artifact:read-file',
+  SHOW_IN_FOLDER: 'artifact:show-in-folder',
 } as const;
 
 // ============ Register Handlers ============
@@ -393,5 +394,9 @@ export function registerIpcHandlers(): void {
     } catch {
       return { content: '', exists: false };
     }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SHOW_IN_FOLDER, async (_, filePath: string): Promise<void> => {
+    shell.showItemInFolder(filePath);
   });
 }
