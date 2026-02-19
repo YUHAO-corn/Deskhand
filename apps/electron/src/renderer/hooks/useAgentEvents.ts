@@ -24,6 +24,7 @@ import {
   sessionArtifactsFamily,
   artifactPanelOpenAtom,
   selectedArtifactAtom,
+  workingDirectoryAtom,
 } from '../atoms/sessions';
 
 /**
@@ -48,6 +49,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
   const setArtifacts = useSetAtom(sessionArtifactsFamily(sessionId));
   const setArtifactPanelOpen = useSetAtom(artifactPanelOpenAtom);
   const setSelectedArtifact = useSetAtom(selectedArtifactAtom);
+  const workingDirectory = useAtomValue(workingDirectoryAtom);
 
   // Track the current streaming message ID
   const streamingMessageIdRef = useRef<string | null>(null);
@@ -190,9 +192,15 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
         // Capture file artifacts from Write/Edit tools
         const toolNameLower = event.toolName?.toLowerCase() ?? '';
         if ((toolNameLower === 'write' || toolNameLower === 'edit') && event.input?.file_path) {
-          const filePath = String(event.input.file_path);
+          let filePath = String(event.input.file_path);
+          // Resolve relative paths against working directory
+          if (!filePath.startsWith('/') && workingDirectory) {
+            filePath = `${workingDirectory}/${filePath}`;
+          } else if (filePath.startsWith('/') && workingDirectory && !filePath.startsWith(workingDirectory)) {
+            // SDK paths like "/hello.html" are relative to cwd with leading slash
+            filePath = `${workingDirectory}${filePath}`;
+          }
           setArtifacts((prev) => {
-            // Don't duplicate — move to end if already exists
             const filtered = prev.filter((p) => p !== filePath);
             return [...filtered, filePath];
           });
@@ -304,7 +312,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       default:
         console.log('[useAgentEvents] unknown event type:', (event as { type: string }).type);
     }
-  }, [sessionId, setMessages, setProcessing, setPermissionRequest, persistMessage, updateMeta, setArtifacts, setArtifactPanelOpen, setSelectedArtifact]);
+  }, [sessionId, setMessages, setProcessing, setPermissionRequest, persistMessage, updateMeta, setArtifacts, setArtifactPanelOpen, setSelectedArtifact, workingDirectory]);
 
   // ─── 订阅 IPC 事件 ───
   useEffect(() => {
