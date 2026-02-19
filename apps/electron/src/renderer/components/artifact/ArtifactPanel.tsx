@@ -17,6 +17,21 @@ import {
   sessionArtifactsFamily,
   activeSessionIdAtom,
 } from '../../atoms/sessions';
+import { Markdown } from '../chat/markdown/Markdown';
+
+// ============================================
+// File type detection
+// ============================================
+
+type FileType = 'html' | 'markdown' | 'image' | 'text';
+
+function getFileType(filePath: string): FileType {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+  if (['html', 'htm'].includes(ext)) return 'html';
+  if (['md', 'markdown', 'mdx'].includes(ext)) return 'markdown';
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp'].includes(ext)) return 'image';
+  return 'text';
+}
 
 export function ArtifactPanel() {
   const [isOpen, setIsOpen] = useAtom(artifactPanelOpenAtom);
@@ -26,6 +41,7 @@ export function ArtifactPanel() {
   const [selectedArtifact, setSelectedArtifact] = useAtom(selectedArtifactAtom);
   const [viewMode, setViewMode] = useAtom(filePreviewModeAtom);
   const [fileContent, setFileContent] = useState<string>('');
+  const [fileBase64, setFileBase64] = useState<string | undefined>();
   const [fileExists, setFileExists] = useState(true);
   const isDragging = useRef(false);
 
@@ -34,6 +50,7 @@ export function ArtifactPanel() {
     const result = await window.electronAPI?.readFile(filePath);
     if (result) {
       setFileContent(result.content);
+      setFileBase64(result.base64);
       setFileExists(result.exists);
     }
   }, []);
@@ -85,6 +102,7 @@ export function ArtifactPanel() {
   };
 
   const fileName = selectedArtifact ? selectedArtifact.split('/').pop() ?? '' : '';
+  const fileType = selectedArtifact ? getFileType(selectedArtifact) : 'text';
 
   return (
     <>
@@ -200,10 +218,17 @@ export function ArtifactPanel() {
                   <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
                     File not found on disk
                   </div>
-                ) : (
+                ) : viewMode === 'code' ? (
                   <pre className="p-4 text-[var(--font-size-sm)] text-[var(--text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
                     {fileContent}
                   </pre>
+                ) : (
+                  <ArtifactPreview
+                    fileType={fileType}
+                    content={fileContent}
+                    base64={fileBase64}
+                    fileName={fileName}
+                  />
                 )}
               </div>
             </div>
@@ -319,4 +344,60 @@ function PreviewToolbar({ fileName, viewMode, onViewModeChange, content, onRefre
       </div>
     </div>
   );
+}
+
+// ============================================
+// ArtifactPreview - Type-aware renderer
+// ============================================
+
+interface ArtifactPreviewProps {
+  fileType: FileType;
+  content: string;
+  base64?: string;
+  fileName: string;
+}
+
+function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
+  switch (fileType) {
+    case 'html':
+      return (
+        <iframe
+          sandbox="allow-scripts"
+          srcDoc={content}
+          className="w-full h-full border-none bg-white"
+          title={fileName}
+        />
+      );
+
+    case 'markdown':
+      return (
+        <div className="p-4 prose prose-sm max-w-none">
+          <Markdown content={content} />
+        </div>
+      );
+
+    case 'image':
+      return (
+        <div className="h-full flex items-center justify-center p-4">
+          {base64 ? (
+            <img
+              src={base64}
+              alt={fileName}
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : (
+            <span className="text-[var(--text-muted)] text-[var(--font-size-sm)]">
+              Unable to load image
+            </span>
+          )}
+        </div>
+      );
+
+    default:
+      return (
+        <pre className="p-4 text-[var(--font-size-sm)] text-[var(--text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
+          {content}
+        </pre>
+      );
+  }
 }

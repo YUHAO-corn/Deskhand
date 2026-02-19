@@ -373,8 +373,21 @@ export function registerIpcHandlers(): void {
 
   // ===== Artifact =====
 
-  ipcMain.handle(IPC_CHANNELS.READ_FILE, async (_, filePath: string): Promise<{ content: string; exists: boolean }> => {
+  ipcMain.handle(IPC_CHANNELS.READ_FILE, async (_, filePath: string): Promise<{ content: string; exists: boolean; base64?: string }> => {
     try {
+      // Check if it's an image file — return base64 for rendering
+      const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+      const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp'];
+      if (imageExts.includes(ext)) {
+        const buffer = await fs.readFile(filePath);
+        const mimeMap: Record<string, string> = {
+          png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+          gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp',
+          ico: 'image/x-icon', bmp: 'image/bmp',
+        };
+        const mime = mimeMap[ext] ?? 'application/octet-stream';
+        return { content: '', exists: true, base64: `data:${mime};base64,${buffer.toString('base64')}` };
+      }
       const content = await fs.readFile(filePath, 'utf-8');
       return { content, exists: true };
     } catch {

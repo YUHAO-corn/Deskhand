@@ -60,7 +60,7 @@ export interface ElectronAPI {
   triggerInsight: () => Promise<{ created: boolean; sessionId?: string; error?: string }>;
 
   // Artifact
-  readFile: (filePath: string) => Promise<{ content: string; exists: boolean }>;
+  readFile: (filePath: string) => Promise<{ content: string; exists: boolean; base64?: string }>;
 
   // Events
   onSessionsRefresh: (callback: () => void) => () => void;
