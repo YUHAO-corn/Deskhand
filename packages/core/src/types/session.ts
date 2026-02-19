@@ -50,6 +50,9 @@ export interface Session {
 
   // Visibility
   hidden?: boolean;                  // Hidden from session list
+
+  // Artifacts
+  artifacts?: string[];              // File paths captured from agent Write/Edit operations
 }
 
 /**

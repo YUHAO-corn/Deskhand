@@ -202,7 +202,12 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           }
           setArtifacts((prev) => {
             const filtered = prev.filter((p) => p !== filePath);
-            return [...filtered, filePath];
+            const updated = [...filtered, filePath];
+            // Persist artifacts to session metadata
+            if (!memoryOnlySessions.has(sessionId)) {
+              window.electronAPI?.updateSessionMeta(sessionId, { artifacts: updated }).catch(() => {});
+            }
+            return updated;
           });
           setSelectedArtifact(filePath);
           setArtifactPanelOpen(true);
