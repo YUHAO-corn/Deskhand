@@ -183,131 +183,45 @@ export function ArtifactPanel() {
           style={{ minWidth: PANEL_MIN_WIDTH, width: effectiveWidth }}
           className="h-full flex flex-col"
         >
-          {/* Header */}
-          <div className="h-12 border-b border-[var(--border-color)] flex items-center px-3 pr-2">
-            <span className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] flex-1">
-              Artifacts
-            </span>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="
-                w-8 h-8 border-none bg-transparent
-                rounded-[var(--radius-md)] cursor-pointer
-                flex items-center justify-center
-                text-[var(--text-secondary)]
-                transition-colors duration-[var(--transition-fast)]
-                hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
-              "
-            >
-              <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+          {/* Toolbar (replaces header + sidebar) */}
+          <PreviewToolbar
+            fileName={fileName}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            content={fileContent}
+            onRefresh={() => selectedArtifact && loadFileContent(selectedArtifact)}
+            artifacts={artifacts}
+            selectedArtifact={selectedArtifact}
+            onSelectArtifact={setSelectedArtifact}
+            onClose={() => setIsOpen(false)}
+            onShowInFinder={() => selectedArtifact && window.electronAPI?.showInFolder(selectedArtifact)}
+          />
 
-          {/* Content: artifact list + preview */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Left: artifact list */}
-            <div className="w-[200px] min-w-[200px] border-r border-[var(--border-color)] overflow-y-auto">
-              {artifacts.length === 0 ? (
-                <div className="p-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
-                  <div className="text-center leading-relaxed">
-                    <div>No artifacts yet.</div>
-                    <div className="mt-1 text-[var(--font-size-xs)]">Files created by AI will appear here.</div>
-                  </div>
+          {/* Full-width preview area */}
+          <div className="flex-1 overflow-auto">
+            {!selectedArtifact ? (
+              <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
+                <div className="text-center leading-relaxed">
+                  <div>No artifacts yet.</div>
+                  <div className="mt-1 text-[var(--font-size-xs)] opacity-60">Files created by AI will appear here.</div>
                 </div>
-              ) : (
-                <div className="py-1">
-                  {artifacts.map((filePath) => {
-                    const name = filePath.split('/').pop() ?? filePath;
-                    const dir = filePath.substring(0, filePath.lastIndexOf('/'));
-                    const isSelected = selectedArtifact === filePath;
-                    const type = getFileType(filePath);
-                    return (
-                      <div
-                        key={filePath}
-                        className={`
-                          group flex items-start gap-2 px-3 py-2 cursor-pointer
-                          transition-colors duration-[var(--transition-fast)]
-                          ${isSelected
-                            ? 'bg-[var(--hover-bg)]'
-                            : 'hover:bg-[var(--hover-bg)]'
-                          }
-                        `}
-                        onClick={() => setSelectedArtifact(filePath)}
-                      >
-                        <FileTypeIcon type={type} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">
-                            {name}
-                          </div>
-                          <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] truncate mt-0.5">
-                            {dir}
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.electronAPI?.showInFolder(filePath);
-                          }}
-                          className="
-                            w-6 h-6 border-none bg-transparent rounded cursor-pointer
-                            flex items-center justify-center
-                            text-[var(--text-muted)] opacity-0 group-hover:opacity-100
-                            transition-all duration-[var(--transition-fast)]
-                            hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
-                          "
-                          title="Show in Finder"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                            <polyline points="15 3 21 3 21 9" />
-                            <line x1="10" y1="14" x2="21" y2="3" />
-                          </svg>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Right: preview area */}
-            <div className="flex-1 flex flex-col bg-[var(--bg-secondary)]">
-              {/* Preview toolbar */}
-              <PreviewToolbar
-                fileName={fileName}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                content={fileContent}
-                onRefresh={() => selectedArtifact && loadFileContent(selectedArtifact)}
-              />
-
-              {/* Preview content */}
-              <div className="flex-1 overflow-auto">
-                {!selectedArtifact ? (
-                  <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
-                    Select a file to preview
-                  </div>
-                ) : !fileExists ? (
-                  <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
-                    File not found on disk
-                  </div>
-                ) : viewMode === 'code' ? (
-                  <pre className="p-4 text-[var(--font-size-sm)] text-[var(--text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
-                    {fileContent}
-                  </pre>
-                ) : (
-                  <ArtifactPreview
-                    fileType={fileType}
-                    content={fileContent}
-                    base64={fileBase64}
-                    fileName={fileName}
-                  />
-                )}
               </div>
-            </div>
+            ) : !fileExists ? (
+              <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
+                File not found on disk
+              </div>
+            ) : viewMode === 'code' ? (
+              <pre className="p-4 text-[var(--font-size-sm)] text-[var(--text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
+                {fileContent}
+              </pre>
+            ) : (
+              <ArtifactPreview
+                fileType={fileType}
+                content={fileContent}
+                base64={fileBase64}
+                fileName={fileName}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -316,7 +230,7 @@ export function ArtifactPanel() {
 }
 
 // ============================================
-// PreviewToolbar
+// PreviewToolbar (with artifact dropdown)
 // ============================================
 
 interface PreviewToolbarProps {
@@ -325,18 +239,42 @@ interface PreviewToolbarProps {
   onViewModeChange: (mode: 'code' | 'preview') => void;
   content: string;
   onRefresh: () => void;
+  artifacts: string[];
+  selectedArtifact: string | null;
+  onSelectArtifact: (path: string) => void;
+  onClose: () => void;
+  onShowInFinder: () => void;
 }
 
-function PreviewToolbar({ fileName, viewMode, onViewModeChange, content, onRefresh }: PreviewToolbarProps) {
+function PreviewToolbar({
+  fileName, viewMode, onViewModeChange, content, onRefresh,
+  artifacts, selectedArtifact, onSelectArtifact, onClose, onShowInFinder,
+}: PreviewToolbarProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [dropdownOpen]);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
   };
 
   return (
-    <div className="h-10 border-b border-[var(--border-color)] flex items-center justify-between px-3">
-      <div className="flex items-center gap-3">
+    <div className="h-10 border-b border-[var(--border-color)] flex items-center justify-between px-2 gap-1">
+      {/* Left: view mode toggle + artifact dropdown */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         {/* View mode toggle */}
-        <div className="flex items-center bg-[var(--hover-bg)] rounded-[var(--radius-md)] p-[3px]">
+        <div className="flex items-center bg-[var(--hover-bg)] rounded-[var(--radius-md)] p-[3px] flex-shrink-0">
           <button
             onClick={() => onViewModeChange('code')}
             className={`
@@ -375,14 +313,98 @@ function PreviewToolbar({ fileName, viewMode, onViewModeChange, content, onRefre
           </button>
         </div>
 
-        {/* File name */}
-        <span className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
-          {fileName || 'No file selected'}
-        </span>
+        {/* Artifact dropdown */}
+        <div ref={dropdownRef} className="relative min-w-0 flex-1">
+          <button
+            onClick={() => artifacts.length > 0 && setDropdownOpen(!dropdownOpen)}
+            disabled={artifacts.length === 0}
+            className={`
+              flex items-center gap-1.5 min-w-0 max-w-full
+              px-2 py-1 rounded-[var(--radius-md)] border-none
+              text-[var(--font-size-xs)] cursor-pointer
+              transition-colors duration-[var(--transition-fast)]
+              ${artifacts.length === 0
+                ? 'bg-transparent text-[var(--text-muted)] cursor-default'
+                : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+              }
+            `}
+          >
+            {selectedArtifact && <FileTypeIcon type={getFileType(selectedArtifact)} />}
+            <span className="truncate">{fileName || 'No file selected'}</span>
+            {artifacts.length > 0 && (
+              <svg
+                width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                className={`flex-shrink-0 transition-transform duration-150 ${dropdownOpen ? 'rotate-180' : ''}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            )}
+          </button>
+
+          {/* Dropdown list */}
+          {dropdownOpen && (
+            <div className="
+              absolute top-full left-0 mt-1 z-50
+              bg-white rounded-lg shadow-lg border border-[var(--border-color)]
+              max-h-[400px] overflow-y-auto
+              min-w-[240px] max-w-[320px]
+            ">
+              {artifacts.map((filePath) => {
+                const name = filePath.split('/').pop() ?? filePath;
+                const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+                const isSelected = selectedArtifact === filePath;
+                const type = getFileType(filePath);
+                return (
+                  <div
+                    key={filePath}
+                    className={`
+                      flex items-start gap-2 px-3 py-2 cursor-pointer
+                      transition-colors duration-[var(--transition-fast)]
+                      ${isSelected ? 'bg-[var(--hover-bg)]' : 'hover:bg-[var(--hover-bg)]'}
+                    `}
+                    onClick={() => {
+                      onSelectArtifact(filePath);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    <FileTypeIcon type={type} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">{name}</div>
+                      <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] truncate mt-0.5">{dir}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-1">
-        {/* Copy button */}
+      {/* Right: action buttons */}
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        {/* Show in Finder */}
+        {selectedArtifact && (
+          <button
+            onClick={onShowInFinder}
+            className="
+              w-7 h-7 border-none bg-transparent
+              rounded-[var(--radius-md)] cursor-pointer
+              flex items-center justify-center
+              text-[var(--text-muted)]
+              transition-all duration-[var(--transition-fast)]
+              hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+            "
+            title="Show in Finder"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </button>
+        )}
+
+        {/* Copy */}
         <button
           onClick={handleCopy}
           className="
@@ -393,6 +415,7 @@ function PreviewToolbar({ fileName, viewMode, onViewModeChange, content, onRefre
             transition-all duration-[var(--transition-fast)]
             hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
           "
+          title="Copy content"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -400,7 +423,7 @@ function PreviewToolbar({ fileName, viewMode, onViewModeChange, content, onRefre
           </svg>
         </button>
 
-        {/* Refresh button */}
+        {/* Refresh */}
         <button
           onClick={onRefresh}
           className="
@@ -411,10 +434,30 @@ function PreviewToolbar({ fileName, viewMode, onViewModeChange, content, onRefre
             transition-all duration-[var(--transition-fast)]
             hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
           "
+          title="Refresh"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="23 4 23 10 17 10" />
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+        </button>
+
+        {/* Close panel */}
+        <button
+          onClick={onClose}
+          className="
+            w-7 h-7 border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            flex items-center justify-center
+            text-[var(--text-muted)]
+            transition-all duration-[var(--transition-fast)]
+            hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+          "
+          title="Close panel"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       </div>
