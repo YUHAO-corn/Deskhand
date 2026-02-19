@@ -121,6 +121,13 @@ export function ArtifactPanel() {
     }
   }, [selectedArtifact, loadFileContent]);
 
+  // Reload content when panel opens (handles restore-then-open timing)
+  useEffect(() => {
+    if (isOpen && selectedArtifact) {
+      loadFileContent(selectedArtifact);
+    }
+  }, [isOpen, selectedArtifact, loadFileContent]);
+
   // Reload content when artifacts list changes (file was re-edited)
   useEffect(() => {
     if (selectedArtifact && artifacts.includes(selectedArtifact)) {
