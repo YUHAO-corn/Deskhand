@@ -8,7 +8,7 @@
  * 宽度：比例制，默认占可用空间 50%，对话区最小 400px
  */
 
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   artifactPanelOpenAtom,
@@ -62,12 +62,19 @@ export function ArtifactPanel() {
   }, []);
 
   // Calculate effective width: if 0 (auto), use 50% of available space
-  const effectiveWidth = useMemo(() => {
+  const [effectiveWidth, setEffectiveWidth] = useState(() => {
+    if (width === 0) return PANEL_MIN_WIDTH; // will be recalculated after mount
+    return width;
+  });
+
+  // Recalculate effective width when width atom changes or on mount
+  useEffect(() => {
     if (width === 0) {
       const available = getAvailableSpace();
-      return Math.max(PANEL_MIN_WIDTH, Math.floor(available * 0.5));
+      setEffectiveWidth(Math.max(PANEL_MIN_WIDTH, Math.floor(available * 0.5)));
+    } else {
+      setEffectiveWidth(width);
     }
-    return width;
   }, [width, getAvailableSpace]);
 
   // Clamp panel width on window resize
@@ -90,8 +97,10 @@ export function ArtifactPanel() {
     const meta = sessionMetaMap.get(activeSessionId);
     if (meta?.artifacts && meta.artifacts.length > 0 && artifacts.length === 0) {
       setArtifacts(meta.artifacts);
+      // Auto-select the last artifact
+      setSelectedArtifact(meta.artifacts[meta.artifacts.length - 1]);
     }
-  }, [activeSessionId, sessionMetaMap, artifacts.length, setArtifacts]);
+  }, [activeSessionId, sessionMetaMap, artifacts.length, setArtifacts, setSelectedArtifact]);
 
   // Load file content when selected artifact changes
   const loadFileContent = useCallback(async (filePath: string) => {
@@ -175,7 +184,7 @@ export function ArtifactPanel() {
         className="
           bg-[var(--bg-secondary)]
           border-l border-[var(--border-color)]
-          flex flex-col overflow-hidden
+          flex flex-col overflow-hidden flex-shrink-0
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         "
       >
@@ -199,12 +208,16 @@ export function ArtifactPanel() {
 
           {/* Full-width preview area */}
           <div className="flex-1 overflow-auto">
-            {!selectedArtifact ? (
+            {artifacts.length === 0 ? (
               <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
                 <div className="text-center leading-relaxed">
                   <div>No artifacts yet.</div>
                   <div className="mt-1 text-[var(--font-size-xs)] opacity-60">Files created by AI will appear here.</div>
                 </div>
+              </div>
+            ) : !selectedArtifact ? (
+              <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
+                Select a file to preview
               </div>
             ) : !fileExists ? (
               <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
