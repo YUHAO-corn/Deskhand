@@ -88,8 +88,13 @@
 ### Phase 3: 会话管理
 > 📖 SPEC_SessionSidebar.md
 
-- [ ] SessionSidebar 模块
-- 验收：SPEC 中 [x] 项全部实现 + 手动验收会话切换
+- [x] SessionSidebar 模块
+  - [x] 会话持久化（磁盘读写 JSONL）
+  - [x] 会话切换 + 懒加载消息
+  - [x] 新建会话
+  - [x] 会话操作菜单（重命名/归档/删除）
+  - [x] 未读指示器（蓝点 + 后台事件监听）
+- 验收：核心会话管理已完成。有意推迟的项：日期分组、搜索、AI 自动命名（见设计文档 Q5/Q7/Q8）
 
 ### Phase 4: 认证流程
 > 📖 SPEC_AuthGuard.md
@@ -113,8 +118,14 @@
 ### Phase 7: 技能系统
 > 📖 SPEC.md §技能系统
 
-- [ ] 技能加载与执行
-- 验收：技能能被触发并执行
+- [x] 技能加载与执行
+  - [x] SDK plugin 集成（自动发现 + 激活 + 执行）
+  - [x] 4 个内置技能（playground, find-skills, skill-creator, frontend-design）+ 首次启动自动安装
+  - [x] 技能工具调用在 Activity Tree 中显示
+  - [x] Skill Insight 管线（facet 提取 + 模式分析 + 技能推荐）
+  - [x] Insight 报告 action buttons + 点击自动发送
+  - [x] 每 20 次对话自动触发 Insight（Slice F）
+- 验收：技能系统全部 6 个 Slice（A-F）已完成
 
 ---
 
