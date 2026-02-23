@@ -90,9 +90,15 @@ export async function loadSession(sessionId: string): Promise<StoredSession | nu
 
     if (!session) return null;
 
+    // Deduplicate messages by ID (keep last entry - handles tool_result updates)
+    const deduped = new Map<string, StoredMessage>();
+    for (const msg of messages) {
+      deduped.set(msg.id, msg);
+    }
+
     return {
       ...session,
-      messages,
+      messages: Array.from(deduped.values()),
       tokenUsage,
     };
   } catch {

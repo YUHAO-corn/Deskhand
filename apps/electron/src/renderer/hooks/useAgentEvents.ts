@@ -216,17 +216,21 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       }
 
       case 'tool_result': {
-        setMessages((prev) =>
-          prev.map((m) =>
+        setMessages((prev) => {
+          const updated = prev.map((m) =>
             m.toolUseId === event.toolUseId
               ? {
                   ...m,
                   toolResult: event.result,
-                  toolStatus: event.isError ? 'error' : 'completed',
+                  toolStatus: (event.isError ? 'error' : 'completed') as import('@deskhand/core').ToolStatus,
                 }
               : m
-          )
-        );
+          );
+          // Persist the updated tool message
+          const updatedMsg = updated.find((m) => m.toolUseId === event.toolUseId);
+          if (updatedMsg) persistMessage(updatedMsg);
+          return updated;
+        });
         break;
       }
 
