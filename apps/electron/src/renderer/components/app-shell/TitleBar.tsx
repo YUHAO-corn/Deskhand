@@ -56,8 +56,7 @@ export function TitleBar() {
     <header
       className="
         h-[var(--titlebar-height)]
-        bg-[var(--bg-secondary)]
-        border-b border-[var(--border-color)]
+        bg-[var(--bg-primary)]
         flex items-center relative
         px-4
         drag-region
