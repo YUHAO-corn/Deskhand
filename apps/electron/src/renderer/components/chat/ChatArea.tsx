@@ -155,7 +155,7 @@ export function ChatArea() {
               <div className="mb-2">
                 <ProcessingIndicator />
               </div>
-            )}}
+            )}
           </div>
         )}
       </div>
