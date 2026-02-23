@@ -148,7 +148,7 @@ export function ChatArea() {
             ))}
             {/* 等待首个响应时的 ProcessingIndicator */}
             {showPendingThinking && (
-              <div className="mb-4">
+              <div className="mb-6">
                 <div className="flex items-center gap-2 mb-2">
                   <div
                     className="
@@ -223,21 +223,21 @@ function TurnRenderer({ turn }: TurnRendererProps) {
   switch (turn.type) {
     case 'user':
       return (
-        <div className="mb-4">
+        <div className="mb-6">
           <UserMessageBubble message={turn.message} />
         </div>
       );
 
     case 'assistant':
       return (
-        <div className="mb-4">
+        <div className="mb-6">
           <TurnCard turn={turn} />
         </div>
       );
 
     case 'system':
       return (
-        <div className="mb-4">
+        <div className="mb-6">
           <div className="text-center text-[var(--text-muted)] text-sm py-2">
             {turn.message.content}
           </div>

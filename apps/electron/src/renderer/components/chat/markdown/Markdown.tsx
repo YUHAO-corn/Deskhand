@@ -75,13 +75,13 @@ const components: Components = {
 
   // 标题
   h1({ children }) {
-    return <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
+    return <h1 className="text-[22px] font-bold mb-3 mt-6 first:mt-0">{children}</h1>;
   },
   h2({ children }) {
-    return <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>;
+    return <h2 className="text-lg font-bold mb-2 mt-5 first:mt-0">{children}</h2>;
   },
   h3({ children }) {
-    return <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h3>;
+    return <h3 className="text-[15px] font-semibold mb-2 mt-4 first:mt-0">{children}</h3>;
   },
 
   // 列表
