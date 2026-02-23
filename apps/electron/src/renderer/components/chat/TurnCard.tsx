@@ -92,31 +92,23 @@ export function TurnCard({ turn }: TurnCardProps) {
             onClick={toggleExpanded}
             className="
               flex items-center gap-2 w-full
-              px-2 py-1.5 rounded-t-lg
-              bg-[var(--bg-secondary)]
-              border border-b-0 border-[var(--border-light)]
-              text-left text-sm text-[var(--text-secondary)]
-              hover:bg-[var(--bg-tertiary)] transition-colors
+              py-1 rounded
+              text-left text-sm text-[var(--text-muted)]
+              hover:text-[var(--text-secondary)] transition-colors
               focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-color)]
             "
           >
             {/* Chevron 箭头 */}
             <ChevronRight
               className={`
-                w-4 h-4 shrink-0
+                w-3.5 h-3.5 shrink-0
                 transition-transform duration-150
                 ${isExpanded ? 'rotate-90' : ''}
               `}
             />
 
-            {/* 步骤数量 Badge */}
-            <span className="
-              shrink-0 px-1.5 py-0.5
-              rounded
-              bg-[var(--bg-tertiary)]
-              border border-[var(--border-light)]
-              text-xs font-medium tabular-nums
-            ">
+            {/* 步骤数量 */}
+            <span className="shrink-0 text-xs tabular-nums">
               {activities.length}
             </span>
 
@@ -128,13 +120,7 @@ export function TurnCard({ turn }: TurnCardProps) {
 
           {/* 可折叠的活动列表 */}
           {isExpanded && (
-            <div className="
-              bg-[var(--bg-secondary)]
-              border border-t-0 border-[var(--border-light)]
-              rounded-b-lg
-              overflow-hidden
-              py-1 px-1
-            ">
+            <div className="pl-1 py-1">
               <ActivityTree
                 activities={activities}
                 onActivityClick={(activity) => {
@@ -147,15 +133,6 @@ export function TurnCard({ turn }: TurnCardProps) {
                 <ProcessingIndicator startTime={timestamp} />
               )}
             </div>
-          )}
-
-          {/* 折叠时的底部边框 */}
-          {!isExpanded && (
-            <div className="
-              h-1 rounded-b-lg
-              bg-[var(--bg-secondary)]
-              border border-t-0 border-[var(--border-light)]
-            " />
           )}
         </div>
       )}
