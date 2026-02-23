@@ -79,33 +79,14 @@ export function TurnCard({ turn }: TurnCardProps) {
 
   return (
     <div className="group">
-      {/* AI 头像和名称 */}
-      <div className="flex items-center gap-2 mb-2">
-        <div
-          className="
-            w-6 h-6 rounded-full
-            bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]
-            flex items-center justify-center
-            text-white text-xs font-medium
-          "
-        >
-          AI
-        </div>
-        <span className="text-sm font-medium text-[var(--text-secondary)]">
-          Claude
-        </span>
-      </div>
-
       {/* Processing 指示器 - 在没有内容时显示 */}
       {showThinking && !hasContent && !hasActivities && (
-        <div className="pl-8">
-          <ProcessingIndicator startTime={timestamp} />
-        </div>
+        <ProcessingIndicator startTime={timestamp} />
       )}
 
       {/* Activity Section：Header + 可折叠的活动列表 */}
       {hasActivities && (
-        <div className="pl-8 mb-2">
+        <div className="mb-2">
           {/* Activity Header - 可点击折叠/展开 */}
           <button
             onClick={toggleExpanded}
@@ -182,7 +163,6 @@ export function TurnCard({ turn }: TurnCardProps) {
       {/* 响应内容 */}
       <div
         className="
-          pl-8
           text-[var(--font-size-base)] leading-relaxed
           text-[var(--text-primary)]
         "

@@ -143,32 +143,19 @@ export function ChatArea() {
         ) : (
           // 消息列表
           <div className="max-w-3xl mx-auto py-6 px-4">
-            {turns.map((turn) => (
-              <TurnRenderer key={getTurnKey(turn)} turn={turn} />
+            {turns.map((turn, index) => (
+              <TurnRenderer
+                key={getTurnKey(turn)}
+                turn={turn}
+                prevTurnType={index > 0 ? turns[index - 1].type : undefined}
+              />
             ))}
             {/* 等待首个响应时的 ProcessingIndicator */}
             {showPendingThinking && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="
-                      w-6 h-6 rounded-full
-                      bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]
-                      flex items-center justify-center
-                      text-white text-xs font-medium
-                    "
-                  >
-                    AI
-                  </div>
-                  <span className="text-sm font-medium text-[var(--text-secondary)]">
-                    Claude
-                  </span>
-                </div>
-                <div className="pl-8">
-                  <ProcessingIndicator />
-                </div>
+              <div className="mb-2">
+                <ProcessingIndicator />
               </div>
-            )}
+            )}}
           </div>
         )}
       </div>
@@ -217,27 +204,32 @@ export function ChatArea() {
 
 interface TurnRendererProps {
   turn: Turn;
+  prevTurnType?: Turn['type'];
 }
 
-function TurnRenderer({ turn }: TurnRendererProps) {
+function TurnRenderer({ turn, prevTurnType }: TurnRendererProps) {
+  // 连续 assistant turn 用小间距，角色切换用大间距
+  const isConsecutiveAssistant = turn.type === 'assistant' && prevTurnType === 'assistant';
+  const spacing = isConsecutiveAssistant ? 'mb-2' : 'mb-6';
+
   switch (turn.type) {
     case 'user':
       return (
-        <div className="mb-6">
+        <div className={spacing}>
           <UserMessageBubble message={turn.message} />
         </div>
       );
 
     case 'assistant':
       return (
-        <div className="mb-6">
+        <div className={spacing}>
           <TurnCard turn={turn} />
         </div>
       );
 
     case 'system':
       return (
-        <div className="mb-6">
+        <div className={spacing}>
           <div className="text-center text-[var(--text-muted)] text-sm py-2">
             {turn.message.content}
           </div>
