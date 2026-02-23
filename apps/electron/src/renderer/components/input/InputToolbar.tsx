@@ -220,8 +220,7 @@ export function InputToolbar() {
       {/* 主容器 */}
       <div className="
         bg-white rounded-[20px]
-        border border-[var(--border-light)]
-        shadow-[0_2px_8px_rgba(0,0,0,0.04)]
+        shadow-[0_2px_16px_rgba(0,0,0,0.08)]
         relative
       ">
         {/* ============================================
