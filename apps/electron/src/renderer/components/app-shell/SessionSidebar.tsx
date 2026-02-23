@@ -123,14 +123,19 @@ export function SessionSidebar() {
   return (
     <aside
       className={`
-        bg-[var(--bg-sidebar)]
-        border-r border-[var(--border-color)]
-        flex flex-col overflow-hidden
+        flex-shrink-0 overflow-hidden
         transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-        ${isOpen ? 'w-[var(--sidebar-width)] min-w-[var(--sidebar-width)]' : 'w-0 min-w-0'}
+        relative z-10
+        ${isOpen ? 'w-[calc(var(--sidebar-width)+16px)] min-w-[calc(var(--sidebar-width)+16px)]' : 'w-0 min-w-0'}
       `}
     >
-      <div className="w-[var(--sidebar-width)] h-full flex flex-col pt-2">
+      <div className="
+        w-[var(--sidebar-width)] h-[calc(100%-16px)]
+        m-2 ml-2
+        bg-[var(--bg-sidebar)] rounded-2xl
+        shadow-[0_2px_16px_rgba(0,0,0,0.06)]
+        flex flex-col pt-2 overflow-hidden
+      ">
         {/* 会话列表 */}
         <div className="flex-1 overflow-y-auto px-2">
           {sessions.length === 0 ? (
@@ -167,7 +172,7 @@ export function SessionSidebar() {
         </div>
 
         {/* 底部操作栏 */}
-        <div className="border-t border-[var(--border-color)] px-3 py-2.5 flex items-center justify-between">
+        <div className="px-3 py-2.5 flex items-center justify-between">
           <button
             onClick={() => setSettingsOpen(true)}
             className="
@@ -302,7 +307,7 @@ function SessionItem({
         transition-colors duration-[var(--transition-fast)]
         flex items-center justify-between gap-2
         ${isActive
-          ? 'bg-[var(--selected-bg)] text-[var(--text-primary)]'
+          ? 'bg-[var(--selected-bg)] text-[var(--text-primary)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
           : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
         }
       `}
