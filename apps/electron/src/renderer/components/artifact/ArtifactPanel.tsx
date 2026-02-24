@@ -498,7 +498,7 @@ interface ArtifactPreviewProps {
 
 function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
   // Listen for postMessage from sandboxed iframes (e.g. A2UI copy button)
-  React.useEffect(() => {
+  useEffect(() => {
     if (fileType !== 'html') return;
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
