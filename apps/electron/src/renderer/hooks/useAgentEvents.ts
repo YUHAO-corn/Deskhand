@@ -231,6 +231,28 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           if (updatedMsg) persistMessage(updatedMsg);
           return updated;
         });
+
+        // A2UI: detect render_playground result and open in Artifact panel
+        if (!event.isError && event.result) {
+          try {
+            const parsed = JSON.parse(event.result);
+            if (parsed.a2ui && parsed.filePath) {
+              const filePath = parsed.filePath as string;
+              setArtifacts((prev) => {
+                const filtered = prev.filter((p) => p !== filePath);
+                const updated = [...filtered, filePath];
+                if (!memoryOnlySessions.has(sessionId)) {
+                  window.electronAPI?.updateSessionMeta(sessionId, { artifacts: updated }).catch(() => {});
+                }
+                return updated;
+              });
+              setSelectedArtifact(filePath);
+              setArtifactPanelOpen(true);
+            }
+          } catch {
+            // Not JSON or not A2UI — ignore
+          }
+        }
         break;
       }
 

@@ -53,6 +53,14 @@ function getCliPath(): string {
   return join(basePath, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
 }
 
+/** Resolve path to A2UI HTML templates */
+function getA2UITemplateDir(): string {
+  // In dev: apps/electron/resources/a2ui-templates/
+  // In packaged: resources/a2ui-templates/ (copied by electron-builder)
+  const basePath = app.isPackaged ? join(app.getAppPath(), '..') : join(process.cwd(), 'apps', 'electron', 'resources');
+  return join(basePath, 'a2ui-templates');
+}
+
 // Get or create agent for a session
 async function getOrCreateAgent(sessionId: string, workingDirectory?: string): Promise<DeskhandAgent | null> {
   if (agents.has(sessionId)) {
@@ -76,6 +84,7 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
     apiKey,
     pathToClaudeCodeExecutable: cliPath,
     workingDirectory: workingDirectory || undefined,
+    a2uiTemplateDir: getA2UITemplateDir(),
     // Callback to persist SDK session ID when captured
     onSdkSessionIdUpdate: (sdkSessionId: string) => {
       console.log('[ipc] SDK session ID captured for', sessionId, ':', sdkSessionId);

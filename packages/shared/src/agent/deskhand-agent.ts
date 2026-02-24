@@ -17,6 +17,7 @@ import type { AgentEvent, PermissionMode, ThinkingLevel } from '@deskhand/core';
 import { query, AbortError, type Query } from '@anthropic-ai/claude-agent-sdk';
 import { ToolIndex, extractToolStarts, extractToolResults, type ContentBlock } from './tool-matching';
 import { getPluginPaths } from '../skills/loader';
+import { createA2UIServer } from './a2ui-tools';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -32,6 +33,8 @@ export interface DeskhandAgentOptions {
   workingDirectory?: string;
   /** Path to the Claude Agent SDK cli.js file */
   pathToClaudeCodeExecutable?: string;
+  /** Path to A2UI HTML templates directory */
+  a2uiTemplateDir?: string;
   /** Callback when SDK session ID is captured (for persistence) */
   onSdkSessionIdUpdate?: (sdkSessionId: string) => void;
 }
@@ -119,6 +122,12 @@ export class DeskhandAgent {
       ...(this.sdkSessionId ? { resume: this.sdkSessionId } : {}),
       // Skills: pass skill directories as plugins for SDK's Skill tool
       plugins: getPluginPaths(this.options.workingDirectory),
+      // A2UI: custom tools for rendering interactive UI components
+      ...(this.options.a2uiTemplateDir ? {
+        mcpServers: {
+          'deskhand-a2ui': createA2UIServer(this.options.a2uiTemplateDir),
+        },
+      } : {}),
       // Custom permission hook
       hooks: {
         PreToolUse: [{
