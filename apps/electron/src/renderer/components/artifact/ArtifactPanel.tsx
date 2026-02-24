@@ -497,23 +497,12 @@ interface ArtifactPreviewProps {
 }
 
 function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
-  // Listen for postMessage from sandboxed iframes (e.g. A2UI copy button)
-  useEffect(() => {
-    if (fileType !== 'html') return;
-    const handler = (e: MessageEvent) => {
-      if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
-        navigator.clipboard.writeText(e.data.text);
-      }
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, [fileType]);
-
   switch (fileType) {
     case 'html':
       return (
         <iframe
           sandbox="allow-scripts"
+          allow="clipboard-write"
           srcDoc={content}
           className="w-full h-full border-none bg-white"
           title={fileName}
