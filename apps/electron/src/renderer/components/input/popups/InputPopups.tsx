@@ -12,7 +12,7 @@
  * - ModelSelectorPopup: 模型选择
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import {
   thinkingLevelAtom,
@@ -458,6 +458,103 @@ function RadioItem({ title, desc, active, onClick }: RadioItemProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================
+// ClipboardPopup - 剪贴板历史
+// ============================================
+
+interface ClipboardEntry {
+  id: string;
+  type: 'text' | 'image' | 'link';
+  content: string;
+  preview: string;
+  timestamp: number;
+  charCount?: number;
+  fileSize?: number;
+}
+
+interface ClipboardPopupProps {
+  isOpen: boolean;
+}
+
+export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
+  const [entries, setEntries] = useState<ClipboardEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    window.electronAPI?.getClipboardHistory().then((history) => {
+      // Show newest first
+      setEntries([...history].reverse());
+      setLoading(false);
+    }).catch(() => {
+      setLoading(false);
+    });
+  }, [isOpen]);
+
+  const typeIcon = (type: ClipboardEntry['type']) => {
+    switch (type) {
+      case 'link': return '🔗';
+      case 'image': return '🖼️';
+      default: return '📝';
+    }
+  };
+
+  const formatTime = (ts: number) => {
+    const diff = Date.now() - ts;
+    if (diff < 60_000) return 'just now';
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)}m ago`;
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)}h ago`;
+    return new Date(ts).toLocaleDateString();
+  };
+
+  return (
+    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={340}>
+      <PopupHeader
+        title="Clipboard History"
+        description="Your recent copies are recorded automatically"
+      />
+
+      <div className="max-h-[320px] overflow-y-auto">
+        {loading && (
+          <div className="p-4 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            Loading...
+          </div>
+        )}
+
+        {!loading && entries.length === 0 && (
+          <div className="p-4 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            No clipboard history yet. Copy something to get started.
+          </div>
+        )}
+
+        {!loading && entries.map((entry) => (
+          <div
+            key={entry.id}
+            className="
+              flex items-start gap-2.5 px-3 py-2.5
+              border-b border-[var(--border-light)] last:border-b-0
+              hover:bg-[var(--hover-bg)] cursor-default
+              transition-colors duration-[var(--transition-fast)]
+            "
+          >
+            <span className="text-[14px] mt-0.5 shrink-0">{typeIcon(entry.type)}</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">
+                {entry.preview}
+              </div>
+              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-0.5">
+                {formatTime(entry.timestamp)}
+                {entry.charCount ? ` · ${entry.charCount.toLocaleString()} chars` : ''}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </PopupContainer>
   );
 }
 
