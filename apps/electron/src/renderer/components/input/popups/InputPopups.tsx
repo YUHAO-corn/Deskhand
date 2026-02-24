@@ -308,16 +308,18 @@ export function ModelSelectorPopup({ isOpen, onClose }: ModelSelectorPopupProps)
 
 interface PopupContainerProps {
   isOpen: boolean;
-  position: string;
+  position?: string;
   minWidth?: number;
+  fullWidth?: boolean;
   children: React.ReactNode;
 }
 
-function PopupContainer({ isOpen, position, minWidth = 240, children }: PopupContainerProps) {
+function PopupContainer({ isOpen, position, minWidth = 240, fullWidth, children }: PopupContainerProps) {
   return (
     <div
       className={`
-        absolute bottom-[calc(100%+8px)] ${position}
+        absolute bottom-[calc(100%+8px)]
+        ${fullWidth ? 'left-0 right-0' : position ?? ''}
         bg-[var(--bg-secondary)]
         rounded-[var(--radius-lg)]
         shadow-[var(--shadow-popup)]
@@ -329,7 +331,7 @@ function PopupContainer({ isOpen, position, minWidth = 240, children }: PopupCon
           : 'opacity-0 invisible translate-y-2'
         }
       `}
-      style={{ minWidth }}
+      style={fullWidth ? undefined : { minWidth }}
     >
       {children}
     </div>
@@ -462,7 +464,7 @@ function RadioItem({ title, desc, active, onClick }: RadioItemProps) {
 }
 
 // ============================================
-// ClipboardPopup - 剪贴板历史
+// ClipboardPopup - 剪贴板历史（v2 设计）
 // ============================================
 
 interface ClipboardEntry {
@@ -480,28 +482,20 @@ interface ClipboardPopupProps {
 }
 
 export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
+  const [activeTab, setActiveTab] = useState<'files' | 'clipboard'>('clipboard');
   const [entries, setEntries] = useState<ClipboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || activeTab !== 'clipboard') return;
     setLoading(true);
     window.electronAPI?.getClipboardHistory().then((history) => {
-      // Show newest first
       setEntries([...history].reverse());
       setLoading(false);
     }).catch(() => {
       setLoading(false);
     });
-  }, [isOpen]);
-
-  const typeIcon = (type: ClipboardEntry['type']) => {
-    switch (type) {
-      case 'link': return '🔗';
-      case 'image': return '🖼️';
-      default: return '📝';
-    }
-  };
+  }, [isOpen, activeTab]);
 
   const formatTime = (ts: number) => {
     const diff = Date.now() - ts;
@@ -512,55 +506,143 @@ export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
   };
 
   return (
-    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={340}>
-      <PopupHeader
-        title="Clipboard History"
-        description="Your recent copies are recorded automatically"
-      />
-
-      <div className="max-h-[320px] overflow-y-auto">
-        {loading && (
-          <div className="p-4 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-            Loading...
-          </div>
-        )}
-
-        {!loading && entries.length === 0 && (
-          <div className="p-4 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-            No clipboard history yet. Copy something to get started.
-          </div>
-        )}
-
-        {!loading && entries.map((entry) => (
-          <div
-            key={entry.id}
-            className="
-              flex items-start gap-2.5 px-3 py-2.5
-              border-b border-[var(--border-light)] last:border-b-0
-              hover:bg-[var(--hover-bg)] cursor-default
-              transition-colors duration-[var(--transition-fast)]
-            "
-          >
-            <span className="text-[14px] mt-0.5 shrink-0">{typeIcon(entry.type)}</span>
-            <div className="flex-1 min-w-0">
-              <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">
-                {entry.preview}
-              </div>
-              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-0.5">
-                {formatTime(entry.timestamp)}
-                {entry.charCount ? ` · ${entry.charCount.toLocaleString()} chars` : ''}
-              </div>
-            </div>
-          </div>
-        ))}
+    <PopupContainer isOpen={isOpen} fullWidth>
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 px-3 pt-3 pb-2">
+        <button
+          onClick={() => setActiveTab('files')}
+          className={`
+            px-3 py-1.5 rounded-[var(--radius-md)]
+            text-[var(--font-size-sm)] font-medium
+            border-none cursor-pointer transition-colors
+            ${activeTab === 'files'
+              ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
+              : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
+            }
+          `}
+        >
+          Files
+        </button>
+        <button
+          onClick={() => setActiveTab('clipboard')}
+          className={`
+            px-3 py-1.5 rounded-[var(--radius-md)]
+            text-[var(--font-size-sm)] font-medium
+            border-none cursor-pointer transition-colors
+            ${activeTab === 'clipboard'
+              ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
+              : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
+            }
+          `}
+        >
+          Clipboard
+        </button>
       </div>
+
+      {/* Files tab (placeholder) */}
+      {activeTab === 'files' && (
+        <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+          Drag files here or click to browse
+        </div>
+      )}
+
+      {/* Clipboard tab */}
+      {activeTab === 'clipboard' && (
+        <div className="max-h-[360px] overflow-y-auto px-3 pb-3">
+          {loading && (
+            <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+              Loading...
+            </div>
+          )}
+
+          {!loading && entries.length === 0 && (
+            <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+              No clipboard history yet. Copy something to get started.
+            </div>
+          )}
+
+          {!loading && entries.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {entries.map((entry) => (
+                <ClipboardCard key={entry.id} entry={entry} formatTime={formatTime} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </PopupContainer>
+  );
+}
+
+function ClipboardCard({ entry, formatTime }: { entry: ClipboardEntry; formatTime: (ts: number) => string }) {
+  return (
+    <div
+      className="
+        flex flex-col gap-2 p-3
+        rounded-[var(--radius-md)]
+        border border-[var(--border-light)]
+        hover:border-[var(--border-color)]
+        bg-[var(--bg-primary)]
+        cursor-default
+        transition-colors duration-[var(--transition-fast)]
+      "
+    >
+      {/* Type icon */}
+      <div className="text-[var(--text-muted)]">
+        {entry.type === 'link' ? <LinkIcon /> : entry.type === 'image' ? <ImageIcon /> : <TextIcon />}
+      </div>
+
+      {/* Content preview (multi-line) */}
+      <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] leading-snug line-clamp-3 break-all">
+        {entry.preview}
+      </div>
+
+      {/* Meta */}
+      <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-auto">
+        {formatTime(entry.timestamp)}
+        {entry.charCount ? ` · ${entry.charCount.toLocaleString()} chars` : ''}
+      </div>
+    </div>
   );
 }
 
 // ============================================
 // Icons
 // ============================================
+
+// Clipboard card type icons
+function TextIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+
+// Toolbar icons
 
 function FolderIcon() {
   return (
