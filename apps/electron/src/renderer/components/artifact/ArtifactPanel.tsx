@@ -497,17 +497,16 @@ interface ArtifactPreviewProps {
 }
 
 function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
-  // Relay clipboard writes from sandboxed iframes via Electron clipboard module
+  // Listen for postMessage from sandboxed A2UI iframes (e.g. copy requests)
   useEffect(() => {
-    if (fileType !== 'html') return;
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
-        window.electronAPI.copyToClipboard(e.data.text);
+        navigator.clipboard.writeText(e.data.text).catch(() => {});
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [fileType]);
+  }, []);
 
   switch (fileType) {
     case 'html':
