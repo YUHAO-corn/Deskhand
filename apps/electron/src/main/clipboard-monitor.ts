@@ -33,7 +33,8 @@ const PREVIEW_LENGTH = 100;
 // ============ State ============
 
 let timer: ReturnType<typeof setInterval> | null = null;
-let lastContentHash = '';
+let lastTextHash = '';
+let lastImageHash = '';
 
 // ============ Paths ============
 
@@ -65,6 +66,10 @@ function makePreview(text: string): string {
 
 function generateId(): string {
   return crypto.randomUUID();
+}
+
+function hashBuffer(buffer: Buffer): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex').slice(0, 16);
 }
 
 // ============ Storage ============
@@ -114,26 +119,52 @@ function enforceLimit(): void {
 
 function checkClipboard(): void {
   try {
+    // Check text first (text takes priority over image)
     const text = clipboard.readText();
-    if (!text || text.trim().length === 0) return;
+    if (text && text.trim().length > 0) {
+      const textHash = hashContent(text);
+      if (textHash !== lastTextHash) {
+        lastTextHash = textHash;
+        const type = detectType(text);
+        appendEntry({
+          id: generateId(),
+          type,
+          content: text,
+          preview: makePreview(text),
+          timestamp: Date.now(),
+          charCount: text.length,
+        });
+        enforceLimit();
+        return;
+      }
+    }
 
-    const hash = hashContent(text);
-    if (hash === lastContentHash) return;
+    // Check image if text didn't change
+    const image = clipboard.readImage();
+    if (!image.isEmpty()) {
+      const pngBuffer = image.toPNG();
+      const imageHash = hashBuffer(pngBuffer);
+      if (imageHash !== lastImageHash) {
+        lastImageHash = imageHash;
+        const id = generateId();
+        const size = image.getSize();
 
-    lastContentHash = hash;
+        // Save image to disk
+        ensureDirs();
+        const imagePath = path.join(getClipboardImagesDir(), `${id}.png`);
+        fs.writeFileSync(imagePath, pngBuffer);
 
-    const type = detectType(text);
-    const entry: ClipboardEntry = {
-      id: generateId(),
-      type,
-      content: text,
-      preview: makePreview(text),
-      timestamp: Date.now(),
-      charCount: text.length,
-    };
-
-    appendEntry(entry);
-    enforceLimit();
+        appendEntry({
+          id,
+          type: 'image',
+          content: imagePath,
+          preview: `Image (${size.width}×${size.height})`,
+          timestamp: Date.now(),
+          fileSize: pngBuffer.length,
+        });
+        enforceLimit();
+      }
+    }
   } catch {
     // Silently ignore clipboard read errors
   }
@@ -144,12 +175,16 @@ function checkClipboard(): void {
 export function startClipboardMonitor(): void {
   if (timer) return;
 
-  // Initialize hash with current clipboard content to avoid recording
+  // Initialize hashes with current clipboard content to avoid recording
   // whatever is already on the clipboard when the app starts
   try {
     const current = clipboard.readText();
     if (current) {
-      lastContentHash = hashContent(current);
+      lastTextHash = hashContent(current);
+    }
+    const currentImage = clipboard.readImage();
+    if (!currentImage.isEmpty()) {
+      lastImageHash = hashBuffer(currentImage.toPNG());
     }
   } catch {
     // ignore
