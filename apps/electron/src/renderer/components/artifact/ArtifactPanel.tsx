@@ -497,12 +497,23 @@ interface ArtifactPreviewProps {
 }
 
 function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
+  // Relay clipboard writes from sandboxed iframes via Electron clipboard module
+  useEffect(() => {
+    if (fileType !== 'html') return;
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
+        window.electronAPI.copyToClipboard(e.data.text);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [fileType]);
+
   switch (fileType) {
     case 'html':
       return (
         <iframe
           sandbox="allow-scripts"
-          allow="clipboard-write"
           srcDoc={content}
           className="w-full h-full border-none bg-white"
           title={fileName}
