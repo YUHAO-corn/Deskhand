@@ -487,6 +487,7 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
   const [entries, setEntries] = useState<ClipboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!isOpen || activeTab !== 'clipboard') return;
@@ -499,10 +500,20 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
     });
   }, [isOpen, activeTab]);
 
-  // Clear selection when popup closes
+  // Clear selection and search when popup closes
   useEffect(() => {
-    if (!isOpen) setSelectedIds(new Set());
+    if (!isOpen) {
+      setSelectedIds(new Set());
+      setSearchQuery('');
+    }
   }, [isOpen]);
+
+  const filteredEntries = searchQuery.trim()
+    ? entries.filter((e) => {
+        const q = searchQuery.toLowerCase();
+        return e.preview.toLowerCase().includes(q) || e.content.toLowerCase().includes(q);
+      })
+    : entries;
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -570,7 +581,33 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
 
       {/* Clipboard tab */}
       {activeTab === 'clipboard' && (
-        <div className="max-h-[360px] overflow-y-auto px-3 pb-3">
+        <div className="flex flex-col">
+          {/* Search box */}
+          <div className="px-3 pb-2">
+            <div className="relative">
+              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <input
+                type="text"
+                placeholder="Search clipboard..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="
+                  w-full pl-8 pr-3 py-1.5
+                  border border-[var(--border-light)]
+                  rounded-[var(--radius-md)]
+                  text-[var(--font-size-sm)]
+                  bg-[var(--bg-primary)]
+                  text-[var(--text-primary)]
+                  placeholder:text-[var(--text-muted)]
+                  outline-none
+                  focus:border-[var(--accent-color)]
+                  transition-colors
+                "
+              />
+            </div>
+          </div>
+
+          <div className="max-h-[360px] overflow-y-auto px-3 pb-3">
           {loading && (
             <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
               Loading...
@@ -583,9 +620,15 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
             </div>
           )}
 
-          {!loading && entries.length > 0 && (
+          {!loading && entries.length > 0 && filteredEntries.length === 0 && (
+            <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+              No matches for "{searchQuery}"
+            </div>
+          )}
+
+          {!loading && filteredEntries.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
-              {entries.map((entry) => (
+              {filteredEntries.map((entry) => (
                 <ClipboardCard
                   key={entry.id}
                   entry={entry}
@@ -596,6 +639,7 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
 
@@ -715,6 +759,15 @@ function ClipboardCard({ entry, formatTime, selected, onClick }: {
 // ============================================
 
 // Clipboard card type icons
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
 function TextIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
