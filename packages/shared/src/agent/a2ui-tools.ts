@@ -13,6 +13,52 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+// ─── Guided Form Step Schema ───
+
+const ChoiceOption = z.object({
+  value: z.string(),
+  label: z.string(),
+});
+
+const BaseStep = z.object({
+  id: z.string().describe('Unique step ID, used in promptTemplate as {{id}}'),
+  question: z.string().describe('The question text shown to the user'),
+  hint: z.string().optional().describe('Optional hint text below the question'),
+});
+
+const ChoiceStep = BaseStep.extend({
+  type: z.literal('choice'),
+  options: z.array(ChoiceOption).describe('Single-select options'),
+});
+
+const MultiChoiceStep = BaseStep.extend({
+  type: z.literal('multi-choice'),
+  options: z.array(ChoiceOption).describe('Multi-select options'),
+});
+
+const TextStep = BaseStep.extend({
+  type: z.literal('text'),
+  placeholder: z.string().optional(),
+});
+
+const TextareaStep = BaseStep.extend({
+  type: z.literal('textarea'),
+  placeholder: z.string().optional(),
+});
+
+const SliderStep = BaseStep.extend({
+  type: z.literal('slider'),
+  min: z.number(),
+  max: z.number(),
+  step: z.number().optional(),
+  defaultValue: z.number(),
+  unit: z.string().optional(),
+  minLabel: z.string().optional(),
+  maxLabel: z.string().optional(),
+});
+
+const FormStep = z.discriminatedUnion('type', [ChoiceStep, MultiChoiceStep, TextStep, TextareaStep, SliderStep]);
+
 // ─── Control Schema ───
 
 const SliderControl = z.object({
@@ -135,12 +181,65 @@ The user adjusts controls and copies the generated prompt back to chat.`,
   );
 }
 
+/** Create the render_guided_form tool with access to the template directory */
+function createRenderGuidedFormTool(templateDir: string) {
+  return tool(
+    'render_guided_form',
+    `Render a guided form in the Artifact panel to collect structured information from the user.
+Use this when you need to gather multiple pieces of information (tone, audience, length, topic, etc.) before performing a task.
+Instead of asking questions one by one in chat, present them as an interactive step-by-step form.
+The user fills in answers, reviews a summary, and copies the generated prompt back to chat.`,
+    {
+      title: z.string().describe('Form title, e.g. "Let me understand your needs"'),
+      description: z.string().optional().describe('Brief description shown below title'),
+      steps: z.array(FormStep).describe('Ordered list of questions. Each step is shown one at a time.'),
+      promptTemplate: z.string().describe(
+        'Template for the copyable prompt output. Use {{stepId}} placeholders that get replaced with user answers.'
+      ),
+    },
+    async (args) => {
+      try {
+        const templatePath = path.join(templateDir, 'guided-form.html');
+        const templateHtml = fs.readFileSync(templatePath, 'utf-8');
+        const html = injectConfig(templateHtml, args as Record<string, unknown>);
+
+        const tmpDir = path.join(os.tmpdir(), 'deskhand-a2ui');
+        fs.mkdirSync(tmpDir, { recursive: true });
+        const fileName = `guided-form-${Date.now()}.html`;
+        const filePath = path.join(tmpDir, fileName);
+        fs.writeFileSync(filePath, html, 'utf-8');
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({ a2ui: true, filePath, title: args.title }),
+          }],
+        };
+      } catch (err) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `Error rendering guided form: ${err}`,
+          }],
+          isError: true,
+        };
+      }
+    },
+    {
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+      },
+    },
+  );
+}
+
 // ─── MCP Server ───
 
 export function createA2UIServer(templateDir: string) {
   return createSdkMcpServer({
     name: 'deskhand-a2ui',
     version: '1.0.0',
-    tools: [createRenderPlaygroundTool(templateDir)],
+    tools: [createRenderPlaygroundTool(templateDir), createRenderGuidedFormTool(templateDir)],
   });
 }
