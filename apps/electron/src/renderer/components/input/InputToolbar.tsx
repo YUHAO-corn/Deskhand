@@ -37,6 +37,7 @@ import {
   SkillsPopup,
   ReasoningPopup,
   ModelSelectorPopup,
+  ClipboardPopup,
 } from './popups';
 
 export function InputToolbar() {
@@ -232,6 +233,7 @@ export function InputToolbar() {
         <SkillsPopup isOpen={activePopup === 'skills'} />
         <ReasoningPopup isOpen={activePopup === 'reasoning'} />
         <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
+        <ClipboardPopup isOpen={activePopup === 'clipboard'} />
 
         {/* ============================================
             区域：输入框
@@ -261,7 +263,11 @@ export function InputToolbar() {
           <div className="flex items-center gap-[1px]">
             {/* 功能：附件上传
                 事件：onClick → 打开文件选择器 */}
-            <ToolbarButton title="Attach file">
+            <ToolbarButton
+              title="Attach file"
+              active={activePopup === 'clipboard'}
+              onClick={() => togglePopup('clipboard')}
+            >
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
               </svg>

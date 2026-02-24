@@ -4,4 +4,5 @@ export {
   SkillsPopup,
   ReasoningPopup,
   ModelSelectorPopup,
+  ClipboardPopup,
 } from './InputPopups';
