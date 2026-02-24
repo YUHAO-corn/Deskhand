@@ -16,6 +16,7 @@ import { join } from 'path';
 import { registerIpcHandlers } from './ipc.ts';
 import { loadWindowState, saveWindowState } from './window-state.ts';
 import { ensureBuiltinSkills } from '@deskhand/shared/skills';
+import { startClipboardMonitor } from './clipboard-monitor.ts';
 
 // ============ Window Management ============
 
@@ -72,6 +73,7 @@ app.whenReady().then(() => {
   ensureBuiltinSkills(join(__dirname, 'builtin-skills'));
 
   registerIpcHandlers();
+  startClipboardMonitor();
   createWindow();
 
   app.on('activate', () => {
