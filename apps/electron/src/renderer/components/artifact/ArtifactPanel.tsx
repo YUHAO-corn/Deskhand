@@ -501,7 +501,7 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
-        navigator.clipboard.writeText(e.data.text).catch(() => {});
+        window.electronAPI.writeClipboard(e.data.text);
       }
     };
     window.addEventListener('message', handler);
