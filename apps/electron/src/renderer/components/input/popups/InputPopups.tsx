@@ -575,6 +575,24 @@ export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
 }
 
 function ClipboardCard({ entry, formatTime }: { entry: ClipboardEntry; formatTime: (ts: number) => string }) {
+  const [thumbSrc, setThumbSrc] = useState<string | null>(null);
+
+  // Load image thumbnail
+  useEffect(() => {
+    if (entry.type !== 'image') return;
+    window.electronAPI?.readFile(entry.content).then((result) => {
+      if (result.exists && result.base64) {
+        setThumbSrc(result.base64);
+      }
+    });
+  }, [entry.type, entry.content]);
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   return (
     <div
       className="
@@ -587,21 +605,39 @@ function ClipboardCard({ entry, formatTime }: { entry: ClipboardEntry; formatTim
         transition-colors duration-[var(--transition-fast)]
       "
     >
-      {/* Type icon */}
-      <div className="text-[var(--text-muted)]">
-        {entry.type === 'link' ? <LinkIcon /> : entry.type === 'image' ? <ImageIcon /> : <TextIcon />}
-      </div>
-
-      {/* Content preview (multi-line) */}
-      <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] leading-snug line-clamp-3 break-all">
-        {entry.preview}
-      </div>
-
-      {/* Meta */}
-      <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-auto">
-        {formatTime(entry.timestamp)}
-        {entry.charCount ? ` · ${entry.charCount.toLocaleString()} chars` : ''}
-      </div>
+      {entry.type === 'image' ? (
+        <>
+          {/* Image thumbnail */}
+          <div className="w-full aspect-[4/3] rounded overflow-hidden bg-[var(--hover-bg)] flex items-center justify-center">
+            {thumbSrc ? (
+              <img src={thumbSrc} alt="Clipboard image" className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-[var(--text-muted)]"><ImageIcon /></div>
+            )}
+          </div>
+          {/* Meta */}
+          <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-auto">
+            {formatTime(entry.timestamp)}
+            {entry.fileSize ? ` · ${formatSize(entry.fileSize)}` : ''}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Type icon */}
+          <div className="text-[var(--text-muted)]">
+            {entry.type === 'link' ? <LinkIcon /> : <TextIcon />}
+          </div>
+          {/* Content preview (multi-line) */}
+          <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] leading-snug line-clamp-3 break-all">
+            {entry.preview}
+          </div>
+          {/* Meta */}
+          <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-auto">
+            {formatTime(entry.timestamp)}
+            {entry.charCount ? ` · ${entry.charCount.toLocaleString()} chars` : ''}
+          </div>
+        </>
+      )}
     </div>
   );
 }
