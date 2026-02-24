@@ -206,6 +206,20 @@ function checkClipboard(): void {
 export function startClipboardMonitor(): void {
   if (timer) return;
 
+  // Rebuild index if history exists but index doesn't
+  ensureDirs();
+  if (fs.existsSync(getHistoryPath()) && !fs.existsSync(getIndexPath())) {
+    const entries = loadHistory();
+    if (entries.length > 0) {
+      const indexContent = entries.map((e) => JSON.stringify({
+        id: e.id, type: e.type, preview: e.preview,
+        timestamp: e.timestamp, charCount: e.charCount, fileSize: e.fileSize,
+      })).join('\n') + '\n';
+      fs.writeFileSync(getIndexPath(), indexContent, 'utf-8');
+      console.log(`[clipboard] Rebuilt index from ${entries.length} history entries`);
+    }
+  }
+
   // Initialize hashes with current clipboard content to avoid recording
   // whatever is already on the clipboard when the app starts
   try {

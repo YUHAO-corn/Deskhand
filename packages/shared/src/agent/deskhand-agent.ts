@@ -115,6 +115,10 @@ export class DeskhandAgent {
     // Bash commands that are explicitly destructive
     const DESTRUCTIVE_COMMANDS = new Set(['rm', 'rmdir', 'unlink', 'shred']);
 
+    if (this.options.clipboardPaths) {
+      console.log('[DeskhandAgent] Clipboard context injected:', this.options.clipboardPaths.indexPath);
+    }
+
     const sdkOptions = {
       model: effectiveModel,
       cwd: this.options.workingDirectory || process.cwd(),
