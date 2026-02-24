@@ -76,7 +76,7 @@ export interface ElectronAPI {
 
   // Clipboard
   getClipboardHistory: () => Promise<ClipboardEntry[]>;
-  writeClipboard: (text: string) => void;
+  copyToClipboard: (text: string) => void;
 
   // Events
   onSessionsRefresh: (callback: () => void) => () => void;
@@ -154,7 +154,7 @@ const electronAPI: ElectronAPI = {
 
   // Clipboard
   getClipboardHistory: () => ipcRenderer.invoke(IPC_CHANNELS.GET_CLIPBOARD_HISTORY),
-  writeClipboard: (text: string) => clipboard.writeText(text),
+  copyToClipboard: (text: string) => clipboard.writeText(text),
 
   // Events
   onSessionsRefresh: (callback: () => void) => {
