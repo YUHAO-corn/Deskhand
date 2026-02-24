@@ -486,27 +486,6 @@ function PreviewToolbar({
 }
 
 // ============================================
-// A2UIIframe - iframe with postMessage clipboard bridge
-// ============================================
-
-function A2UIIframe(props: React.IframeHTMLAttributes<HTMLIFrameElement>) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.source !== iframeRef.current?.contentWindow) return;
-      if (e.data?.type === 'a2ui-copy') {
-        navigator.clipboard.writeText(e.data.text).catch(() => {});
-      }
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, []);
-
-  return <iframe ref={iframeRef} sandbox="allow-scripts" {...props} />;
-}
-
-// ============================================
 // ArtifactPreview - Type-aware renderer
 // ============================================
 
@@ -518,10 +497,23 @@ interface ArtifactPreviewProps {
 }
 
 function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
+  // Listen for postMessage from sandboxed iframes (e.g. A2UI copy button)
+  React.useEffect(() => {
+    if (fileType !== 'html') return;
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
+        navigator.clipboard.writeText(e.data.text);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [fileType]);
+
   switch (fileType) {
     case 'html':
       return (
-        <A2UIIframe
+        <iframe
+          sandbox="allow-scripts"
           srcDoc={content}
           className="w-full h-full border-none bg-white"
           title={fileName}
