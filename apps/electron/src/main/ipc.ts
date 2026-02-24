@@ -35,7 +35,7 @@ import {
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import { loadSkills } from '@deskhand/shared/skills';
 import { runInsightPipeline, type InsightPipelineConfig } from '@deskhand/shared/insight';
-import { loadHistory, type ClipboardEntry } from './clipboard-monitor.ts';
+import { loadHistory, getClipboardPaths, type ClipboardEntry } from './clipboard-monitor.ts';
 
 // ============ Agent Instance Management ============
 
@@ -86,6 +86,7 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
     pathToClaudeCodeExecutable: cliPath,
     workingDirectory: workingDirectory || undefined,
     a2uiTemplateDir: getA2UITemplateDir(),
+    clipboardPaths: getClipboardPaths(),
     // Callback to persist SDK session ID when captured
     onSdkSessionIdUpdate: (sdkSessionId: string) => {
       console.log('[ipc] SDK session ID captured for', sessionId, ':', sdkSessionId);

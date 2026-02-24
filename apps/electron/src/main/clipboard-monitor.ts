@@ -28,6 +28,7 @@ export interface ClipboardEntry {
 const POLL_INTERVAL = 500; // ms
 const MAX_ENTRIES = 500;
 const HISTORY_FILE = 'clipboard-history.jsonl';
+const INDEX_FILE = 'clipboard-index.jsonl';
 const PREVIEW_LENGTH = 100;
 
 // ============ State ============
@@ -40,6 +41,18 @@ let lastImageHash = '';
 
 function getHistoryPath(): string {
   return path.join(getConfigDir(), HISTORY_FILE);
+}
+
+function getIndexPath(): string {
+  return path.join(getConfigDir(), INDEX_FILE);
+}
+
+/** Get paths for external consumers (e.g. agent system prompt) */
+export function getClipboardPaths() {
+  return {
+    historyPath: getHistoryPath(),
+    indexPath: getIndexPath(),
+  };
 }
 
 function getClipboardImagesDir(): string {
@@ -89,6 +102,17 @@ function appendEntry(entry: ClipboardEntry): void {
   ensureDirs();
   const line = JSON.stringify(entry) + '\n';
   fs.appendFileSync(getHistoryPath(), line, 'utf-8');
+
+  // Also append to lightweight index (metadata only, no full content)
+  const indexEntry = {
+    id: entry.id,
+    type: entry.type,
+    preview: entry.preview,
+    timestamp: entry.timestamp,
+    charCount: entry.charCount,
+    fileSize: entry.fileSize,
+  };
+  fs.appendFileSync(getIndexPath(), JSON.stringify(indexEntry) + '\n', 'utf-8');
 }
 
 /** Load all entries from JSONL file */
@@ -113,6 +137,13 @@ function enforceLimit(): void {
   const trimmed = entries.slice(entries.length - MAX_ENTRIES);
   const content = trimmed.map((e) => JSON.stringify(e)).join('\n') + '\n';
   fs.writeFileSync(getHistoryPath(), content, 'utf-8');
+
+  // Rebuild index from trimmed entries
+  const indexContent = trimmed.map((e) => JSON.stringify({
+    id: e.id, type: e.type, preview: e.preview,
+    timestamp: e.timestamp, charCount: e.charCount, fileSize: e.fileSize,
+  })).join('\n') + '\n';
+  fs.writeFileSync(getIndexPath(), indexContent, 'utf-8');
 }
 
 // ============ Polling ============

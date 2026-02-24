@@ -37,6 +37,11 @@ export interface DeskhandAgentOptions {
   a2uiTemplateDir?: string;
   /** Callback when SDK session ID is captured (for persistence) */
   onSdkSessionIdUpdate?: (sdkSessionId: string) => void;
+  /** Clipboard file paths for system prompt injection */
+  clipboardPaths?: {
+    indexPath: string;
+    historyPath: string;
+  };
 }
 
 /** Chat options */
@@ -115,6 +120,25 @@ export class DeskhandAgent {
       cwd: this.options.workingDirectory || process.cwd(),
       abortController: this.abortController,
       pathToClaudeCodeExecutable: this.options.pathToClaudeCodeExecutable,
+      // System prompt: inject clipboard context if available
+      ...(this.options.clipboardPaths ? {
+        systemPrompt: {
+          type: 'preset' as const,
+          preset: 'claude_code' as const,
+          append: [
+            '',
+            '## Clipboard History',
+            'The user has clipboard monitoring enabled. Their clipboard history is stored locally.',
+            `- Index file (lightweight metadata): ${this.options.clipboardPaths.indexPath}`,
+            `- Full history file (complete content): ${this.options.clipboardPaths.historyPath}`,
+            '',
+            'When the user mentions clipboard, copied content, or asks to find something they copied before:',
+            '1. Read the index file first to browse entries (each line is JSON with id, type, preview, timestamp)',
+            '2. If you need the full content of a specific entry, search for its id in the history file',
+            '3. Always respond in the language the user is using',
+          ].join('\n'),
+        },
+      } : {}),
       // Bypass SDK's built-in permissions — we implement our own via PreToolUse hook
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
