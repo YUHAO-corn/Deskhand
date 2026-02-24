@@ -479,12 +479,14 @@ interface ClipboardEntry {
 
 interface ClipboardPopupProps {
   isOpen: boolean;
+  onConfirm?: (entries: ClipboardEntry[]) => void;
 }
 
-export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
+export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
   const [activeTab, setActiveTab] = useState<'files' | 'clipboard'>('clipboard');
   const [entries, setEntries] = useState<ClipboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isOpen || activeTab !== 'clipboard') return;
@@ -496,6 +498,26 @@ export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
       setLoading(false);
     });
   }, [isOpen, activeTab]);
+
+  // Clear selection when popup closes
+  useEffect(() => {
+    if (!isOpen) setSelectedIds(new Set());
+  }, [isOpen]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleConfirm = () => {
+    const selected = entries.filter((e) => selectedIds.has(e.id));
+    onConfirm?.(selected);
+    setSelectedIds(new Set());
+  };
 
   const formatTime = (ts: number) => {
     const diff = Date.now() - ts;
@@ -564,17 +586,49 @@ export function ClipboardPopup({ isOpen }: ClipboardPopupProps) {
           {!loading && entries.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {entries.map((entry) => (
-                <ClipboardCard key={entry.id} entry={entry} formatTime={formatTime} />
+                <ClipboardCard
+                  key={entry.id}
+                  entry={entry}
+                  formatTime={formatTime}
+                  selected={selectedIds.has(entry.id)}
+                  onClick={() => toggleSelect(entry.id)}
+                />
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Bottom confirmation bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-light)]">
+          <span className="text-[var(--font-size-sm)] text-[var(--text-secondary)]">
+            {selectedIds.size} selected
+          </span>
+          <button
+            onClick={handleConfirm}
+            className="
+              px-4 py-1.5 rounded-[var(--radius-md)]
+              bg-[var(--accent-color)] text-white
+              text-[var(--font-size-sm)] font-medium
+              border-none cursor-pointer
+              hover:opacity-90 transition-opacity
+            "
+          >
+            Attach
+          </button>
         </div>
       )}
     </PopupContainer>
   );
 }
 
-function ClipboardCard({ entry, formatTime }: { entry: ClipboardEntry; formatTime: (ts: number) => string }) {
+function ClipboardCard({ entry, formatTime, selected, onClick }: {
+  entry: ClipboardEntry;
+  formatTime: (ts: number) => string;
+  selected?: boolean;
+  onClick?: () => void;
+}) {
   const [thumbSrc, setThumbSrc] = useState<string | null>(null);
 
   // Load image thumbnail
@@ -595,17 +649,30 @@ function ClipboardCard({ entry, formatTime }: { entry: ClipboardEntry; formatTim
 
   return (
     <div
-      className="
+      onClick={onClick}
+      className={`
         flex flex-col gap-2 p-3 h-[140px]
         rounded-[var(--radius-md)]
-        border border-[var(--border-light)]
-        hover:border-[var(--border-color)]
+        border-2
         bg-[var(--bg-primary)]
-        cursor-default
+        cursor-pointer
         transition-colors duration-[var(--transition-fast)]
         overflow-hidden
-      "
+        relative
+        ${selected
+          ? 'border-[var(--accent-color)] bg-[var(--accent-bg)]'
+          : 'border-[var(--border-light)] hover:border-[var(--border-color)]'
+        }
+      `}
     >
+      {/* Selection checkmark */}
+      {selected && (
+        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--accent-color)] flex items-center justify-center">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+      )}
       {entry.type === 'image' ? (
         <>
           {/* Image thumbnail */}

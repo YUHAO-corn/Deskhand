@@ -74,6 +74,36 @@ export function InputToolbar() {
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
 
+  // 剪贴板附件
+  const [clipboardAttachments, setClipboardAttachments] = useState<Array<{
+    id: string;
+    type: 'text' | 'image' | 'link';
+    content: string;
+    preview: string;
+    charCount?: number;
+    fileSize?: number;
+  }>>([]);
+
+  const handleClipboardConfirm = (entries: Array<{
+    id: string;
+    type: 'text' | 'image' | 'link';
+    content: string;
+    preview: string;
+    charCount?: number;
+    fileSize?: number;
+  }>) => {
+    setClipboardAttachments((prev) => {
+      const existingIds = new Set(prev.map((a) => a.id));
+      const newEntries = entries.filter((e) => !existingIds.has(e.id));
+      return [...prev, ...newEntries];
+    });
+    setActivePopup(null);
+  };
+
+  const removeAttachment = (id: string) => {
+    setClipboardAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const togglePopup = (popup: string) => {
     setActivePopup(activePopup === popup ? null : popup);
   };
@@ -97,11 +127,28 @@ export function InputToolbar() {
     const trimmedInput = (overrideMessage ?? inputValue).trim();
     if (!trimmedInput || !activeSessionId) return;
 
+    // Build message with clipboard attachments inlined
+    let fullMessage = trimmedInput;
+    if (!overrideMessage && clipboardAttachments.length > 0) {
+      const attachmentParts = clipboardAttachments.map((att) => {
+        if (att.type === 'image') {
+          return `[Clipboard image: ${att.content}]`;
+        }
+        const MAX_INLINE = 500;
+        if (att.content.length <= MAX_INLINE) {
+          return `---\n${att.content}\n---`;
+        }
+        return `---\n${att.content.slice(0, MAX_INLINE)}…\n(truncated, ${att.charCount?.toLocaleString()} chars total)\n---`;
+      });
+      fullMessage = attachmentParts.join('\n\n') + '\n\n' + trimmedInput;
+      setClipboardAttachments([]);
+    }
+
     // 1. 添加用户消息到 atoms
     const userMessage: Message = {
       id: generateMessageId(),
       role: 'user',
-      content: trimmedInput,
+      content: fullMessage,
       timestamp: Date.now(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -165,7 +212,7 @@ export function InputToolbar() {
 
     // 5. 调用 IPC 发送消息
     try {
-      await window.electronAPI?.chat(activeSessionId, trimmedInput, {
+      await window.electronAPI?.chat(activeSessionId, fullMessage, {
         model: selectedModel,
         thinkingLevel,
         workingDirectory: workingDirectory ?? undefined,
@@ -174,7 +221,7 @@ export function InputToolbar() {
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode, memoryOnlySessions, setMemoryOnlySessions, sessionMetaMap, setSessionMetaMap, setSessionIds]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, thinkingLevel, workingDirectory, permissionMode, memoryOnlySessions, setMemoryOnlySessions, sessionMetaMap, setSessionMetaMap, setSessionIds, clipboardAttachments]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -233,7 +280,44 @@ export function InputToolbar() {
         <SkillsPopup isOpen={activePopup === 'skills'} />
         <ReasoningPopup isOpen={activePopup === 'reasoning'} />
         <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
-        <ClipboardPopup isOpen={activePopup === 'clipboard'} />
+        <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} />
+
+        {/* ============================================
+            区域：剪贴板附件预览
+            ============================================ */}
+        {clipboardAttachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-[22px] pt-[14px]">
+            {clipboardAttachments.map((att) => (
+              <div
+                key={att.id}
+                className="
+                  flex items-center gap-2 px-3 py-1.5
+                  bg-[var(--accent-bg)] rounded-[var(--radius-md)]
+                  text-[var(--font-size-sm)] text-[var(--text-primary)]
+                  max-w-[240px]
+                "
+              >
+                <span className="truncate">
+                  {att.type === 'image' ? 'Image' : att.preview.slice(0, 30)}
+                  {att.preview.length > 30 && att.type !== 'image' ? '…' : ''}
+                </span>
+                <button
+                  onClick={() => removeAttachment(att.id)}
+                  className="
+                    shrink-0 w-4 h-4 flex items-center justify-center
+                    bg-transparent border-none cursor-pointer
+                    text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                  "
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ============================================
             区域：输入框
