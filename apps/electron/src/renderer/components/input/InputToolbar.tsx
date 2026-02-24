@@ -30,6 +30,7 @@ import {
   permissionModeAtom,
   skillsAtom,
   pendingActionMessageAtom,
+  pendingA2UIPromptAtom,
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
@@ -70,6 +71,9 @@ export function InputToolbar() {
 
   // Skills
   const [skills] = useAtom(skillsAtom);
+
+  // A2UI prompt attachment
+  const [a2uiPrompt, setA2UIPrompt] = useAtom(pendingA2UIPromptAtom);
 
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
@@ -142,6 +146,12 @@ export function InputToolbar() {
       });
       fullMessage = attachmentParts.join('\n\n') + '\n\n' + trimmedInput;
       setClipboardAttachments([]);
+    }
+
+    // Include A2UI prompt attachment if present
+    if (!overrideMessage && a2uiPrompt) {
+      fullMessage = `---\n${a2uiPrompt}\n---\n\n` + fullMessage;
+      setA2UIPrompt(null);
     }
 
     // 1. 添加用户消息到 atoms
@@ -285,8 +295,41 @@ export function InputToolbar() {
         {/* ============================================
             区域：剪贴板附件预览
             ============================================ */}
-        {clipboardAttachments.length > 0 && (
+        {(clipboardAttachments.length > 0 || a2uiPrompt) && (
           <div className="flex flex-wrap gap-2 px-[22px] pt-[14px]">
+            {a2uiPrompt && (
+              <div
+                className="
+                  flex items-center gap-2 px-3 py-1.5
+                  bg-[var(--accent-bg)] rounded-[var(--radius-md)]
+                  text-[var(--font-size-sm)] text-[var(--accent)]
+                  max-w-[240px] border border-[var(--accent)]/20
+                "
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <span className="truncate">
+                  {a2uiPrompt.slice(0, 30)}{a2uiPrompt.length > 30 ? '…' : ''}
+                </span>
+                <button
+                  onClick={() => setA2UIPrompt(null)}
+                  className="
+                    shrink-0 w-4 h-4 flex items-center justify-center
+                    bg-transparent border-none cursor-pointer
+                    text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                  "
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )}
             {clipboardAttachments.map((att) => (
               <div
                 key={att.id}

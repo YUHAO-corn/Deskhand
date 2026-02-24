@@ -78,7 +78,7 @@
     <div class="prompt-output">
       <div class="prompt-label">Generated prompt</div>
       <div class="prompt-text" id="prompt-text"></div>
-      <button class="btn-copy" id="copy-btn">Copy</button>
+      <button class="btn-copy" id="copy-btn">Send to Chat</button>
     </div>
   </div>
 </div>
@@ -440,10 +440,10 @@ function fillTemplate(template) {
 // Copy button
 document.getElementById('copy-btn').onclick = () => {
   const text = document.getElementById('prompt-text').textContent;
-  window.parent.postMessage({ type: 'a2ui-copy', text }, '*');
+  window.parent.postMessage({ type: 'a2ui-send', text }, '*');
   const btn = document.getElementById('copy-btn');
-  btn.textContent = '✓ Copied!';
-  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  btn.textContent = '✓ Sent!';
+  setTimeout(() => { btn.textContent = 'Send to Chat'; }, 1500);
 };
 
 init();

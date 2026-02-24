@@ -108,3 +108,6 @@ export const skillsAtom = atom<Skill[]>([]);
 
 /** Pending action message to auto-send (set by action buttons, consumed by InputToolbar) */
 export const pendingActionMessageAtom = atom<string | null>(null);
+
+/** Pending A2UI prompt attachment (set by ArtifactPanel postMessage, displayed as chip in InputToolbar) */
+export const pendingA2UIPromptAtom = atom<string | null>(null);

@@ -58,7 +58,7 @@
     <div id="preview" style="flex:1;overflow:auto;padding:20px;background:var(--bg);"></div>
     <div id="prompt-bar" style="border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:8px;background:var(--bg-muted);">
       <div id="prompt-text" style="flex:1;font-size:13px;color:var(--text-secondary);font-family:var(--mono);white-space:pre-wrap;max-height:80px;overflow-y:auto;"></div>
-      <button id="copy-btn" style="padding:6px 16px;font-size:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius-md);cursor:pointer;flex-shrink:0;font-family:var(--font);font-weight:500;transition:background 0.15s;">Copy</button>
+      <button id="copy-btn" style="padding:6px 16px;font-size:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius-md);cursor:pointer;flex-shrink:0;font-family:var(--font);font-weight:500;transition:background 0.15s;">Send to Chat</button>
     </div>
   </div>
 </div>
@@ -306,10 +306,10 @@ function updateAll() {
 
 document.getElementById('copy-btn').onclick = () => {
   const text = document.getElementById('prompt-text').textContent;
-  window.parent.postMessage({ type: 'a2ui-copy', text }, '*');
+  window.parent.postMessage({ type: 'a2ui-send', text }, '*');
   const btn = document.getElementById('copy-btn');
-  btn.textContent = '✓ Copied!';
-  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  btn.textContent = '✓ Sent!';
+  setTimeout(() => { btn.textContent = 'Send to Chat'; }, 1500);
 };
 
 init();

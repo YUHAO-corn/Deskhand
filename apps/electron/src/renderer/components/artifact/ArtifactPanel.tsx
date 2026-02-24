@@ -18,6 +18,7 @@ import {
   sessionArtifactsFamily,
   activeSessionIdAtom,
   sessionMetaMapAtom,
+  pendingA2UIPromptAtom,
 } from '../../atoms/sessions';
 import { Markdown } from '../chat/markdown/Markdown';
 
@@ -497,17 +498,19 @@ interface ArtifactPreviewProps {
 }
 
 function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPreviewProps) {
-  // Relay clipboard writes from sandboxed iframes via Electron clipboard module
+  const setA2UIPrompt = useSetAtom(pendingA2UIPromptAtom);
+
+  // Relay A2UI prompt from sandboxed iframes to chat input as attachment
   useEffect(() => {
     if (fileType !== 'html') return;
     const handler = (e: MessageEvent) => {
-      if (e.data?.type === 'a2ui-copy' && typeof e.data.text === 'string') {
-        window.electronAPI.copyToClipboard(e.data.text);
+      if (e.data?.type === 'a2ui-send' && typeof e.data.text === 'string') {
+        setA2UIPrompt(e.data.text);
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [fileType]);
+  }, [fileType, setA2UIPrompt]);
 
   switch (fileType) {
     case 'html':
