@@ -1,6 +1,6 @@
 ---
 name: playground
-description: Creates interactive HTML playgrounds — self-contained single-file explorers that let users configure something visually through controls, see a live preview, and copy out a prompt. Use when the user asks to make a playground, explorer, or interactive tool for a topic.
+description: Creates COMPLEX interactive HTML playgrounds that need custom visualizations, diagrams, or creative layouts beyond standard controls. Use this when the user needs a mind map, architecture diagram, code review tool, concept explorer, or any interactive tool that requires custom HTML/JS. Do NOT use this for simple parameter tuning or configuration — use the render_playground tool instead.
 ---
 
 # Playground Builder

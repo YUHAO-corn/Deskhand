@@ -124,10 +124,10 @@ function injectConfig(templateHtml: string, config: Record<string, unknown>): st
 function createRenderPlaygroundTool(templateDir: string) {
   return tool(
     'render_playground',
-    `Render an interactive playground in the Artifact panel.
-Use this when the user needs to visually explore design options, configurations, or parameters.
-You provide a JSON configuration with controls and preview template — the frontend renders it.
-The user adjusts controls and copies the generated prompt back to chat.`,
+    `Render a quick interactive playground in the Artifact panel using standard controls (sliders, selects, color pickers, toggles).
+Use this for STANDARD configuration scenarios where the built-in control types are sufficient — e.g. adjusting design parameters, tuning settings, comparing options.
+Do NOT use this for complex or creative visualizations that need custom HTML/JS (use the playground skill instead).
+You provide a JSON configuration — the frontend renders it instantly. The user adjusts controls and copies the generated prompt.`,
     {
       title: z.string().describe('Playground title'),
       description: z.string().optional().describe('Brief description shown below title'),
