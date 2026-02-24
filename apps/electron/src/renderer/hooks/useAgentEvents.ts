@@ -235,7 +235,13 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
         // A2UI: detect render_playground result and open in Artifact panel
         if (!event.isError && event.result) {
           try {
-            const parsed = JSON.parse(event.result);
+            // MCP tool results come as content array: [{ type: "text", text: "..." }]
+            let resultText = event.result;
+            const outer = JSON.parse(resultText);
+            if (Array.isArray(outer) && outer[0]?.type === 'text' && outer[0]?.text) {
+              resultText = outer[0].text;
+            }
+            const parsed = JSON.parse(resultText);
             if (parsed.a2ui && parsed.filePath) {
               const filePath = parsed.filePath as string;
               setArtifacts((prev) => {
