@@ -319,7 +319,7 @@ function PopupContainer({ isOpen, position, minWidth = 240, fullWidth, children 
     <div
       className={`
         absolute bottom-[calc(100%+8px)]
-        ${fullWidth ? 'left-0 right-0' : position ?? ''}
+        ${fullWidth ? 'left-0 right-0 max-w-[520px]' : position ?? ''}
         bg-[var(--bg-secondary)]
         rounded-[var(--radius-lg)]
         shadow-[var(--shadow-popup)]
@@ -596,19 +596,20 @@ function ClipboardCard({ entry, formatTime }: { entry: ClipboardEntry; formatTim
   return (
     <div
       className="
-        flex flex-col gap-2 p-3
+        flex flex-col gap-2 p-3 h-[140px]
         rounded-[var(--radius-md)]
         border border-[var(--border-light)]
         hover:border-[var(--border-color)]
         bg-[var(--bg-primary)]
         cursor-default
         transition-colors duration-[var(--transition-fast)]
+        overflow-hidden
       "
     >
       {entry.type === 'image' ? (
         <>
           {/* Image thumbnail */}
-          <div className="w-full aspect-[4/3] rounded overflow-hidden bg-[var(--hover-bg)] flex items-center justify-center">
+          <div className="flex-1 min-h-0 rounded overflow-hidden bg-[var(--hover-bg)] flex items-center justify-center">
             {thumbSrc ? (
               <img src={thumbSrc} alt="Clipboard image" className="w-full h-full object-cover" />
             ) : (
