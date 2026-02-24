@@ -486,6 +486,27 @@ function PreviewToolbar({
 }
 
 // ============================================
+// A2UIIframe - iframe with postMessage clipboard bridge
+// ============================================
+
+function A2UIIframe(props: React.IframeHTMLAttributes<HTMLIFrameElement>) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      if (e.data?.type === 'a2ui-copy') {
+        navigator.clipboard.writeText(e.data.text).catch(() => {});
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  return <iframe ref={iframeRef} sandbox="allow-scripts" {...props} />;
+}
+
+// ============================================
 // ArtifactPreview - Type-aware renderer
 // ============================================
 
@@ -500,8 +521,7 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
   switch (fileType) {
     case 'html':
       return (
-        <iframe
-          sandbox="allow-scripts"
+        <A2UIIframe
           srcDoc={content}
           className="w-full h-full border-none bg-white"
           title={fileName}

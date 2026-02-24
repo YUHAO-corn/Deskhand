@@ -440,11 +440,10 @@ function fillTemplate(template) {
 // Copy button
 document.getElementById('copy-btn').onclick = () => {
   const text = document.getElementById('prompt-text').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
-  });
+  window.parent.postMessage({ type: 'a2ui-copy', text }, '*');
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
 };
 
 init();
