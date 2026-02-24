@@ -35,6 +35,7 @@ import {
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import { loadSkills } from '@deskhand/shared/skills';
 import { runInsightPipeline, type InsightPipelineConfig } from '@deskhand/shared/insight';
+import { loadHistory, type ClipboardEntry } from './clipboard-monitor.ts';
 
 // ============ Agent Instance Management ============
 
@@ -194,6 +195,9 @@ export const IPC_CHANNELS = {
   // Artifact
   READ_FILE: 'artifact:read-file',
   SHOW_IN_FOLDER: 'artifact:show-in-folder',
+
+  // Clipboard
+  GET_CLIPBOARD_HISTORY: 'clipboard:get-history',
 } as const;
 
 // ============ Register Handlers ============
@@ -407,5 +411,11 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.SHOW_IN_FOLDER, async (_, filePath: string): Promise<void> => {
     shell.showItemInFolder(filePath);
+  });
+
+  // ============ Clipboard ============
+
+  ipcMain.handle(IPC_CHANNELS.GET_CLIPBOARD_HISTORY, async (): Promise<ClipboardEntry[]> => {
+    return loadHistory();
   });
 }

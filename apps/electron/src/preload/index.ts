@@ -18,6 +18,17 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, StoredMessage, Session, AgentEvent, ThinkingLevel, Skill } from '@deskhand/core';
 
+// Re-export clipboard entry type for renderer usage
+export interface ClipboardEntry {
+  id: string;
+  type: 'text' | 'image' | 'link';
+  content: string;
+  preview: string;
+  timestamp: number;
+  charCount?: number;
+  fileSize?: number;
+}
+
 // ============ Chat Config ============
 
 export interface ChatConfig {
@@ -63,6 +74,9 @@ export interface ElectronAPI {
   readFile: (filePath: string) => Promise<{ content: string; exists: boolean; base64?: string }>;
   showInFolder: (filePath: string) => Promise<void>;
 
+  // Clipboard
+  getClipboardHistory: () => Promise<ClipboardEntry[]>;
+
   // Events
   onSessionsRefresh: (callback: () => void) => () => void;
 }
@@ -89,6 +103,7 @@ const IPC_CHANNELS = {
   TRIGGER_INSIGHT: 'insight:trigger',
   READ_FILE: 'artifact:read-file',
   SHOW_IN_FOLDER: 'artifact:show-in-folder',
+  GET_CLIPBOARD_HISTORY: 'clipboard:get-history',
 } as const;
 
 // ============ Expose API ============
@@ -135,6 +150,9 @@ const electronAPI: ElectronAPI = {
   // Artifact
   readFile: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.READ_FILE, filePath),
   showInFolder: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHOW_IN_FOLDER, filePath),
+
+  // Clipboard
+  getClipboardHistory: () => ipcRenderer.invoke(IPC_CHANNELS.GET_CLIPBOARD_HISTORY),
 
   // Events
   onSessionsRefresh: (callback: () => void) => {
