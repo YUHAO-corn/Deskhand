@@ -134,7 +134,12 @@ You provide a JSON configuration — the frontend renders it instantly. The user
       controls: z.array(Control).describe('Interactive controls (sliders, selects, colors, toggles)'),
       presets: z.array(Preset).optional().describe('Named presets that snap all controls to preset values'),
       previewTemplate: z.string().describe(
-        'HTML template for the live preview area. Use {{controlId}} placeholders that get replaced with current values.'
+        'HTML for live preview, injected via innerHTML. ' +
+        'ONLY {{controlId}} placeholders supported — replaced with plain string values. ' +
+        'NO conditionals, NO loops, NO expressions — just {{id}} substitution. ' +
+        'Toggle values become "true"/"false" strings — do NOT use {{#if}}, just always show the element. ' +
+        'Use ONLY inline styles, never CSS classes or <style> tags. Keep it simple. ' +
+        'Example: \'<div style="display:flex;justify-content:center;padding:40px"><button style="border-radius:{{radius}}px;background:{{bg_color}}">Preview</button></div>\''
       ),
       promptTemplate: z.string().describe(
         'Template for the copyable prompt output. Use {{controlId}} placeholders. Write as natural language instruction.'
