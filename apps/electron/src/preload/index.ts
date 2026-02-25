@@ -15,7 +15,7 @@
  *   });
  */
 
-import { contextBridge, ipcRenderer, clipboard } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import type { AppConfig, SetupNeeds, SessionMeta, StoredSession, StoredMessage, Session, AgentEvent, ThinkingLevel, Skill } from '@deskhand/core';
 
 // Re-export clipboard entry type for renderer usage
@@ -76,7 +76,7 @@ export interface ElectronAPI {
 
   // Clipboard
   getClipboardHistory: () => Promise<ClipboardEntry[]>;
-  copyToClipboard: (text: string) => void;
+  copyToClipboard: (text: string) => Promise<void>;
 
   // Events
   onSessionsRefresh: (callback: () => void) => () => void;
@@ -105,6 +105,7 @@ const IPC_CHANNELS = {
   READ_FILE: 'artifact:read-file',
   SHOW_IN_FOLDER: 'artifact:show-in-folder',
   GET_CLIPBOARD_HISTORY: 'clipboard:get-history',
+  COPY_TO_CLIPBOARD: 'clipboard:copy',
 } as const;
 
 // ============ Expose API ============
@@ -154,7 +155,7 @@ const electronAPI: ElectronAPI = {
 
   // Clipboard
   getClipboardHistory: () => ipcRenderer.invoke(IPC_CHANNELS.GET_CLIPBOARD_HISTORY),
-  copyToClipboard: (text: string) => clipboard.writeText(text),
+  copyToClipboard: (text: string) => ipcRenderer.invoke(IPC_CHANNELS.COPY_TO_CLIPBOARD, text),
 
   // Events
   onSessionsRefresh: (callback: () => void) => {

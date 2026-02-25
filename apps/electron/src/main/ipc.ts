@@ -35,7 +35,7 @@ import {
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import { loadSkills } from '@deskhand/shared/skills';
 import { runInsightPipeline, type InsightPipelineConfig } from '@deskhand/shared/insight';
-import { loadHistory, getClipboardPaths, type ClipboardEntry } from './clipboard-monitor.ts';
+import { loadHistory, getClipboardPaths, markSelfWrite, type ClipboardEntry } from './clipboard-monitor.ts';
 
 // ============ Agent Instance Management ============
 
@@ -199,6 +199,7 @@ export const IPC_CHANNELS = {
 
   // Clipboard
   GET_CLIPBOARD_HISTORY: 'clipboard:get-history',
+  COPY_TO_CLIPBOARD: 'clipboard:copy',
 } as const;
 
 // ============ Register Handlers ============
@@ -418,5 +419,11 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.GET_CLIPBOARD_HISTORY, async (): Promise<ClipboardEntry[]> => {
     return loadHistory();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.COPY_TO_CLIPBOARD, async (_event, text: string): Promise<void> => {
+    const { clipboard } = await import('electron');
+    markSelfWrite();
+    clipboard.writeText(text);
   });
 }

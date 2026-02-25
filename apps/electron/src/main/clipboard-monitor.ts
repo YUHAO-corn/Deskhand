@@ -36,6 +36,7 @@ const PREVIEW_LENGTH = 100;
 let timer: ReturnType<typeof setInterval> | null = null;
 let lastTextHash = '';
 let lastImageHash = '';
+let skipNextChange = false;
 
 // ============ Paths ============
 
@@ -146,6 +147,11 @@ function enforceLimit(): void {
   fs.writeFileSync(getIndexPath(), indexContent, 'utf-8');
 }
 
+/** Mark that the next clipboard change is from Deskhand itself and should be skipped */
+export function markSelfWrite(): void {
+  skipNextChange = true;
+}
+
 // ============ Polling ============
 
 function checkClipboard(): void {
@@ -156,6 +162,11 @@ function checkClipboard(): void {
       const textHash = hashContent(text);
       if (textHash !== lastTextHash) {
         lastTextHash = textHash;
+        // Skip recording if this change was from Deskhand itself
+        if (skipNextChange) {
+          skipNextChange = false;
+          return;
+        }
         const type = detectType(text);
         appendEntry({
           id: generateId(),
@@ -177,6 +188,11 @@ function checkClipboard(): void {
       const imageHash = hashBuffer(pngBuffer);
       if (imageHash !== lastImageHash) {
         lastImageHash = imageHash;
+        // Skip recording if this change was from Deskhand itself
+        if (skipNextChange) {
+          skipNextChange = false;
+          return;
+        }
         const id = generateId();
         const size = image.getSize();
 

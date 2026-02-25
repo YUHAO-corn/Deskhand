@@ -287,7 +287,7 @@ function PreviewToolbar({
   }, [dropdownOpen]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content);
+    window.electronAPI?.copyToClipboard(content);
   };
 
   return (
