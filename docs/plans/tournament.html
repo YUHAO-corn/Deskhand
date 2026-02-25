@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafaf9;
+    --card-bg: #fff;
+    --border: #e8e8e6;
+    --text-primary: #1a1a1a;
+    --text-secondary: #888;
+    --text-tertiary: #bbb;
+    --accent: #2a2a2a;
+    --accent-light: #f0f0ee;
+    --green: #3a8a5c;
+    --green-bg: #edf7f1;
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Noto Sans SC', -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .app {
+    width: 600px;
+    max-width: 100%;
+  }
+
+  /* Agent message */
+  .agent-msg {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .agent-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .agent-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  .agent-text .subtle {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  /* Progress */
+  .progress-area {
+    margin-bottom: 28px;
+    animation: fadeUp 0.4s ease 0.1s both;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+
+  .progress-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Battle */
+  .battle {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 20px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+  }
+
+  .card:active { transform: translateY(0); }
+
+  .card.exit-left { animation: exitLeft 0.28s ease both; }
+  .card.exit-right { animation: exitRight 0.28s ease both; }
+  .card.enter { animation: enterCard 0.28s ease both; }
+
+  .card-emoji { font-size: 32px; margin-bottom: 12px; }
+  .card-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    flex-grow: 1;
+  }
+
+  .vs {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    width: 32px;
+    justify-content: center;
+  }
+
+  /* Skip */
+  .skip-area { text-align: center; margin-bottom: 8px; }
+
+  .skip-btn {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-family: inherit;
+  }
+  .skip-btn:hover { color: var(--text-secondary); }
+
+  /* Eliminated */
+  .eliminated { margin-top: 20px; animation: fadeUp 0.3s ease both; }
+  .eliminated-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px; }
+  .eliminated-items { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .eliminated-tag {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--accent-light);
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-decoration: line-through;
+    text-decoration-color: #ccc;
+  }
+
+  /* Result */
+  .result-area { animation: fadeUp 0.5s ease both; }
+
+  .result-winner {
+    background: var(--green-bg);
+    border: 1.5px solid rgba(58, 138, 92, 0.2);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .result-winner .card-emoji { font-size: 40px; margin-bottom: 8px; }
+  .result-winner .card-name { font-size: 18px; color: var(--green); }
+  .result-winner .card-desc { color: var(--text-secondary); margin-top: 4px; }
+
+  /* Prompt */
+  .prompt-area {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .prompt-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .prompt-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    padding: 14px 16px;
+    background: var(--bg);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    min-height: 60px;
+    white-space: pre-wrap;
+    cursor: text;
+    outline: none;
+    transition: all var(--transition);
+  }
+
+  .prompt-text:focus { border-color: var(--accent); }
+
+  .prompt-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .btn-secondary:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #111; }
+
+  /* Sent */
+  .sent-msg {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .sent-bubble {
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 12px 12px 4px 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 420px;
+    white-space: pre-wrap;
+  }
+
+  .hidden { display: none !important; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes exitLeft {
+    to { opacity: 0; transform: translateX(-20px) scale(0.95); }
+  }
+  @keyframes exitRight {
+    to { opacity: 0; transform: translateX(20px) scale(0.95); }
+  }
+  @keyframes enterCard {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <div class="agent-msg">
+    <div class="agent-avatar">A</div>
+    <div class="agent-text">
+      今晚吃什么？我帮你想了几个方向，来做几轮二选一，很快就能找到答案。
+      <br><span class="subtle">点你更想吃的那个 👇</span>
+    </div>
+  </div>
+
+  <div class="progress-area" id="progressArea">
+    <div class="progress-header">
+      <span class="progress-label">找到你的口味中...</span>
+      <span class="progress-count" id="progressCount">1 / 7</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="battle" id="battleArea">
+    <div class="card" id="cardLeft" onclick="pick('left')">
+      <div class="card-emoji" id="emojiLeft"></div>
+      <div class="card-name" id="nameLeft"></div>
+      <div class="card-desc" id="descLeft"></div>
+    </div>
+    <div class="vs">or</div>
+    <div class="card" id="cardRight" onclick="pick('right')">
+      <div class="card-emoji" id="emojiRight"></div>
+      <div class="card-name" id="nameRight"></div>
+      <div class="card-desc" id="descRight"></div>
+    </div>
+  </div>
+
+  <div class="skip-area" id="skipArea">
+    <button class="skip-btn" onclick="skipRound()">都不想吃 → 换一组</button>
+  </div>
+
+  <div class="eliminated hidden" id="eliminatedArea">
+    <div class="eliminated-label">已淘汰</div>
+    <div class="eliminated-items" id="eliminatedItems"></div>
+  </div>
+
+  <div class="result-area hidden" id="resultArea"></div>
+
+  <div class="sent-msg hidden" id="sentMsg">
+    <div class="sent-bubble" id="sentBubble"></div>
+  </div>
+
+</div>
+
+<script>
+const candidates = [
+  { emoji: '🍜', name: '热汤面', desc: '暖和的汤底，面条筋道，适合放松的夜晚', tags: ['热食','主食','中式','暖胃'] },
+  { emoji: '🍣', name: '日料', desc: '寿司刺身，清爽精致，吃完没有负担', tags: ['日式','清淡','精致','冷食'] },
+  { emoji: '🍕', name: '披萨', desc: '芝士拉丝，热量满满，适合犒劳自己', tags: ['西式','重口','高热量','放纵'] },
+  { emoji: '🥗', name: '轻食沙拉', desc: '蔬菜水果坚果，吃完无罪恶感', tags: ['健康','清淡','低热量','西式'] },
+  { emoji: '🍛', name: '咖喱饭', desc: '浓郁的酱汁配米饭，暖和又满足', tags: ['热食','主食','浓郁','异国'] },
+  { emoji: '🥟', name: '饺子', desc: '皮薄馅大，蘸醋吃，家常温馨感', tags: ['中式','家常','主食','暖胃'] },
+  { emoji: '🍔', name: '汉堡', desc: '大口咬下的快感，简单直接的满足', tags: ['西式','快餐','高热量','放纵'] },
+  { emoji: '🫕', name: '火锅', desc: '涮一涮的仪式感，适合慢慢吃', tags: ['中式','社交','热食','重口'] }
+];
+
+let pool, eliminated, currentLeft, currentRight, round, totalRounds, isAnimating;
+
+function init() {
+  pool = [...candidates].sort(() => Math.random() - 0.5);
+  eliminated = [];
+  currentLeft = null;
+  currentRight = null;
+  round = 0;
+  totalRounds = pool.length - 1;
+  isAnimating = false;
+
+  document.getElementById('battleArea').classList.remove('hidden');
+  document.getElementById('skipArea').classList.remove('hidden');
+  document.getElementById('progressArea').classList.remove('hidden');
+  document.getElementById('eliminatedArea').classList.add('hidden');
+  document.getElementById('resultArea').classList.add('hidden');
+  document.getElementById('resultArea').innerHTML = '';
+  document.getElementById('sentMsg').classList.add('hidden');
+
+  showNextPair();
+}
+
+function showNextPair() {
+  if (pool.length === 0 && currentLeft) {
+    showResult(currentLeft);
+    return;
+  }
+  if (pool.length === 0) return;
+
+  if (!currentLeft) currentLeft = pool.shift();
+  if (pool.length === 0) {
+    showResult(currentLeft);
+    return;
+  }
+  currentRight = pool.shift();
+  render();
+}
+
+function render() {
+  document.getElementById('emojiLeft').textContent = currentLeft.emoji;
+  document.getElementById('nameLeft').textContent = currentLeft.name;
+  document.getElementById('descLeft').textContent = currentLeft.desc;
+
+  document.getElementById('emojiRight').textContent = currentRight.emoji;
+  document.getElementById('nameRight').textContent = currentRight.name;
+  document.getElementById('descRight').textContent = currentRight.desc;
+
+  round++;
+  const progress = Math.min(round / totalRounds * 100, 100);
+  document.getElementById('progressCount').textContent = `${Math.min(round, totalRounds)} / ${totalRounds}`;
+  document.getElementById('progressFill').style.width = progress + '%';
+
+  if (eliminated.length > 0) {
+    document.getElementById('eliminatedArea').classList.remove('hidden');
+    document.getElementById('eliminatedItems').innerHTML = eliminated
+      .map(e => `<span class="eliminated-tag">${e.emoji} ${e.name}</span>`).join('');
+  }
+}
+
+function pick(side) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  const winner = side === 'left' ? currentLeft : currentRight;
+  const loser = side === 'left' ? currentRight : currentLeft;
+  eliminated.push(loser);
+
+  const loserId = side === 'left' ? 'cardRight' : 'cardLeft';
+  document.getElementById(loserId).classList.add(side === 'left' ? 'exit-right' : 'exit-left');
+
+  setTimeout(() => {
+    document.getElementById(loserId).classList.remove('exit-left', 'exit-right');
+    currentLeft = winner;
+
+    if (pool.length === 0) {
+      showResult(winner);
+      return;
+    }
+
+    currentRight = pool.shift();
+    render();
+
+    document.getElementById(loserId).classList.add('enter');
+    setTimeout(() => {
+      document.getElementById(loserId).classList.remove('enter');
+      isAnimating = false;
+    }, 280);
+  }, 280);
+}
+
+function skipRound() {
+  if (isAnimating) return;
+  eliminated.push(currentLeft, currentRight);
+  currentLeft = null;
+
+  if (pool.length >= 2) {
+    showNextPair();
+  } else if (pool.length === 1) {
+    showResult(pool.shift());
+  }
+}
+
+function showResult(winner) {
+  document.getElementById('battleArea').classList.add('hidden');
+  document.getElementById('skipArea').classList.add('hidden');
+  document.getElementById('progressArea').classList.add('hidden');
+  document.getElementById('eliminatedArea').classList.add('hidden');
+
+  const prompt = generatePrompt(winner, eliminated);
+
+  document.getElementById('resultArea').classList.remove('hidden');
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-winner">
+      <div class="card-emoji">${winner.emoji}</div>
+      <div class="card-name">${winner.name}</div>
+      <div class="card-desc">${winner.desc}</div>
+    </div>
+    <div class="eliminated">
+      <div class="eliminated-label">淘汰顺序</div>
+      <div class="eliminated-items">
+        ${eliminated.map(e => `<span class="eliminated-tag">${e.emoji} ${e.name}</span>`).join('')}
+      </div>
+    </div>
+    <div class="prompt-area">
+      <div class="prompt-label">为你生成的 Prompt</div>
+      <div class="prompt-text" id="promptText" contenteditable="true">${prompt}</div>
+      <div class="prompt-actions" id="promptActions">
+        <button class="btn btn-secondary" onclick="restart()">重新选</button>
+        <button class="btn btn-primary" onclick="sendPrompt()">发送给 Agent ↵</button>
+      </div>
+    </div>
+  `;
+}
+
+function generatePrompt(winner, eliminated) {
+  const wt = winner.tags;
+  const rt = {};
+  eliminated.forEach(e => e.tags.forEach(t => { rt[t] = (rt[t] || 0) + 1; }));
+
+  let p = `帮我找一家附近的${winner.name}店`;
+
+  const prefs = [];
+  if (wt.includes('清淡') || rt['重口'] >= 2) prefs.push('清淡一点的');
+  else if (wt.includes('重口') || rt['清淡'] >= 2) prefs.push('味道重一些的');
+
+  if (wt.includes('热食')) prefs.push('要热乎的');
+  if (wt.includes('家常')) prefs.push('家常风格');
+  if (rt['高热量'] >= 2) prefs.push('不要太油腻');
+  if (wt.includes('精致')) prefs.push('环境好一点的');
+
+  if (prefs.length > 0) p += '，' + prefs.join('，');
+
+  p += '，评分 4 分以上，最好步行能到。';
+  return p;
+}
+
+function sendPrompt() {
+  const text = document.getElementById('promptText').textContent;
+  document.getElementById('promptActions').classList.add('hidden');
+  document.getElementById('sentMsg').classList.remove('hidden');
+  document.getElementById('sentBubble').textContent = text;
+  document.getElementById('promptText').style.opacity = '0.5';
+  document.getElementById('promptText').contentEditable = 'false';
+}
+
+function restart() {
+  init();
+}
+
+init();
+</script>
+
+</body>
+</html>

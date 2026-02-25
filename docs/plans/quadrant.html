@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户表达方式象限图</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fff;
+    color: #222;
+    font-family: 'Noto Sans SC', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #999;
+    margin-top: -10px;
+  }
+
+  .chart-area {
+    position: relative;
+    width: 820px;
+    height: 820px;
+  }
+
+  .container {
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    right: 60px;
+    bottom: 60px;
+  }
+
+  .axes-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .axis-label {
+    position: absolute;
+    font-size: 12px;
+    color: #888;
+    white-space: nowrap;
+  }
+
+  .label-top {
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: 600;
+  }
+
+  .label-bottom {
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #aaa;
+  }
+
+  .label-right {
+    right: -14px;
+    top: 50%;
+    transform: translateY(12px);
+    font-weight: 600;
+  }
+
+  .label-left {
+    left: -14px;
+    top: 50%;
+    transform: translateY(12px);
+    font-size: 11px;
+    color: #aaa;
+    text-align: right;
+  }
+
+  .diag-label {
+    position: absolute;
+    font-size: 10.5px;
+    color: #aaa;
+    font-style: italic;
+  }
+
+  .diag-label-bl {
+    bottom: -2px;
+    left: -2px;
+  }
+
+  .diag-label-tr {
+    top: -2px;
+    right: -2px;
+  }
+
+  .zone {
+    position: absolute;
+    max-width: 180px;
+  }
+
+  .zone-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 3px;
+  }
+
+  .zone-desc {
+    font-size: 11px;
+    color: #999;
+    line-height: 1.6;
+  }
+
+  .zone-examples {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .zone-examples span {
+    display: inline-block;
+    background: #f3f3f3;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    color: #666;
+  }
+
+  .align-right { text-align: right; }
+  .align-right .zone-examples { justify-content: flex-end; }
+
+  .z-natural     { top: 36%; left: 8%; }
+  .z-progressive { top: 6%;  left: 8%; }
+  .z-show        { top: 36%; right: 8%; }
+  .z-project     { top: 6%;  right: 8%; }
+  .z-ask         { bottom: 36%; left: 8%; }
+  .z-structure   { bottom: 6%;  left: 8%; }
+  .z-explore     { bottom: 36%; right: 8%; }
+  .z-immerse     { bottom: 6%;  right: 8%; }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="title">用户表达方式全景图</div>
+  <div class="subtitle">用户在不同情景下，需要怎样的表达手段？</div>
+
+  <div class="chart-area">
+    <div class="container">
+
+      <svg class="axes-svg" viewBox="0 0 700 700">
+        <defs>
+          <marker id="ah" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#aaa"/>
+          </marker>
+        </defs>
+
+        <!-- Vertical: line spans full, arrow at top only -->
+        <line x1="350" y1="695" x2="350" y2="5" stroke="#bbb" stroke-width="1" marker-end="url(#ah)"/>
+
+        <!-- Horizontal: line spans full, arrow at right only -->
+        <line x1="5" y1="350" x2="695" y2="350" stroke="#bbb" stroke-width="1" marker-end="url(#ah)"/>
+
+        <!-- Diagonal dashed -->
+        <line x1="5" y1="695" x2="695" y2="5" stroke="#ccc" stroke-width="1" stroke-dasharray="6 4"/>
+      </svg>
+
+      <div class="axis-label label-top">知道自己要什么</div>
+      <div class="axis-label label-bottom">不知道自己要什么</div>
+      <div class="axis-label label-right">说不准</div>
+      <div class="axis-label label-left">能说准</div>
+
+      <div class="diag-label diag-label-bl">↙ 一句话说完</div>
+      <div class="diag-label diag-label-tr">一句话说不完 ↗</div>
+
+      <!-- Top-left: 知道 + 能说准 -->
+      <div class="zone z-natural">
+        <div class="zone-name">自然语言</div>
+        <div class="zone-desc">最简单的情况，打字说就行</div>
+        <div class="zone-examples">
+          <span>文字</span><span>语音</span><span>命令行</span>
+        </div>
+      </div>
+
+      <div class="zone z-progressive">
+        <div class="zone-name">渐进式引导</div>
+        <div class="zone-desc">知道要什么也能说准，<br>但要交代的太多</div>
+        <div class="zone-examples">
+          <span>分步表单</span><span>AI 动态追问细节</span>
+        </div>
+      </div>
+
+      <!-- Top-right: 知道 + 说不准 -->
+      <div class="zone z-show align-right">
+        <div class="zone-name">直接展示</div>
+        <div class="zone-desc">知道要什么但说不准，<br>给你看一下就懂了</div>
+        <div class="zone-examples">
+          <span>发图片</span><span>截屏</span><span>指屏幕</span>
+        </div>
+      </div>
+
+      <div class="zone z-project align-right">
+        <div class="zone-name">文件/项目级展示</div>
+        <div class="zone-desc">说不准又说不完，<br>直接把整个东西给你</div>
+        <div class="zone-examples">
+          <span>上传文件夹</span><span>共享项目</span>
+        </div>
+      </div>
+
+      <!-- Bottom-left: 不知道 + 能说准 -->
+      <div class="zone z-ask">
+        <div class="zone-name">追问引导</div>
+        <div class="zone-desc">能描述处境，<br>但不确定自己想要什么</div>
+        <div class="zone-examples">
+          <span>苏格拉底式提问</span><span>选项澄清</span>
+        </div>
+      </div>
+
+      <div class="zone z-structure">
+        <div class="zone-name">结构化梳理</div>
+        <div class="zone-desc">情况复杂也说得清，<br>但自己理不出头绪</div>
+        <div class="zone-examples">
+          <span>Trade-off 拆解</span><span>维度对比表</span>
+        </div>
+      </div>
+
+      <!-- Bottom-right: 不知道 + 说不准 -->
+      <div class="zone z-explore align-right">
+        <div class="zone-name">生成式探索</div>
+        <div class="zone-desc">说不清也不确定，<br>你给我看几个我来挑</div>
+        <div class="zone-examples">
+          <span>Playground</span><span>Tournament</span>
+        </div>
+      </div>
+
+      <div class="zone z-immerse align-right">
+        <div class="zone-name">沉浸式发散</div>
+        <div class="zone-desc">完全没方向，<br>需要大量素材找感觉</div>
+        <div class="zone-examples">
+          <span>Mood Board</span><span>灵感画廊</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
