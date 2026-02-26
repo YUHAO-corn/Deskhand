@@ -307,9 +307,18 @@ export function registerIpcHandlers(): void {
       permissionMode: config?.permissionMode,
       onEvent: (agentEvent: AgentEvent) => {
         // Forward event to renderer
+        console.log('[IPC] agent:event', sessionId, agentEvent.type);
         event.sender.send('agent:event', sessionId, agentEvent);
       },
+    }).catch((err: unknown) => {
+      console.error('[IPC] agent.chat error:', err);
+      event.sender.send('agent:event', sessionId, {
+        type: 'error',
+        error: String(err),
+      } as AgentEvent);
     });
+
+    console.log('[IPC] agent.chat completed for', sessionId);
 
     // Auto-trigger insight check (async, non-blocking)
     maybeRunInsight(event.sender).catch(() => {});
