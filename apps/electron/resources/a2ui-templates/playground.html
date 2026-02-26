@@ -42,6 +42,23 @@
   .preset-btn { padding: 5px 12px; font-size: 12px; border-radius: 100px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; transition: all 0.2s var(--ease); font-family: var(--font); font-weight: 500; }
   .preset-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-soft); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .preset-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--shadow-accent); }
+
+  /* Options mode */
+  .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 16px; }
+  .option-card { padding: 16px; border-radius: var(--radius-lg); border: 2px solid var(--border); background: var(--bg-card); cursor: pointer; transition: all 0.2s var(--ease); animation: fadeIn 0.3s var(--ease) both; text-align: center; }
+  .option-card:hover { border-color: var(--accent-soft); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .option-card.selected { border-color: var(--accent); background: var(--accent-bg); box-shadow: var(--shadow-accent); }
+  .option-emoji { font-size: 28px; margin-bottom: 8px; line-height: 1; }
+  .option-preview { margin-bottom: 10px; border-radius: var(--radius-sm); overflow: hidden; }
+  .option-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .option-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .option-check { display: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); margin: 0 auto 8px; align-items: center; justify-content: center; }
+  .option-card.selected .option-check { display: flex; }
+
+  /* Options layout: gallery left, preview right */
+  .options-layout { flex: 1; display: flex; overflow: hidden; }
+  .options-sidebar { width: 320px; flex-shrink: 0; overflow-y: auto; background: var(--bg-card); border-right: 1px solid var(--border-light); display: flex; flex-direction: column; }
+  .options-controls { padding: 12px 16px; border-top: 1px solid var(--border-light); }
 </style>
 </head>
 <body>
@@ -49,13 +66,28 @@
   <div class="header-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".2"/></svg></div>
   <div class="header-text"><h1 id="title"></h1><p id="description"></p></div>
 </div></div>
-<div class="main">
+<div class="main" id="controls-layout">
   <div class="controls"><div id="presets-container"></div><div id="controls-container"></div></div>
   <div class="preview-area">
     <div id="preview" class="preview-content"></div>
     <div class="prompt-bar"><div class="prompt-inner">
       <div id="prompt-text" class="prompt-text"></div>
       <button id="copy-btn" class="send-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Send to Chat</span></button>
+    </div></div>
+  </div>
+</div>
+<div class="main options-layout" id="options-layout" style="display:none">
+  <div class="options-sidebar">
+    <div id="options-grid" class="options-grid"></div>
+    <div id="options-controls" class="options-controls" style="display:none">
+      <div id="options-controls-container"></div>
+    </div>
+  </div>
+  <div class="preview-area">
+    <div id="options-preview" class="preview-content"></div>
+    <div class="prompt-bar"><div class="prompt-inner">
+      <div id="options-prompt-text" class="prompt-text"></div>
+      <button id="options-copy-btn" class="send-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Send to Chat</span></button>
     </div></div>
   </div>
 </div>
@@ -110,16 +142,112 @@
 <script>
 const CONFIG = window.__A2UI_CONFIG__ || {};
 const state = {};
+const isOptionsMode = CONFIG.options && CONFIG.options.length > 0;
 
 function init() {
   document.getElementById('title').textContent = CONFIG.title || 'Playground';
   const descEl = document.getElementById('description');
   if (CONFIG.description) descEl.textContent = CONFIG.description;
   else descEl.style.display = 'none';
+
+  // Initialize control state
   (CONFIG.controls || []).forEach(c => { state[c.id] = c.defaultValue; });
-  renderPresets();
-  renderControls();
-  updateAll();
+
+  if (isOptionsMode) {
+    // Options mode: show gallery layout
+    document.getElementById('controls-layout').style.display = 'none';
+    document.getElementById('options-layout').style.display = 'flex';
+    state.selected = CONFIG.options[0].id;
+    state.selectedLabel = CONFIG.options[0].label;
+    renderOptions();
+    // Render optional controls in options sidebar
+    if (CONFIG.controls && CONFIG.controls.length > 0) {
+      document.getElementById('options-controls').style.display = 'block';
+      renderControlsInto(document.getElementById('options-controls-container'));
+    }
+    updateOptionsMode();
+  } else {
+    // Controls mode: existing behavior
+    renderPresets();
+    renderControlsInto(document.getElementById('controls-container'));
+    updateAll();
+  }
+}
+
+function renderOptions() {
+  const grid = document.getElementById('options-grid');
+  CONFIG.options.forEach((opt, i) => {
+    const card = document.createElement('div');
+    card.className = 'option-card' + (i === 0 ? ' selected' : '');
+    card.dataset.optionId = opt.id;
+    card.style.animationDelay = (i * 0.06) + 's';
+
+    // Check mark
+    const check = document.createElement('div');
+    check.className = 'option-check';
+    check.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+    card.appendChild(check);
+
+    // Emoji
+    if (opt.emoji) {
+      const emoji = document.createElement('div');
+      emoji.className = 'option-emoji';
+      emoji.textContent = opt.emoji;
+      card.appendChild(emoji);
+    }
+
+    // Preview HTML
+    if (opt.previewHtml) {
+      const preview = document.createElement('div');
+      preview.className = 'option-preview';
+      preview.innerHTML = opt.previewHtml;
+      card.appendChild(preview);
+    }
+
+    // Label
+    const label = document.createElement('div');
+    label.className = 'option-label';
+    label.textContent = opt.label;
+    card.appendChild(label);
+
+    // Description
+    if (opt.description) {
+      const desc = document.createElement('div');
+      desc.className = 'option-desc';
+      desc.textContent = opt.description;
+      card.appendChild(desc);
+    }
+
+    card.onclick = () => {
+      state.selected = opt.id;
+      state.selectedLabel = opt.label;
+      grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      updateOptionsMode();
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+function updateOptionsMode() {
+  // Update preview
+  if (CONFIG.previewTemplate) {
+    document.getElementById('options-preview').innerHTML = fillTemplate(CONFIG.previewTemplate);
+  }
+  // Update prompt
+  if (CONFIG.promptTemplate) {
+    document.getElementById('options-prompt-text').textContent = fillTemplate(CONFIG.promptTemplate);
+  }
+  // Update control value displays
+  (CONFIG.controls || []).forEach(c => {
+    const valEl = document.getElementById(`val-${c.id}`);
+    if (!valEl) return;
+    const v = state[c.id];
+    if (c.type === 'slider') valEl.textContent = v + (c.unit || '');
+    else if (c.type === 'toggle') valEl.textContent = v ? 'On' : 'Off';
+    else valEl.textContent = String(v);
+  });
 }
 
 function renderPresets() {
@@ -144,8 +272,7 @@ function renderPresets() {
   container.appendChild(wrap);
 }
 
-function renderControls() {
-  const container = document.getElementById('controls-container');
+function renderControlsInto(container) {
   (CONFIG.controls || []).forEach((c, i) => {
     const group = document.createElement('div');
     group.className = 'control-group';
@@ -251,6 +378,10 @@ function fillTemplate(template) {
 }
 
 function updateAll() {
+  if (isOptionsMode) {
+    updateOptionsMode();
+    return;
+  }
   (CONFIG.controls || []).forEach(c => {
     const valEl = document.getElementById(`val-${c.id}`);
     if (!valEl) return;
@@ -268,13 +399,16 @@ function updateAll() {
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
 }
 
-document.getElementById('copy-btn').onclick = () => {
-  const text = document.getElementById('prompt-text').textContent;
+function handleSend(btnId, textId) {
+  const text = document.getElementById(textId).textContent;
   window.parent.postMessage({ type: 'a2ui-send', text }, '*');
-  const btn = document.getElementById('copy-btn');
+  const btn = document.getElementById(btnId);
   btn.querySelector('span').textContent = '✓ Sent!';
   setTimeout(() => { btn.querySelector('span').textContent = 'Send to Chat'; }, 1500);
-};
+}
+
+document.getElementById('copy-btn').onclick = () => handleSend('copy-btn', 'prompt-text');
+document.getElementById('options-copy-btn').onclick = () => handleSend('options-copy-btn', 'options-prompt-text');
 
 init();
 </script>

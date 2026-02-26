@@ -107,6 +107,18 @@ const Preset = z.object({
   values: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
 });
 
+// ─── Option Schema (for gallery/options mode) ───
+
+const PlaygroundOption = z.object({
+  id: z.string().describe('Unique option ID'),
+  label: z.string().describe('Display name'),
+  description: z.string().optional().describe('Short description'),
+  emoji: z.string().optional().describe('Emoji icon shown on the card'),
+  previewHtml: z.string().optional().describe(
+    'Optional HTML snippet for visual preview on the card. Uses ONLY inline styles.'
+  ),
+});
+
 // ─── Template Injection ───
 
 /** Inject JSON config into the HTML template by replacing the placeholder script */
@@ -124,25 +136,35 @@ function injectConfig(templateHtml: string, config: Record<string, unknown>): st
 function createRenderPlaygroundTool(templateDir: string) {
   return tool(
     'render_playground',
-    `Render a quick interactive playground in the Artifact panel using standard controls (sliders, selects, color pickers, toggles).
-Use this for STANDARD configuration scenarios where the built-in control types are sufficient — e.g. adjusting design parameters, tuning settings, comparing options.
-Do NOT use this for complex or creative visualizations that need custom HTML/JS (use the playground skill instead).
-You provide a JSON configuration — the frontend renders it instantly. The user adjusts controls and copies the generated prompt.`,
+    `Render an interactive playground in the Artifact panel. Two modes:
+
+**Controls mode** (pass "controls"): Standard parameter tuning with sliders, selects, color pickers, toggles. User adjusts individual parameters.
+**Options mode** (pass "options"): Gallery of complete options for the user to pick from. Each option is a card with label, description, and optional emoji/preview. User selects one. You may also pass "controls" alongside "options" for secondary tweaking after selection.
+
+Use controls mode for fine-tuning scenarios. Use options mode when the user needs to choose between distinct alternatives (styles, themes, approaches).
+Do NOT use this for complex visualizations that need custom HTML/JS (use the playground skill instead).`,
     {
       title: z.string().describe('Playground title'),
       description: z.string().optional().describe('Brief description shown below title'),
-      controls: z.array(Control).describe('Interactive controls (sliders, selects, colors, toggles)'),
-      presets: z.array(Preset).optional().describe('Named presets that snap all controls to preset values'),
-      previewTemplate: z.string().describe(
+      options: z.array(PlaygroundOption).optional().describe(
+        'Gallery options for "Pick a Style" mode. Each option is a selectable card. ' +
+        'When provided, the playground renders as a gallery instead of a controls panel. ' +
+        'The selected option ID is available as {{selected}} in templates.'
+      ),
+      controls: z.array(Control).optional().describe('Interactive controls (sliders, selects, colors, toggles). Optional when using options mode.'),
+      presets: z.array(Preset).optional().describe('Named presets that snap all controls to preset values. Only used in controls mode.'),
+      previewTemplate: z.string().optional().describe(
         'HTML for live preview, injected via innerHTML. ' +
         'ONLY {{controlId}} placeholders supported — replaced with plain string values. ' +
+        'In options mode, {{selected}} is the selected option ID. ' +
         'NO conditionals, NO loops, NO expressions — just {{id}} substitution. ' +
         'Toggle values become "true"/"false" strings — do NOT use {{#if}}, just always show the element. ' +
-        'Use ONLY inline styles, never CSS classes or <style> tags. Keep it simple. ' +
-        'Example: \'<div style="display:flex;justify-content:center;padding:40px"><button style="border-radius:{{radius}}px;background:{{bg_color}}">Preview</button></div>\''
+        'Use ONLY inline styles, never CSS classes or <style> tags. Keep it simple.'
       ),
       promptTemplate: z.string().describe(
-        'Template for the copyable prompt output. Use {{controlId}} placeholders. Write as natural language instruction.'
+        'Template for the copyable prompt output. Use {{controlId}} placeholders. ' +
+        'In options mode, {{selected}} is the selected option ID, {{selectedLabel}} is its label. ' +
+        'Write as natural language instruction.'
       ),
     },
     async (args) => {
