@@ -29,6 +29,7 @@ import {
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
+  InteractPopup,
   ToolsPopup,
   ModelSelectorPopup,
   ClipboardPopup,
@@ -273,6 +274,14 @@ export function InputToolbar() {
             区域：弹窗容器
             ============================================ */}
         <WorkspacePopup isOpen={activePopup === 'workspace'} />
+        <InteractPopup
+          isOpen={activePopup === 'interact'}
+          onSelect={(tag) => {
+            const marker = `[${tag}] `;
+            setInputValue((prev) => marker + (prev as string));
+            setActivePopup(null);
+          }}
+        />
         <ToolsPopup isOpen={activePopup === 'tools'} />
         <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
         <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} />
@@ -381,6 +390,18 @@ export function InputToolbar() {
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </ToolbarIconButton>
+
+            {/* 交互方式（Interact 菜单） */}
+            <ToolbarIconButton
+              title="Interact"
+              active={activePopup === 'interact'}
+              onClick={() => togglePopup('interact')}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 12l2 2 4-4" />
               </svg>
             </ToolbarIconButton>
 

@@ -1,5 +1,6 @@
 export {
   WorkspacePopup,
+  InteractPopup,
   ToolsPopup,
   ModelSelectorPopup,
   ClipboardPopup,

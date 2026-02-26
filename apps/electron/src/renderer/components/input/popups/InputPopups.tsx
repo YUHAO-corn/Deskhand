@@ -6,6 +6,7 @@
  *
  * 包含：
  * - WorkspacePopup: 工作目录选择
+ * - InteractPopup: 交互方式菜单（Pick a Style / This or That）
  * - ToolsPopup: 统一工具选择（MCP Tools + Skills）
  * - ModelSelectorPopup: 模型选择
  * - ClipboardPopup: 剪贴板历史
@@ -79,6 +80,86 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
           <PlusIcon />
           {workingDirectory ? 'Change Directory...' : 'Select Directory...'}
         </button>
+      </div>
+    </PopupContainer>
+  );
+}
+
+// ============================================
+// InteractPopup - 交互方式菜单
+// ============================================
+
+interface InteractPopupProps {
+  isOpen: boolean;
+  onSelect: (tag: string) => void;
+}
+
+const interactModes = [
+  {
+    tag: 'Pick a Style',
+    label: 'Pick a Style',
+    description: 'Browse options and choose your favorite',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    tag: 'This or That',
+    label: 'This or That',
+    description: 'Quick rounds to discover what you want',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+        <line x1="12" y1="8" x2="12" y2="16" />
+        <line x1="8" y1="12" x2="16" y2="12" />
+      </svg>
+    ),
+  },
+];
+
+export function InteractPopup({ isOpen, onSelect }: InteractPopupProps) {
+  return (
+    <PopupContainer isOpen={isOpen} position="left-[40px]" minWidth={260}>
+      <PopupHeader
+        title="Interact"
+        description="Not sure how to describe it? Try these"
+      />
+
+      <div className="p-1.5">
+        {interactModes.map((mode) => (
+          <button
+            key={mode.tag}
+            onClick={() => onSelect(mode.tag)}
+            className="
+              flex items-start gap-3 w-full p-2.5
+              border-none bg-transparent
+              rounded-[var(--radius-md)] cursor-pointer
+              text-left
+              transition-colors duration-[var(--transition-fast)]
+              hover:bg-[var(--hover-bg)]
+            "
+          >
+            <div className="text-[var(--text-muted)] mt-0.5 shrink-0">
+              {mode.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
+                {mode.label}
+              </div>
+              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-snug">
+                {mode.description}
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
     </PopupContainer>
   );
