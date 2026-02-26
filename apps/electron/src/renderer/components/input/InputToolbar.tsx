@@ -148,9 +148,11 @@ export function InputToolbar() {
     }
 
     // Include interact tag if present
+    // Note: Do NOT use "/" prefix — the SDK interprets /xxx as slash commands.
+    // Use [tag] format instead; the agent sees it as plain text instruction.
     if (!overrideMessage && interactTag) {
       const slug = interactTag.toLowerCase().replace(/\s+/g, '-');
-      fullMessage = fullMessage ? `/${slug} ${fullMessage}` : `/${slug}`;
+      fullMessage = fullMessage ? `[${slug}] ${fullMessage}` : `[${slug}]`;
       setInteractTag(null);
     }
 
