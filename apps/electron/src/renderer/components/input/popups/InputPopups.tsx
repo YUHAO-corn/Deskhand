@@ -6,21 +6,18 @@
  *
  * 包含：
  * - WorkspacePopup: 工作目录选择
- * - ToolsPopup: MCP 工具选择
- * - SkillsPopup: Skills 选择
- * - ReasoningPopup: 思考级别选择
+ * - ToolsPopup: 统一工具选择（MCP Tools + Skills）
  * - ModelSelectorPopup: 模型选择
+ * - ClipboardPopup: 剪贴板历史
  */
 
 import { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import {
-  thinkingLevelAtom,
   selectedModelAtom,
   workingDirectoryAtom,
   skillsAtom,
 } from '../../../atoms/sessions';
-import type { ThinkingLevel } from '@deskhand/core';
 
 // ============================================
 // WorkspacePopup - 工作目录选择
@@ -88,7 +85,7 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
 }
 
 // ============================================
-// ToolsPopup - MCP 工具选择
+// ToolsPopup - 统一工具选择（MCP Tools + Skills）
 // ============================================
 
 interface ToolsPopupProps {
@@ -96,52 +93,6 @@ interface ToolsPopupProps {
 }
 
 export function ToolsPopup({ isOpen }: ToolsPopupProps) {
-  // TODO: 从 MCP 配置加载工具列表
-  const tools = [
-    { title: 'Web fetch', desc: 'Fetch the raw contents of a URL.' },
-    { title: 'Web search', desc: 'Search the web for fresh information.' },
-  ];
-
-  return (
-    <PopupContainer isOpen={isOpen} position="left-[50px]" minWidth={300}>
-      <PopupHeader
-        title="Tools"
-        description="Allow Alma to use the selected tools for the next response."
-      />
-
-      <div className="p-2 max-h-80 overflow-y-auto">
-        {/* 快捷操作 */}
-        <div className="flex gap-1 mb-3">
-          <button className="px-4 py-2 border-none bg-[var(--accent-bg)] rounded-[var(--radius-md)] cursor-pointer text-[var(--font-size-sm)] font-medium text-[var(--accent-color)] flex items-center gap-1.5">
-            <StarIcon />
-            Auto
-          </button>
-          <button className="px-4 py-2 border-none bg-transparent rounded-[var(--radius-md)] cursor-pointer text-[var(--font-size-sm)] font-medium text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]">
-            Select all
-          </button>
-          <button className="px-4 py-2 border-none bg-transparent rounded-[var(--radius-md)] cursor-pointer text-[var(--font-size-sm)] font-medium text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]">
-            Clear all
-          </button>
-        </div>
-
-        {/* 工具列表 */}
-        {tools.map((tool) => (
-          <CheckboxItem key={tool.title} title={tool.title} desc={tool.desc} />
-        ))}
-      </div>
-    </PopupContainer>
-  );
-}
-
-// ============================================
-// SkillsPopup - Skills 选择
-// ============================================
-
-interface SkillsPopupProps {
-  isOpen: boolean;
-}
-
-export function SkillsPopup({ isOpen }: SkillsPopupProps) {
   const [skills, setSkills] = useAtom(skillsAtom);
 
   // Refresh skills from disk when popup opens
@@ -151,24 +102,41 @@ export function SkillsPopup({ isOpen }: SkillsPopupProps) {
   }
   if (isOpen !== lastOpen) setLastOpen(isOpen);
 
+  // TODO: 从 MCP 配置加载工具列表
+  const mcpTools = [
+    { title: 'Web fetch', desc: 'Fetch the raw contents of a URL.' },
+    { title: 'Web search', desc: 'Search the web for fresh information.' },
+  ];
+
   return (
-    <PopupContainer isOpen={isOpen} position="left-[80px]" minWidth={300}>
+    <PopupContainer isOpen={isOpen} position="left-[40px]" minWidth={300}>
       <PopupHeader
-        title="Skills"
-        icon={<WrenchIcon />}
-        description="Skills are activated automatically when your request matches."
+        title="Tools"
+        description="Tools and skills available for the next response."
       />
 
       <div className="p-2 max-h-80 overflow-y-auto">
+        {/* MCP Tools section */}
+        <div className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          MCP Tools
+        </div>
+        {mcpTools.map((tool) => (
+          <CheckboxItem key={tool.title} title={tool.title} desc={tool.desc} />
+        ))}
+
+        {/* Skills section */}
+        <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          Skills
+        </div>
         {skills.length === 0 ? (
-          <div className="p-4 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-            No skills found. Add skills to ~/.deskhand/skills/
+          <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            No skills installed
           </div>
         ) : (
           skills.map((skill) => (
             <div
               key={skill.id}
-              className="flex items-start gap-3 p-2.5 rounded-[var(--radius-md)]"
+              className="flex items-start gap-3 p-2.5 rounded-[var(--radius-md)] hover:bg-[var(--hover-bg)] transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
@@ -181,45 +149,6 @@ export function SkillsPopup({ isOpen }: SkillsPopupProps) {
             </div>
           ))
         )}
-      </div>
-    </PopupContainer>
-  );
-}
-
-// ============================================
-// ReasoningPopup - 思考级别选择
-// ============================================
-
-interface ReasoningPopupProps {
-  isOpen: boolean;
-}
-
-export function ReasoningPopup({ isOpen }: ReasoningPopupProps) {
-  const [thinkingLevel, setThinkingLevel] = useAtom(thinkingLevelAtom);
-
-  const levels: { value: ThinkingLevel; title: string; desc: string }[] = [
-    { value: 'off', title: 'Off', desc: 'Disable extended thinking' },
-    { value: 'think', title: 'Think', desc: 'Standard thinking (5,000-10,000 tokens)' },
-    { value: 'max', title: 'Max', desc: 'Maximum thinking depth (20,000 tokens)' },
-  ];
-
-  return (
-    <PopupContainer isOpen={isOpen} position="left-[118px]" minWidth={280}>
-      <PopupHeader
-        title="Reasoning"
-        description="Adjust the reasoning effort for models that support extended thinking."
-      />
-
-      <div className="p-2 max-h-80 overflow-y-auto">
-        {levels.map((level) => (
-          <RadioItem
-            key={level.value}
-            title={level.title}
-            desc={level.desc}
-            active={thinkingLevel === level.value}
-            onClick={() => setThinkingLevel(level.value)}
-          />
-        ))}
       </div>
     </PopupContainer>
   );
@@ -250,7 +179,7 @@ export function ModelSelectorPopup({ isOpen, onClose }: ModelSelectorPopupProps)
   };
 
   return (
-    <PopupContainer isOpen={isOpen} position="left-[200px]" minWidth={320}>
+    <PopupContainer isOpen={isOpen} position="right-[14px]" minWidth={280}>
       {/* 搜索框 */}
       <div className="px-4 py-3 border-b border-[var(--border-light)]">
         <input
@@ -395,58 +324,6 @@ function CheckboxItem({ title, desc, checked, onChange }: CheckboxItemProps) {
           stroke="currentColor"
           strokeWidth="3"
           className={`w-3 h-3 text-white ${checked ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-          {title}
-        </div>
-        <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight">
-          {desc}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface RadioItemProps {
-  title: string;
-  desc: string;
-  active?: boolean;
-  onClick?: () => void;
-}
-
-function RadioItem({ title, desc, active, onClick }: RadioItemProps) {
-  return (
-    <div
-      onClick={onClick}
-      className={`
-        flex items-start gap-3 p-2.5
-        rounded-[var(--radius-md)] cursor-pointer
-        transition-colors duration-[var(--transition-fast)]
-        hover:bg-[var(--hover-bg)]
-        ${active ? 'bg-[var(--accent-bg)]' : ''}
-      `}
-    >
-      <div
-        className={`
-          w-[18px] h-[18px]
-          border-2 rounded
-          flex items-center justify-center
-          ${active
-            ? 'bg-[var(--accent-color)] border-[var(--accent-color)]'
-            : 'border-[var(--border-color)]'
-          }
-        `}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          className={`w-3 h-3 text-white ${active ? 'opacity-100' : 'opacity-0'}`}
         >
           <polyline points="20 6 9 17 4 12" />
         </svg>
@@ -816,22 +693,6 @@ function PlusIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
-
-function StarIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 3L14.5 8.5L20 9L16 13L17 19L12 16L7 19L8 13L4 9L9.5 8.5L12 3Z" />
-    </svg>
-  );
-}
-
-function WrenchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
     </svg>
   );
 }
