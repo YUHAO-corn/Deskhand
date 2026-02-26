@@ -68,6 +68,9 @@ export function InputToolbar() {
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
 
+  // Interact 标记（斜杠命令 chip）
+  const [interactTag, setInteractTag] = useState<string | null>(null);
+
   // 剪贴板附件
   const [clipboardAttachments, setClipboardAttachments] = useState<Array<{
     id: string;
@@ -119,7 +122,7 @@ export function InputToolbar() {
   // ============================================
   const handleSend = useCallback(async (overrideMessage?: string) => {
     const trimmedInput = (overrideMessage ?? inputValue).trim();
-    if (!trimmedInput || !activeSessionId) return;
+    if ((!trimmedInput && !interactTag) || !activeSessionId) return;
 
     // Build message with clipboard attachments inlined
     let fullMessage = trimmedInput;
@@ -142,6 +145,13 @@ export function InputToolbar() {
     if (!overrideMessage && a2uiPrompt) {
       fullMessage = `---\n${a2uiPrompt}\n---\n\n` + fullMessage;
       setA2UIPrompt(null);
+    }
+
+    // Include interact tag if present
+    if (!overrideMessage && interactTag) {
+      const slug = interactTag.toLowerCase().replace(/\s+/g, '-');
+      fullMessage = fullMessage ? `/${slug} ${fullMessage}` : `/${slug}`;
+      setInteractTag(null);
     }
 
     // 1. 添加用户消息到 atoms
@@ -220,7 +230,7 @@ export function InputToolbar() {
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
     }
-  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, workingDirectory, permissionMode, memoryOnlySessions, setMemoryOnlySessions, sessionMetaMap, setSessionMetaMap, setSessionIds, clipboardAttachments]);
+  }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, workingDirectory, permissionMode, memoryOnlySessions, setMemoryOnlySessions, sessionMetaMap, setSessionMetaMap, setSessionIds, clipboardAttachments, interactTag]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -277,8 +287,7 @@ export function InputToolbar() {
         <InteractPopup
           isOpen={activePopup === 'interact'}
           onSelect={(tag) => {
-            const marker = `[${tag}] `;
-            setInputValue((prev) => marker + (prev as string));
+            setInteractTag(tag);
             setActivePopup(null);
           }}
         />
@@ -287,10 +296,36 @@ export function InputToolbar() {
         <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} />
 
         {/* ============================================
-            区域：剪贴板附件预览
+            区域：附件 / 标记预览
             ============================================ */}
-        {(clipboardAttachments.length > 0 || a2uiPrompt) && (
+        {(clipboardAttachments.length > 0 || a2uiPrompt || interactTag) && (
           <div className="flex flex-wrap gap-2 px-[22px] pt-[14px]">
+            {interactTag && (
+              <div
+                className="
+                  flex items-center gap-1.5 px-2.5 py-1
+                  bg-[var(--accent-color)]/10 rounded-full
+                  text-[var(--font-size-sm)] font-medium text-[var(--accent-color)]
+                  border border-[var(--accent-color)]/20
+                "
+              >
+                <span className="text-[var(--accent-color)]/60">/</span>
+                <span>{interactTag.toLowerCase().replace(/\s+/g, '-')}</span>
+                <button
+                  onClick={() => setInteractTag(null)}
+                  className="
+                    shrink-0 w-4 h-4 flex items-center justify-center
+                    bg-transparent border-none cursor-pointer
+                    text-[var(--accent-color)]/50 hover:text-[var(--accent-color)]
+                  "
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )}
             {a2uiPrompt && (
               <div
                 className="
@@ -476,7 +511,7 @@ export function InputToolbar() {
             ) : (
               <button
                 onClick={() => handleSend()}
-                disabled={!inputValue?.trim()}
+                disabled={!inputValue?.trim() && !interactTag}
                 title="Send message"
                 className="
                   w-[30px] h-[30px]
