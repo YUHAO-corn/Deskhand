@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户表达情景地图 v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fff;
+    color: #222;
+    font-family: 'Noto Sans SC', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #999;
+    margin-top: -10px;
+  }
+
+  .chart-area {
+    position: relative;
+    width: 820px;
+    height: 820px;
+    margin: 20px 40px;
+  }
+
+  .container {
+    position: absolute;
+    top: 60px;
+    left: 60px;
+    right: 60px;
+    bottom: 60px;
+    /* 700x700 */
+  }
+
+  .axes-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Axis labels */
+  .axis-label {
+    position: absolute;
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    white-space: nowrap;
+  }
+
+  .label-top {
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .label-bottom {
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: 400;
+    color: #aaa;
+    font-size: 11px;
+  }
+
+  .label-right {
+    right: -16px;
+    top: 25%;
+    transform: translateY(-50%);
+  }
+
+  .label-left {
+    left: -16px;
+    top: 25%;
+    transform: translateY(-50%);
+    font-weight: 400;
+    color: #aaa;
+    font-size: 11px;
+  }
+
+  /* Diagonal labels — only in top half */
+  .diag-label {
+    position: absolute;
+    font-size: 10.5px;
+    color: #aaa;
+    font-style: italic;
+  }
+
+  .diag-label-near {
+    top: 47%;
+    left: 2%;
+  }
+
+  .diag-label-far {
+    top: 2%;
+    right: 2%;
+  }
+
+  /* Bottom zone label */
+  .bottom-label {
+    position: absolute;
+    bottom: 24%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #bbb;
+    white-space: nowrap;
+  }
+
+  /* Scene blocks */
+  .scene {
+    position: absolute;
+    max-width: 195px;
+  }
+
+  .scene-id {
+    font-size: 10px;
+    font-weight: 600;
+    color: #ccc;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .scene-voice {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 4px;
+  }
+
+  .scene-state {
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+
+  .scene-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .scene-tools span {
+    display: inline-block;
+    background: #f3f3f3;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    color: #666;
+  }
+
+  .align-right {
+    text-align: right;
+  }
+
+  .align-right .scene-tools {
+    justify-content: flex-end;
+  }
+
+  .align-center {
+    text-align: center;
+  }
+
+  .align-center .scene-tools {
+    justify-content: center;
+  }
+
+  /* ===== Positions ===== */
+
+  /* Top-left near center: A (知道 + 能说准 + 简单) */
+  .s-a { top: 28%; left: 6%; }
+
+  /* Top-left far from center: B (知道 + 能说准 + 复杂) */
+  .s-b { top: 6%; left: 6%; }
+
+  /* Top-right near center: C (知道 + 说不准 + 简单) */
+  .s-c { top: 28%; right: 6%; }
+
+  /* Top-right far from center: D (知道 + 说不准 + 复杂) */
+  .s-d { top: 6%; right: 6%; }
+
+  /* Bottom center: E (不知道) */
+  .s-e {
+    bottom: 12%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="title">用户表达情景地图</div>
+  <div class="subtitle">用户在向 AI 表达意图时，会遇到哪些不同的处境？</div>
+
+  <div class="chart-area">
+    <div class="container">
+
+      <svg class="axes-svg" viewBox="0 0 700 700">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#aaa" />
+          </marker>
+        </defs>
+
+        <!-- Vertical axis: arrow up (知道要什么) -->
+        <line x1="350" y1="700" x2="350" y2="5" stroke="#bbb" stroke-width="1" marker-end="url(#arrowhead)" />
+
+        <!-- Horizontal axis: only in top half, arrow right (说不准) -->
+        <line x1="0" y1="350" x2="695" y2="350" stroke="#bbb" stroke-width="1" marker-end="url(#arrowhead)" />
+
+        <!-- Diagonal: only in top half, from center-left to top-right -->
+        <line x1="10" y1="340" x2="690" y2="10" stroke="#ccc" stroke-width="1" stroke-dasharray="6 4" />
+
+        <!-- Light horizontal dashed line to fade out horizontal axis below -->
+        <!-- Bottom half is one zone, so the horizontal axis is just structural -->
+      </svg>
+
+      <!-- Axis labels -->
+      <div class="axis-label label-top">我知道自己要什么 ↑</div>
+      <div class="axis-label label-bottom">不知道要什么</div>
+      <div class="axis-label label-right">我说不准 →</div>
+      <div class="axis-label label-left">能说准</div>
+
+      <!-- Diagonal labels (top half only) -->
+      <div class="diag-label diag-label-near">↙ 几句话说完</div>
+      <div class="diag-label diag-label-far">要说很多 ↗</div>
+
+
+
+      <!-- ===== A: 知道 + 能说准 + 简单 ===== -->
+      <div class="scene s-a">
+        <div class="scene-voice">"说一句你就懂"</div>
+        <div class="scene-state">知道 · 能说准 · 几句话说完</div>
+        <div class="scene-tools">
+          <span>自然语言</span>
+          <span>语音</span>
+        </div>
+      </div>
+
+      <!-- ===== B: 知道 + 能说准 + 复杂 ===== -->
+      <div class="scene s-b">
+        <div class="scene-voice">"要交代的太多了"</div>
+        <div class="scene-state">知道 · 能说准 · 要说很多</div>
+        <div class="scene-tools">
+          <span>上传文件</span>
+          <span>知识库</span>
+        </div>
+      </div>
+
+      <!-- ===== C: 知道 + 说不准 + 简单 ===== -->
+      <div class="scene s-c align-right">
+        <div class="scene-voice">"心里有数嘴上说不清"</div>
+        <div class="scene-state">知道 · 说不准 · 几句话说完</div>
+        <div class="scene-tools">
+          <span>发图片</span>
+          <span>截屏</span>
+          <span>Skill</span>
+        </div>
+      </div>
+
+      <!-- ===== D: 知道 + 说不准 + 复杂 ===== -->
+      <div class="scene s-d align-right">
+        <div class="scene-voice">"脑子里有整个画面"</div>
+        <div class="scene-state">知道 · 说不准 · 要说很多</div>
+        <div class="scene-tools">
+          <span>共享项目</span>
+          <span>MCP</span>
+          <span>API</span>
+        </div>
+      </div>
+
+      <!-- ===== E: 不知道 ===== -->
+      <div class="scene s-e align-center">
+        <div class="scene-voice">"没想法，帮我探索"</div>
+        <div class="scene-state">不知道自己要什么，需要先发现偏好</div>
+        <div class="scene-tools">
+          <span>Tournament</span>
+          <span>Playground</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
