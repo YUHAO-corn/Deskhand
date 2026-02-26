@@ -231,14 +231,29 @@ function renderOptions() {
 }
 
 function updateOptionsMode() {
-  // Update preview
-  if (CONFIG.previewTemplate) {
-    document.getElementById('options-preview').innerHTML = fillTemplate(CONFIG.previewTemplate);
+  // Auto-generate preview from selected option
+  const selectedOpt = CONFIG.options.find(o => o.id === state.selected);
+  const previewEl = document.getElementById('options-preview');
+  if (selectedOpt) {
+    let html = '';
+    if (selectedOpt.previewHtml) {
+      html = selectedOpt.previewHtml;
+    } else {
+      html = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">${selectedOpt.emoji ? `<span style="font-size:48px;margin-right:12px">${selectedOpt.emoji}</span>` : ''}${selectedOpt.label}</div>`;
+    }
+    previewEl.innerHTML = html;
   }
-  // Update prompt
-  if (CONFIG.promptTemplate) {
-    document.getElementById('options-prompt-text').textContent = fillTemplate(CONFIG.promptTemplate);
+  // Auto-generate prompt from selection + controls
+  const parts = [];
+  if (selectedOpt) {
+    parts.push(`I chose: ${selectedOpt.label}${selectedOpt.description ? ' — ' + selectedOpt.description : ''}`);
   }
+  (CONFIG.controls || []).forEach(c => {
+    const v = state[c.id];
+    const display = c.type === 'toggle' ? (v ? 'Yes' : 'No') : c.type === 'slider' ? v + (c.unit || '') : String(v);
+    parts.push(`${c.label}: ${display}`);
+  });
+  document.getElementById('options-prompt-text').textContent = parts.join('\n');
   // Update control value displays
   (CONFIG.controls || []).forEach(c => {
     const valEl = document.getElementById(`val-${c.id}`);
@@ -370,18 +385,13 @@ function syncControlsToState() {
   });
 }
 
-function fillTemplate(template) {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, id) => {
-    const val = state[id];
-    return val !== undefined ? String(val) : `{{${id}}}`;
-  });
-}
 
 function updateAll() {
   if (isOptionsMode) {
     updateOptionsMode();
     return;
   }
+  // Auto-generate control value displays
   (CONFIG.controls || []).forEach(c => {
     const valEl = document.getElementById(`val-${c.id}`);
     if (!valEl) return;
@@ -390,12 +400,21 @@ function updateAll() {
     else if (c.type === 'toggle') valEl.textContent = v ? 'On' : 'Off';
     else valEl.textContent = String(v);
   });
-  if (CONFIG.previewTemplate) {
-    document.getElementById('preview').innerHTML = fillTemplate(CONFIG.previewTemplate);
-  }
-  if (CONFIG.promptTemplate) {
-    document.getElementById('prompt-text').textContent = fillTemplate(CONFIG.promptTemplate);
-  }
+  // Auto-generate preview from control values
+  const previewEl = document.getElementById('preview');
+  const previewParts = (CONFIG.controls || []).map(c => {
+    const v = state[c.id];
+    const display = c.type === 'toggle' ? (v ? 'Yes' : 'No') : c.type === 'color' ? `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:${v};vertical-align:middle;margin-right:4px;border:1px solid var(--border)"></span>${v}` : c.type === 'slider' ? v + (c.unit || '') : String(v);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:var(--radius-sm);background:var(--bg-surface);font-size:13px;"><span style="color:var(--text-secondary)">${c.label}</span><span style="font-family:var(--mono);color:var(--accent);font-weight:500">${display}</span></div>`;
+  });
+  previewEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;max-width:400px;margin:0 auto;padding-top:20px">${previewParts.join('')}</div>`;
+  // Auto-generate prompt from control values
+  const promptParts = (CONFIG.controls || []).map(c => {
+    const v = state[c.id];
+    const display = c.type === 'toggle' ? (v ? 'Yes' : 'No') : c.type === 'slider' ? v + (c.unit || '') : String(v);
+    return `${c.label}: ${display}`;
+  });
+  document.getElementById('prompt-text').textContent = promptParts.join('\n');
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
 }
 

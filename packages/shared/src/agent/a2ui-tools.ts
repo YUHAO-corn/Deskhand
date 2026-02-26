@@ -138,10 +138,10 @@ function createRenderPlaygroundTool(templateDir: string) {
     'render_playground',
     `Render an interactive playground in the Artifact panel. Two modes:
 
-**Controls mode** (pass "controls"): Standard parameter tuning with sliders, selects, color pickers, toggles. User adjusts individual parameters.
-**Options mode** (pass "options"): Gallery of complete options for the user to pick from. Each option is a card with label, description, and optional emoji/preview. User selects one. You may also pass "controls" alongside "options" for secondary tweaking after selection.
+**Controls mode** (pass "controls"): Parameter tuning with sliders, selects, color pickers, toggles. User adjusts parameters and the prompt is auto-generated from control values.
+**Options mode** (pass "options"): Gallery of complete options for the user to pick from. Each option is a card with label, description, and optional emoji/preview. User selects one and the prompt is auto-generated.
 
-Use controls mode for fine-tuning scenarios. Use options mode when the user needs to choose between distinct alternatives (styles, themes, approaches).
+You only need to provide structured data (title, options, controls). The frontend auto-generates the preview and prompt output — do NOT include previewTemplate or promptTemplate.
 Do NOT use this for complex visualizations that need custom HTML/JS (use the playground skill instead).`,
     {
       title: z.string().describe('Playground title'),
@@ -153,19 +153,6 @@ Do NOT use this for complex visualizations that need custom HTML/JS (use the pla
       ),
       controls: z.array(Control).optional().describe('Interactive controls (sliders, selects, colors, toggles). Optional when using options mode.'),
       presets: z.array(Preset).optional().describe('Named presets that snap all controls to preset values. Only used in controls mode.'),
-      previewTemplate: z.string().optional().describe(
-        'HTML for live preview, injected via innerHTML. ' +
-        'ONLY {{controlId}} placeholders supported — replaced with plain string values. ' +
-        'In options mode, {{selected}} is the selected option ID. ' +
-        'NO conditionals, NO loops, NO expressions — just {{id}} substitution. ' +
-        'Toggle values become "true"/"false" strings — do NOT use {{#if}}, just always show the element. ' +
-        'Use ONLY inline styles, never CSS classes or <style> tags. Keep it simple.'
-      ),
-      promptTemplate: z.string().describe(
-        'Template for the copyable prompt output. Use {{controlId}} placeholders. ' +
-        'In options mode, {{selected}} is the selected option ID, {{selectedLabel}} is its label. ' +
-        'Write as natural language instruction.'
-      ),
     },
     async (args) => {
       try {
