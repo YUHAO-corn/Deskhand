@@ -113,9 +113,8 @@ const PlaygroundOption = z.object({
   id: z.string().describe('Unique option ID'),
   label: z.string().describe('Display name'),
   description: z.string().optional().describe('Short description'),
-  emoji: z.string().optional().describe('Emoji icon shown on the card'),
   previewHtml: z.string().optional().describe(
-    'Optional HTML snippet for visual preview on the card. Uses ONLY inline styles.'
+    'HTML snippet for visual preview. Uses ONLY inline styles. Use CSS variables var(--controlId) for dynamic parts.'
   ),
 });
 
@@ -173,7 +172,8 @@ Do NOT use this for complex visualizations that need custom JS logic (use the pl
         // Write to temp file
         const tmpDir = path.join(os.tmpdir(), 'deskhand-a2ui');
         fs.mkdirSync(tmpDir, { recursive: true });
-        const fileName = `playground-${Date.now()}.html`;
+        const slug = args.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+        const fileName = `${slug || 'playground'}-${Date.now()}.html`;
         const filePath = path.join(tmpDir, fileName);
         fs.writeFileSync(filePath, html, 'utf-8');
 
