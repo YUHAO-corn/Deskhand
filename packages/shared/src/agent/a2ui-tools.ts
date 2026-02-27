@@ -173,7 +173,7 @@ Do NOT use this for complex visualizations that need custom JS logic (use the pl
         const tmpDir = path.join(os.tmpdir(), 'deskhand-a2ui');
         fs.mkdirSync(tmpDir, { recursive: true });
         const slug = args.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
-        const fileName = `${slug || 'playground'}-${Date.now()}.html`;
+        const fileName = `${slug || 'playground'}.html`;
         const filePath = path.join(tmpDir, fileName);
         fs.writeFileSync(filePath, html, 'utf-8');
 
@@ -226,7 +226,8 @@ The user fills in answers, reviews a summary, and copies the generated prompt ba
 
         const tmpDir = path.join(os.tmpdir(), 'deskhand-a2ui');
         fs.mkdirSync(tmpDir, { recursive: true });
-        const fileName = `guided-form-${Date.now()}.html`;
+        const formSlug = args.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+        const fileName = `${formSlug || 'guided-form'}.html`;
         const filePath = path.join(tmpDir, fileName);
         fs.writeFileSync(filePath, html, 'utf-8');
 
