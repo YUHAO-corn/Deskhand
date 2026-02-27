@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A2UI Tournament</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f5f8f7; --bg-card: #fff; --bg-muted: #eef4f2; --bg-surface: #f9fbfa;
+    --text: #1b2a2a; --text-secondary: #5a6b6b; --text-muted: #8a9a9a;
+    --accent: #10a37f; --accent-soft: #d4ede5; --accent-bg: #edf7f3;
+    --accent-hover: #0d8f6e; --accent-glow: rgba(16,163,127,0.12);
+    --border: #dce6e3; --border-light: #e8efec;
+    --radius-sm: 8px; --radius-md: 10px; --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-accent: 0 2px 12px rgba(16,163,127,0.2);
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { width: 600px; max-width: 100%; }
+
+  /* Header */
+  .header {
+    margin-bottom: 32px;
+    animation: fadeUp 0.4s var(--ease) both;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* Progress */
+  .progress-area {
+    margin-bottom: 28px;
+    animation: fadeUp 0.4s var(--ease) 0.1s both;
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .progress-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s var(--ease);
+  }
+
+  /* Battle */
+  .battle {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+  .card {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    cursor: pointer;
+    transition: all 0.25s var(--ease);
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .card:active { transform: translateY(0); }
+  .card.exit-left { animation: exitLeft 0.28s var(--ease) both; }
+  .card.exit-right { animation: exitRight 0.28s var(--ease) both; }
+  .card.enter { animation: enterCard 0.28s var(--ease) both; }
+
+  .card-emoji { font-size: 32px; margin-bottom: 12px; }
+  .card-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    flex-grow: 1;
+  }
+
+  .vs {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: 32px;
+    justify-content: center;
+  }
+
+  /* Result */
+  .result-area {
+    animation: fadeUp 0.5s var(--ease) both;
+  }
+  .result-list {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .result-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .result-item {
+    padding: 10px 12px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .result-item:last-child { margin-bottom: 0; }
+  .result-item .round { color: var(--text-muted); font-weight: 500; }
+  .result-item .choice { color: var(--text); font-weight: 600; }
+  .result-item .vs { color: var(--text-secondary); }
+
+  /* Prompt bar */
+  .prompt-bar {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+  .prompt-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    min-height: 60px;
+    white-space: pre-wrap;
+  }
+  .send-btn {
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .send-btn:hover {
+    background: var(--accent-hover);
+    box-shadow: var(--shadow-accent);
+  }
+
+  .hidden { display: none !important; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes exitLeft {
+    to { opacity: 0; transform: translateX(-20px) scale(0.95); }
+  }
+  @keyframes exitRight {
+    to { opacity: 0; transform: translateX(20px) scale(0.95); }
+  }
+  @keyframes enterCard {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="header">
+    <h1 id="title"></h1>
+    <p id="description"></p>
+  </div>
+
+  <div id="playing-area">
+    <div class="progress-area">
+      <div class="progress-header">
+        <span class="progress-label">选择中...</span>
+        <span class="progress-count" id="progressCount"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <div class="battle">
+      <div class="card" id="cardLeft">
+        <div class="card-emoji" id="emojiLeft"></div>
+        <div class="card-name" id="nameLeft"></div>
+        <div class="card-desc" id="descLeft"></div>
+      </div>
+      <div class="vs">or</div>
+      <div class="card" id="cardRight">
+        <div class="card-emoji" id="emojiRight"></div>
+        <div class="card-name" id="nameRight"></div>
+        <div class="card-desc" id="descRight"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="result-area" class="result-area hidden">
+    <div class="result-list">
+      <div class="result-label">你的选择</div>
+      <div id="resultItems"></div>
+    </div>
+    <div class="prompt-bar">
+      <div class="prompt-text" id="promptText"></div>
+      <button id="sendBtn" class="send-btn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0">
+          <path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Send to Chat</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONFIG = window.__A2UI_CONFIG__ || {};
+let currentRound = 0;
+let selections = [];
+let isAnimating = false;
+
+function init() {
+  document.getElementById('title').textContent = CONFIG.title || 'Tournament';
+  const desc = document.getElementById('description');
+  if (CONFIG.description) {
+    desc.textContent = CONFIG.description;
+  } else {
+    desc.style.display = 'none';
+  }
+
+  if (!CONFIG.rounds || CONFIG.rounds.length === 0) {
+    document.getElementById('playing-area').innerHTML = '<p style="color:var(--text-muted);text-align:center">No rounds configured</p>';
+    return;
+  }
+
+  showRound(0);
+}
+
+function showRound(index) {
+  if (index >= CONFIG.rounds.length) {
+    showResult();
+    return;
+  }
+
+  currentRound = index;
+  const round = CONFIG.rounds[index];
+
+  document.getElementById('emojiLeft').textContent = round.left.emoji;
+  document.getElementById('nameLeft').textContent = round.left.title;
+  document.getElementById('descLeft').textContent = round.left.description;
+
+  document.getElementById('emojiRight').textContent = round.right.emoji;
+  document.getElementById('nameRight').textContent = round.right.title;
+  document.getElementById('descRight').textContent = round.right.description;
+
+  const progress = ((index + 1) / CONFIG.rounds.length) * 100;
+  document.getElementById('progressCount').textContent = `第 ${index + 1} 轮 / 共 ${CONFIG.rounds.length} 轮`;
+  document.getElementById('progressFill').style.width = progress + '%';
+
+  document.getElementById('cardLeft').onclick = () => pick('left');
+  document.getElementById('cardRight').onclick = () => pick('right');
+}
+
+function pick(side) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  const round = CONFIG.rounds[currentRound];
+  const chosen = side === 'left' ? round.left : round.right;
+  const other = side === 'left' ? round.right : round.left;
+
+  selections.push({
+    round: currentRound + 1,
+    chosen: chosen,
+    other: other,
+  });
+
+  const loserId = side === 'left' ? 'cardRight' : 'cardLeft';
+  document.getElementById(loserId).classList.add(side === 'left' ? 'exit-right' : 'exit-left');
+
+  setTimeout(() => {
+    document.getElementById(loserId).classList.remove('exit-left', 'exit-right');
+    isAnimating = false;
+
+    if (currentRound + 1 >= CONFIG.rounds.length) {
+      showResult();
+    } else {
+      showRound(currentRound + 1);
+      document.getElementById(loserId).classList.add('enter');
+      setTimeout(() => {
+        document.getElementById(loserId).classList.remove('enter');
+      }, 280);
+    }
+  }, 280);
+}
+
+function showResult() {
+  document.getElementById('playing-area').classList.add('hidden');
+  document.getElementById('result-area').classList.remove('hidden');
+
+  const resultItems = document.getElementById('resultItems');
+  resultItems.innerHTML = selections.map(s => {
+    return `<div class="result-item">
+      <span class="round">第${s.round}轮：</span>
+      <span class="choice">选了「${s.chosen.title}」</span>
+      <span class="vs">（vs ${s.other.title}）</span>
+    </div>`;
+  }).join('');
+
+  const promptText = selections.map(s => {
+    return `第${s.round}轮：选了「${s.chosen.title}」（vs ${s.other.title}）`;
+  }).join('\n');
+
+  document.getElementById('promptText').textContent = promptText;
+
+  document.getElementById('sendBtn').onclick = () => {
+    window.electron?.sendToChat?.(promptText);
+  };
+}
+
+init();
+</script>
+
+</body>
+</html>
