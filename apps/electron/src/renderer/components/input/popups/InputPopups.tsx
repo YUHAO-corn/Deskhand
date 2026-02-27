@@ -86,6 +86,80 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
 }
 
 // ============================================
+// AttachMenuPopup - 附件入口菜单（类似 Claude 的 + 下拉）
+// ============================================
+
+interface AttachMenuPopupProps {
+  isOpen: boolean;
+  onSelectFiles: () => void;
+  onOpenClipboard: () => void;
+}
+
+export function AttachMenuPopup({ isOpen, onSelectFiles, onOpenClipboard }: AttachMenuPopupProps) {
+  return (
+    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={220}>
+      <div className="p-1.5">
+        <button
+          onClick={onSelectFiles}
+          className="
+            flex items-center gap-3 w-full p-2.5
+            border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            text-left
+            transition-colors duration-[var(--transition-fast)]
+            hover:bg-[var(--hover-bg)]
+          "
+        >
+          <div className="w-8 h-8 rounded-[6px] bg-[var(--hover-bg)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
+              Add files or photos
+            </div>
+            <div className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
+              Browse from your computer
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={onOpenClipboard}
+          className="
+            flex items-center gap-3 w-full p-2.5
+            border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            text-left
+            transition-colors duration-[var(--transition-fast)]
+            hover:bg-[var(--hover-bg)]
+          "
+        >
+          <div className="w-8 h-8 rounded-[6px] bg-[var(--hover-bg)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
+              Clipboard history
+            </div>
+            <div className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
+              Paste from recent copies
+            </div>
+          </div>
+        </button>
+      </div>
+    </PopupContainer>
+  );
+}
+
+// ============================================
 // InteractPopup - 交互方式菜单
 // ============================================
 
@@ -422,7 +496,8 @@ function CheckboxItem({ title, desc, checked, onChange }: CheckboxItemProps) {
 }
 
 // ============================================
-// ClipboardPopup - 剪贴板历史（v2 设计）
+// ClipboardPopup - 剪贴板快速附加（v3 redesign）
+// 设计理念：单列列表 + 单击即附加 + 时间分组
 // ============================================
 
 interface ClipboardEntry {
@@ -440,15 +515,39 @@ interface ClipboardPopupProps {
   onConfirm?: (entries: ClipboardEntry[]) => void;
 }
 
+type TimeGroup = { label: string; entries: ClipboardEntry[] };
+
+function groupByTime(entries: ClipboardEntry[]): TimeGroup[] {
+  const now = Date.now();
+  const groups: Record<string, ClipboardEntry[]> = {};
+  const order: string[] = [];
+
+  for (const entry of entries) {
+    const diff = now - entry.timestamp;
+    let label: string;
+    if (diff < 300_000) label = 'Just now';
+    else if (diff < 3600_000) label = 'Recent';
+    else if (diff < 86400_000) label = 'Earlier today';
+    else label = 'Older';
+
+    if (!groups[label]) {
+      groups[label] = [];
+      order.push(label);
+    }
+    groups[label]!.push(entry);
+  }
+
+  return order.map((label) => ({ label, entries: groups[label]! }));
+}
+
 export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
-  const [activeTab, setActiveTab] = useState<'files' | 'clipboard'>('clipboard');
   const [entries, setEntries] = useState<ClipboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || activeTab !== 'clipboard') return;
+    if (!isOpen) return;
     setLoading(true);
     window.electronAPI?.getClipboardHistory().then((history) => {
       setEntries([...history].reverse());
@@ -456,13 +555,12 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
     }).catch(() => {
       setLoading(false);
     });
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
-  // Clear selection and search when popup closes
   useEffect(() => {
     if (!isOpen) {
-      setSelectedIds(new Set());
       setSearchQuery('');
+      setShowSearch(false);
     }
   }, [isOpen]);
 
@@ -473,167 +571,142 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
       })
     : entries;
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const groups = groupByTime(filteredEntries);
 
-  const handleConfirm = () => {
-    const selected = entries.filter((e) => selectedIds.has(e.id));
-    onConfirm?.(selected);
-    setSelectedIds(new Set());
+  const handleAttach = (entry: ClipboardEntry) => {
+    onConfirm?.([entry]);
   };
 
   const formatTime = (ts: number) => {
     const diff = Date.now() - ts;
-    if (diff < 60_000) return 'just now';
-    if (diff < 3600_000) return `${Math.floor(diff / 60_000)}m ago`;
-    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)}h ago`;
-    return new Date(ts).toLocaleDateString();
+    if (diff < 60_000) return 'now';
+    if (diff < 3600_000) return `${Math.floor(diff / 60_000)}m`;
+    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)}h`;
+    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
     <PopupContainer isOpen={isOpen} fullWidth>
-      {/* Tab bar */}
-      <div className="flex items-center gap-1 px-3 pt-3 pb-2">
-        <button
-          onClick={() => setActiveTab('files')}
-          className={`
-            px-3 py-1.5 rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] font-medium
-            border-none cursor-pointer transition-colors
-            ${activeTab === 'files'
-              ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
-              : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
-            }
-          `}
-        >
-          Files
-        </button>
-        <button
-          onClick={() => setActiveTab('clipboard')}
-          className={`
-            px-3 py-1.5 rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] font-medium
-            border-none cursor-pointer transition-colors
-            ${activeTab === 'clipboard'
-              ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
-              : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
-            }
-          `}
-        >
-          Clipboard
-        </button>
+      {/* Header with search toggle */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-light)]">
+        <div>
+          <h3 className="text-[14px] font-semibold text-[var(--text-primary)] m-0">
+            Clipboard
+          </h3>
+          <p className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-0.5 m-0">
+            Click to attach
+          </p>
+        </div>
+        {entries.length > 5 && (
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={`
+              w-7 h-7 flex items-center justify-center
+              rounded-[var(--radius-md)] border-none cursor-pointer
+              transition-colors
+              ${showSearch
+                ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
+                : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
+              }
+            `}
+          >
+            <SearchIcon />
+          </button>
+        )}
       </div>
 
-      {/* Files tab (placeholder) */}
-      {activeTab === 'files' && (
-        <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-          Drag files here or click to browse
+      {/* Collapsible search */}
+      {showSearch && (
+        <div className="px-3 pt-2 pb-1">
+          <input
+            type="text"
+            placeholder="Filter..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+            className="
+              w-full px-3 py-1.5
+              border border-[var(--border-light)]
+              rounded-[var(--radius-md)]
+              text-[var(--font-size-sm)]
+              bg-[var(--bg-primary)]
+              text-[var(--text-primary)]
+              placeholder:text-[var(--text-muted)]
+              outline-none
+              focus:border-[var(--accent-color)]
+              transition-colors
+            "
+          />
         </div>
       )}
 
-      {/* Clipboard tab */}
-      {activeTab === 'clipboard' && (
-        <div className="flex flex-col">
-          {/* Search box */}
-          <div className="px-3 pb-2">
-            <div className="relative">
-              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-              <input
-                type="text"
-                placeholder="Search clipboard..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="
-                  w-full pl-8 pr-3 py-1.5
-                  border border-[var(--border-light)]
-                  rounded-[var(--radius-md)]
-                  text-[var(--font-size-sm)]
-                  bg-[var(--bg-primary)]
-                  text-[var(--text-primary)]
-                  placeholder:text-[var(--text-muted)]
-                  outline-none
-                  focus:border-[var(--accent-color)]
-                  transition-colors
-                "
-              />
+      {/* Content */}
+      <div className="max-h-[380px] overflow-y-auto">
+        {loading && (
+          <div className="p-8 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            Loading...
+          </div>
+        )}
+
+        {!loading && entries.length === 0 && (
+          <div className="p-8 text-center">
+            <div className="text-[var(--text-muted)] mb-2">
+              <ClipboardEmptyIcon />
+            </div>
+            <div className="text-[var(--font-size-sm)] text-[var(--text-muted)]">
+              No clipboard history yet
+            </div>
+            <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-1 opacity-60">
+              Copy something to see it here
             </div>
           </div>
+        )}
 
-          <div className="max-h-[360px] overflow-y-auto px-3 pb-3">
-          {loading && (
-            <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-              Loading...
+        {!loading && entries.length > 0 && filteredEntries.length === 0 && (
+          <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            No matches
+          </div>
+        )}
+
+        {!loading && groups.map((group) => (
+          <div key={group.label}>
+            {/* Time group header */}
+            <div className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              {group.label}
             </div>
-          )}
-
-          {!loading && entries.length === 0 && (
-            <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-              No clipboard history yet. Copy something to get started.
-            </div>
-          )}
-
-          {!loading && entries.length > 0 && filteredEntries.length === 0 && (
-            <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
-              No matches for "{searchQuery}"
-            </div>
-          )}
-
-          {!loading && filteredEntries.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {filteredEntries.map((entry) => (
-                <ClipboardCard
+            {/* Items */}
+            <div className="px-2 pb-1">
+              {group.entries.map((entry) => (
+                <ClipboardRow
                   key={entry.id}
                   entry={entry}
                   formatTime={formatTime}
-                  selected={selectedIds.has(entry.id)}
-                  onClick={() => toggleSelect(entry.id)}
+                  formatSize={formatSize}
+                  onAttach={() => handleAttach(entry)}
                 />
               ))}
             </div>
-          )}
           </div>
-        </div>
-      )}
-
-      {/* Bottom confirmation bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-light)]">
-          <span className="text-[var(--font-size-sm)] text-[var(--text-secondary)]">
-            {selectedIds.size} selected
-          </span>
-          <button
-            onClick={handleConfirm}
-            className="
-              px-4 py-1.5 rounded-[var(--radius-md)]
-              bg-[var(--accent-color)] text-white
-              text-[var(--font-size-sm)] font-medium
-              border-none cursor-pointer
-              hover:opacity-90 transition-opacity
-            "
-          >
-            Attach
-          </button>
-        </div>
-      )}
+        ))}
+      </div>
     </PopupContainer>
   );
 }
 
-function ClipboardCard({ entry, formatTime, selected, onClick }: {
+function ClipboardRow({ entry, formatTime, formatSize, onAttach }: {
   entry: ClipboardEntry;
   formatTime: (ts: number) => string;
-  selected?: boolean;
-  onClick?: () => void;
+  formatSize: (bytes: number) => string;
+  onAttach: () => void;
 }) {
   const [thumbSrc, setThumbSrc] = useState<string | null>(null);
 
-  // Load image thumbnail
   useEffect(() => {
     if (entry.type !== 'image') return;
     window.electronAPI?.readFile(entry.content).then((result) => {
@@ -643,72 +716,84 @@ function ClipboardCard({ entry, formatTime, selected, onClick }: {
     });
   }, [entry.type, entry.content]);
 
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   return (
-    <div
-      onClick={onClick}
-      className={`
-        flex flex-col gap-2 p-3 h-[140px]
-        rounded-[var(--radius-md)]
-        border-2
-        bg-[var(--bg-primary)]
-        cursor-pointer
+    <button
+      onClick={onAttach}
+      className="
+        flex items-center gap-3 w-full p-2.5
+        border-none bg-transparent
+        rounded-[var(--radius-md)] cursor-pointer
+        text-left
         transition-colors duration-[var(--transition-fast)]
-        overflow-hidden
-        relative
-        ${selected
-          ? 'border-[var(--accent-color)] bg-[var(--accent-bg)]'
-          : 'border-[var(--border-light)] hover:border-[var(--border-color)]'
-        }
-      `}
+        hover:bg-[var(--hover-bg)]
+        group
+      "
     >
-      {/* Selection checkmark */}
-      {selected && (
-        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--accent-color)] flex items-center justify-center">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+      {/* Type indicator */}
+      {entry.type === 'image' ? (
+        <div className="w-10 h-10 rounded-[6px] overflow-hidden bg-[var(--hover-bg)] shrink-0 flex items-center justify-center">
+          {thumbSrc ? (
+            <img src={thumbSrc} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <ImageIcon />
+          )}
+        </div>
+      ) : (
+        <div className={`
+          w-10 h-10 rounded-[6px] shrink-0
+          flex items-center justify-center
+          ${entry.type === 'link'
+            ? 'bg-blue-500/10 text-blue-400'
+            : 'bg-[var(--hover-bg)] text-[var(--text-muted)]'
+          }
+        `}>
+          {entry.type === 'link' ? <LinkIcon /> : <TextIcon />}
         </div>
       )}
-      {entry.type === 'image' ? (
-        <>
-          {/* Image thumbnail */}
-          <div className="flex-1 min-h-0 rounded overflow-hidden bg-[var(--hover-bg)] flex items-center justify-center">
-            {thumbSrc ? (
-              <img src={thumbSrc} alt="Clipboard image" className="w-full h-full object-cover" />
-            ) : (
-              <div className="text-[var(--text-muted)]"><ImageIcon /></div>
-            )}
-          </div>
-          {/* Meta */}
-          <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-auto">
-            {formatTime(entry.timestamp)}
-            {entry.fileSize ? ` · ${formatSize(entry.fileSize)}` : ''}
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Type icon */}
-          <div className="text-[var(--text-muted)]">
-            {entry.type === 'link' ? <LinkIcon /> : <TextIcon />}
-          </div>
-          {/* Content preview (multi-line) */}
-          <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] leading-snug line-clamp-3 break-all">
-            {entry.preview}
-          </div>
-          {/* Meta */}
-          <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-auto">
-            {formatTime(entry.timestamp)}
-            {entry.charCount ? ` · ${entry.charCount.toLocaleString()} chars` : ''}
-          </div>
-        </>
-      )}
-    </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] leading-snug line-clamp-2 break-all">
+          {entry.type === 'image'
+            ? 'Screenshot'
+            : entry.preview}
+        </div>
+        <div className="flex items-center gap-1.5 mt-1 text-[var(--font-size-xs)] text-[var(--text-muted)]">
+          <span>{formatTime(entry.timestamp)}</span>
+          {entry.charCount && (
+            <>
+              <span className="opacity-40">·</span>
+              <span>{entry.charCount.toLocaleString()} chars</span>
+            </>
+          )}
+          {entry.fileSize && (
+            <>
+              <span className="opacity-40">·</span>
+              <span>{formatSize(entry.fileSize)}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Attach hint on hover */}
+      <div className="
+        shrink-0 opacity-0 group-hover:opacity-100
+        transition-opacity
+        text-[var(--font-size-xs)] text-[var(--accent-color)]
+        font-medium
+      ">
+        +
+      </div>
+    </button>
+  );
+}
+
+function ClipboardEmptyIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block opacity-40">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+    </svg>
   );
 }
 
