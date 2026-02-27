@@ -59,6 +59,19 @@ const SliderStep = BaseStep.extend({
 
 const FormStep = z.discriminatedUnion('type', [ChoiceStep, MultiChoiceStep, TextStep, TextareaStep, SliderStep]);
 
+// ─── Tournament Schema ───
+
+const TournamentCard = z.object({
+  emoji: z.string().describe('Emoji representing this option'),
+  title: z.string().describe('Short title'),
+  description: z.string().describe('One-sentence description'),
+});
+
+const TournamentRound = z.object({
+  left: TournamentCard,
+  right: TournamentCard,
+});
+
 // ─── Control Schema ───
 
 const SliderControl = z.object({
@@ -257,12 +270,72 @@ The user fills in answers, reviews a summary, and copies the generated prompt ba
   );
 }
 
+/** Create the render_tournament tool with access to the template directory */
+function createRenderTournamentTool(templateDir: string) {
+  return tool(
+    'render_tournament',
+    `Render a tournament (two-by-two comparison) in the Artifact panel. Users make quick binary choices across multiple rounds to discover their preferences.
+
+Use this when the user doesn't know what they want and needs to discover preferences through comparison. Each round shows two cards (emoji + title + description), user picks one, advances to next round.
+
+The result is a selection log showing what the user chose in each round. You can use this for:
+- Elimination tournament: same-category options (8 foods, pick winner)
+- Preference discovery: cross-dimension comparisons (beach vs mountain, budget vs comfort)
+
+The template doesn't distinguish between these modes — you decide how to structure the rounds based on context.`,
+    {
+      title: z.string().describe('Tournament title, e.g. "五一去哪玩" or "今晚吃什么"'),
+      description: z.string().optional().describe('Brief description shown below title'),
+      rounds: z.array(TournamentRound).describe('Ordered list of rounds. Each round presents two options for the user to choose between.'),
+    },
+    async (args) => {
+      try {
+        const templatePath = path.join(templateDir, 'tournament.html');
+        const templateHtml = fs.readFileSync(templatePath, 'utf-8');
+        const html = injectConfig(templateHtml, args as Record<string, unknown>);
+
+        const tmpDir = path.join(os.tmpdir(), 'deskhand-a2ui');
+        fs.mkdirSync(tmpDir, { recursive: true });
+        const slug = args.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+        const fileName = `${slug || 'tournament'}.html`;
+        const filePath = path.join(tmpDir, fileName);
+        fs.writeFileSync(filePath, html, 'utf-8');
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({ a2ui: true, filePath, title: args.title }),
+          }],
+        };
+      } catch (err) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `Error rendering tournament: ${err}`,
+          }],
+          isError: true,
+        };
+      }
+    },
+    {
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+      },
+    },
+  );
+}
+
 // ─── MCP Server ───
 
 export function createA2UIServer(templateDir: string) {
   return createSdkMcpServer({
     name: 'deskhand-a2ui',
     version: '1.0.0',
-    tools: [createRenderPlaygroundTool(templateDir), createRenderGuidedFormTool(templateDir)],
+    tools: [
+      createRenderPlaygroundTool(templateDir),
+      createRenderGuidedFormTool(templateDir),
+      createRenderTournamentTool(templateDir),
+    ],
   });
 }
