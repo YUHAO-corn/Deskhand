@@ -29,6 +29,7 @@ import {
 } from '../../atoms/sessions';
 import {
   WorkspacePopup,
+  AttachMenuPopup,
   InteractPopup,
   ToolsPopup,
   ModelSelectorPopup,
@@ -286,6 +287,23 @@ export function InputToolbar() {
             区域：弹窗容器
             ============================================ */}
         <WorkspacePopup isOpen={activePopup === 'workspace'} />
+        <AttachMenuPopup
+          isOpen={activePopup === 'attach-menu'}
+          onSelectFiles={async () => {
+            const files = await window.electronAPI?.selectFiles();
+            if (files && files.length > 0) {
+              const fileEntries = files.map((filePath: string) => ({
+                id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                type: 'text' as const,
+                content: filePath,
+                preview: filePath.split('/').pop() || filePath,
+              }));
+              setClipboardAttachments((prev) => [...prev, ...fileEntries]);
+            }
+            setActivePopup(null);
+          }}
+          onOpenClipboard={() => setActivePopup('clipboard')}
+        />
         <InteractPopup
           isOpen={activePopup === 'interact'}
           onSelect={(tag) => {
@@ -422,8 +440,8 @@ export function InputToolbar() {
             {/* 附件（文件/剪贴板） */}
             <ToolbarIconButton
               title="Attach"
-              active={activePopup === 'clipboard'}
-              onClick={() => togglePopup('clipboard')}
+              active={activePopup === 'attach-menu' || activePopup === 'clipboard'}
+              onClick={() => togglePopup('attach-menu')}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />

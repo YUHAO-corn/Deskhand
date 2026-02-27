@@ -186,6 +186,7 @@ export const IPC_CHANNELS = {
 
   // Directory
   SELECT_DIRECTORY: 'directory:select',
+  SELECT_FILES: 'directory:select-files',
 
   // Skills
   LOAD_SKILLS: 'skills:load',
@@ -361,6 +362,23 @@ export function registerIpcHandlers(): void {
 
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SELECT_FILES, async (): Promise<string[]> => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (!win) return [];
+
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openFile', 'multiSelections'],
+      title: 'Select Files',
+      filters: [
+        { name: 'All Files', extensions: ['*'] },
+        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return [];
+    return result.filePaths;
   });
 
   // ===== Skills =====

@@ -63,6 +63,7 @@ export interface ElectronAPI {
 
   // Directory
   selectDirectory: () => Promise<string | null>;
+  selectFiles: () => Promise<string[]>;
 
   // Skills
   loadSkills: () => Promise<Skill[]>;
@@ -100,6 +101,7 @@ const IPC_CHANNELS = {
   AGENT_PERMISSION_RESPONSE: 'agent:permission-response',
   AGENT_EVENT: 'agent:event',
   SELECT_DIRECTORY: 'directory:select',
+  SELECT_FILES: 'directory:select-files',
   LOAD_SKILLS: 'skills:load',
   TRIGGER_INSIGHT: 'insight:trigger',
   READ_FILE: 'artifact:read-file',
@@ -142,6 +144,7 @@ const electronAPI: ElectronAPI = {
 
   // Directory
   selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY),
+  selectFiles: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_FILES),
 
   // Skills
   loadSkills: () => ipcRenderer.invoke(IPC_CHANNELS.LOAD_SKILLS),
