@@ -136,23 +136,30 @@ function injectConfig(templateHtml: string, config: Record<string, unknown>): st
 function createRenderPlaygroundTool(templateDir: string) {
   return tool(
     'render_playground',
-    `Render an interactive playground in the Artifact panel. Two modes:
+    `Render an interactive playground in the Artifact panel. The template provides the layout (left controls, right preview, bottom prompt bar), interaction logic, and styling. You provide the content.
 
-**Controls mode** (pass "controls"): Parameter tuning with sliders, selects, color pickers, toggles. User adjusts parameters and the prompt is auto-generated from control values.
-**Options mode** (pass "options"): Gallery of complete options for the user to pick from. Each option is a card with label, description, and optional emoji/preview. User selects one and the prompt is auto-generated.
+**Controls mode** (pass "controls"): Parameter tuning with sliders, selects, color pickers, toggles.
+**Options mode** (pass "options"): Gallery of options for the user to pick from. Each option should include previewHtml showing what it looks like visually.
+**Mixed mode** (pass both): User picks an option, then fine-tunes with controls.
 
-You only need to provide structured data (title, options, controls). The frontend auto-generates the preview and prompt output — do NOT include previewTemplate or promptTemplate.
-Do NOT use this for complex visualizations that need custom HTML/JS (use the playground skill instead).`,
+For visual preview: write previewHtml as standard HTML/CSS. Use CSS variables var(--controlId) to reference control values — the template auto-binds each control's id as a CSS variable. For example, a control with id "spacing" becomes var(--spacing) in your HTML.
+
+The prompt output is auto-generated from the user's selections. Do NOT write promptTemplate.
+Do NOT use this for complex visualizations that need custom JS logic (use the playground skill instead).`,
     {
       title: z.string().describe('Playground title'),
       description: z.string().optional().describe('Brief description shown below title'),
       options: z.array(PlaygroundOption).optional().describe(
-        'Gallery options for "Pick a Style" mode. Each option is a selectable card. ' +
-        'When provided, the playground renders as a gallery instead of a controls panel. ' +
-        'The selected option ID is available as {{selected}} in templates.'
+        'Gallery options. Each option should have previewHtml with a visual preview (HTML/CSS). ' +
+        'Use CSS variables var(--controlId) in previewHtml to let controls affect the preview dynamically.'
       ),
-      controls: z.array(Control).optional().describe('Interactive controls (sliders, selects, colors, toggles). Optional when using options mode.'),
+      controls: z.array(Control).optional().describe('Interactive controls (sliders, selects, colors, toggles). Each control id becomes a CSS variable var(--id) usable in previewHtml.'),
       presets: z.array(Preset).optional().describe('Named presets that snap all controls to preset values. Only used in controls mode.'),
+      previewHtml: z.string().optional().describe(
+        'HTML/CSS for the preview area. Use standard inline styles. ' +
+        'Reference control values with CSS variables: var(--controlId). ' +
+        'In options mode, each option\'s previewHtml is used instead; this field serves as fallback.'
+      ),
     },
     async (args) => {
       try {
