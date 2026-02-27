@@ -114,7 +114,7 @@ const PlaygroundOption = z.object({
   label: z.string().describe('Display name'),
   description: z.string().optional().describe('Short description'),
   previewHtml: z.string().optional().describe(
-    'HTML snippet for visual preview. Uses ONLY inline styles. Use CSS variables var(--controlId) for dynamic parts.'
+    'HTML snippet for visual preview. Use ONLY inline styles (no <style> or <script> tags). Use CSS variables var(--controlId) for dynamic parts.'
   ),
 });
 
@@ -122,10 +122,11 @@ const PlaygroundOption = z.object({
 
 /** Inject JSON config into the HTML template by replacing the placeholder script */
 function injectConfig(templateHtml: string, config: Record<string, unknown>): string {
-  // Replace `window.__A2UI_CONFIG__ || {}` with the actual config
+  // Escape </script> and </style> inside JSON to prevent breaking the outer <script> tag
+  const json = JSON.stringify(config).replace(/<\/(script|style)/gi, '<\\/$1');
   return templateHtml.replace(
     'window.__A2UI_CONFIG__ || {}',
-    JSON.stringify(config),
+    json,
   );
 }
 
@@ -155,7 +156,7 @@ Do NOT use this for complex visualizations that need custom JS logic (use the pl
       controls: z.array(Control).optional().describe('Interactive controls (sliders, selects, colors, toggles). Each control id becomes a CSS variable var(--id) usable in previewHtml.'),
       presets: z.array(Preset).optional().describe('Named presets that snap all controls to preset values. Only used in controls mode.'),
       previewHtml: z.string().optional().describe(
-        'HTML/CSS for the preview area. Use standard inline styles. ' +
+        'HTML/CSS for the preview area. Use ONLY inline styles (no <style> or <script> tags). ' +
         'Reference control values with CSS variables: var(--controlId). ' +
         'In options mode, each option\'s previewHtml is used instead; this field serves as fallback.'
       ),
