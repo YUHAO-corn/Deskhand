@@ -374,7 +374,10 @@ function showResult() {
   document.getElementById('promptText').textContent = promptText;
 
   document.getElementById('sendBtn').onclick = () => {
-    window.electron?.sendToChat?.(promptText);
+    window.parent.postMessage({ type: 'a2ui-send', text: promptText }, '*');
+    const btn = document.getElementById('sendBtn');
+    btn.querySelector('span').textContent = '✓ Sent!';
+    setTimeout(() => { btn.querySelector('span').textContent = 'Send to Chat'; }, 1500);
   };
 }
 
