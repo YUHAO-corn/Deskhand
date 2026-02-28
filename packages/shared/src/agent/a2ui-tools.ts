@@ -279,10 +279,10 @@ function createRenderTournamentTool(templateDir: string) {
 Use this when the user doesn't know what they want and needs to discover preferences through comparison. Each round shows two cards (emoji + title + description), user picks one, advances to next round.
 
 The result is a selection log showing what the user chose in each round. You can use this for:
-- Elimination tournament: same-category options (8 foods, pick winner)
-- Preference discovery: cross-dimension comparisons (beach vs mountain, budget vs comfort)
+- Elimination tournament: same-category options (8 foods → 4 rounds of 1v1 → 2 semifinals → 1 final = 7 rounds total)
+- Preference discovery: cross-dimension comparisons (beach vs mountain, budget vs comfort, food vs outdoor = 3 rounds)
 
-The template doesn't distinguish between these modes — you decide how to structure the rounds based on context.`,
+The template doesn't distinguish between these modes — you decide how to structure the rounds based on context. For elimination tournaments, design the bracket yourself (pair up all options, then pair up winners, etc.).`,
     {
       title: z.string().describe('Tournament title, e.g. "五一去哪玩" or "今晚吃什么"'),
       description: z.string().optional().describe('Brief description shown below title'),
