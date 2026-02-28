@@ -67,9 +67,11 @@ const TournamentCard = z.object({
   description: z.string().describe('One-sentence description'),
 });
 
-const TournamentRound = z.object({
-  left: TournamentCard,
-  right: TournamentCard,
+const TournamentDimension = z.object({
+  name: z.string().describe('Dimension name, e.g. "风格偏好", "预算偏好"'),
+  candidates: z.array(TournamentCard).min(2).max(8).describe(
+    'Candidate options for this dimension (3-5 recommended). The first becomes the arena champion, others challenge in order.'
+  ),
 });
 
 // ─── Control Schema ───
@@ -274,19 +276,55 @@ The user fills in answers, reviews a summary, and copies the generated prompt ba
 function createRenderTournamentTool(templateDir: string) {
   return tool(
     'render_tournament',
-    `Render a tournament (two-by-two comparison) in the Artifact panel. Users make quick binary choices across multiple rounds to discover their preferences.
+    `Render a multi-dimension arena tournament in the Artifact panel. Users discover their preferences through quick binary choices across multiple preference dimensions.
 
-Use this when the user doesn't know what they want and needs to discover preferences through comparison. Each round shows two cards (emoji + title + description), user picks one, advances to next round.
+**Core Mechanism: Multi-Dimension Arena**
 
-The result is a selection log showing what the user chose in each round. You can use this for:
-- Elimination tournament: same-category options (8 foods → 4 rounds of 1v1 → 2 semifinals → 1 final = 7 rounds total)
-- Preference discovery: cross-dimension comparisons (beach vs mountain, budget vs comfort, food vs outdoor = 3 rounds)
+Each dimension runs an independent arena battle:
+- First candidate becomes the arena champion (left side)
+- Other candidates challenge in order (right side)
+- User picks winner → winner stays as champion, loser eliminated, next challenger enters
+- When all challengers defeated, champion is the winner of that dimension
 
-The template doesn't distinguish between these modes — you decide how to structure the rounds based on context. For elimination tournaments, design the bracket yourself (pair up all options, then pair up winners, etc.).`,
+Result is a preference profile combining winners from all dimensions (e.g. "海岛 · 舒适 · 慢节奏").
+
+**When to Use**
+
+Use this when the user can't directly express preferences but can make intuitive binary choices. Suitable for:
+- Travel destination (style, budget, pace)
+- Restaurant/food (cuisine, price, atmosphere)
+- Gift selection (style, price range, occasion)
+- Fashion style exploration
+- Learning path planning
+
+**How to Structure Dimensions**
+
+1. **Analyze context first** (Phase Zero: Dynamic Planning):
+   - Skip known information (user said "Japan" → don't ask country, ask city preference)
+   - Prioritize high-impact dimensions (style matters more than WiFi availability)
+   - Stop when enough information collected (don't ask all dimensions)
+
+2. **Design each dimension**:
+   - Name: Clear dimension label (e.g. "风格偏好", "预算偏好")
+   - Candidates: 3-5 options representing distinct preferences within that dimension
+   - Each option should be clearly distinguishable and intuitive to choose between
+
+**Example**
+
+User: "五一想出去玩但不知道去哪"
+
+You should create 2-3 dimensions:
+- 风格偏好: [海岛, 古城, 都市, 山野] (4 candidates)
+- 预算偏好: [穷游, 舒适, 奢华] (3 candidates)
+- 节奏偏好: [慢悠悠, 适中, 暴走] (3 candidates)
+
+Frontend will run arena battles for each dimension, then return preference profile.`,
     {
       title: z.string().describe('Tournament title, e.g. "五一去哪玩" or "今晚吃什么"'),
       description: z.string().optional().describe('Brief description shown below title'),
-      rounds: z.array(TournamentRound).describe('Ordered list of rounds. Each round presents two options for the user to choose between.'),
+      dimensions: z.array(TournamentDimension).min(1).max(5).describe(
+        'Preference dimensions to explore. Each dimension runs an independent arena battle. 2-3 dimensions recommended.'
+      ),
     },
     async (args) => {
       try {
