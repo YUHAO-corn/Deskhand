@@ -258,7 +258,7 @@
 
   <div id="result-area" class="result-area hidden">
     <div class="result-list">
-      <div class="result-label">你的选择</div>
+      <div class="result-label">偏好画像</div>
       <div id="resultItems"></div>
     </div>
     <div class="prompt-bar">
@@ -275,8 +275,14 @@
 
 <script>
 const CONFIG = window.__A2UI_CONFIG__ || {};
-let currentRound = 0;
-let selections = [];
+
+// State
+let currentDimensionIndex = 0;
+let currentDimension = null;
+let champion = null;  // Current arena champion (left side)
+let challengerPool = [];  // Remaining challengers
+let eliminated = [];  // Eliminated candidates in current dimension
+let dimensionResults = [];  // Results for each dimension
 let isAnimating = false;
 
 function init() {
@@ -288,35 +294,72 @@ function init() {
     desc.style.display = 'none';
   }
 
-  if (!CONFIG.rounds || CONFIG.rounds.length === 0) {
-    document.getElementById('playing-area').innerHTML = '<p style="color:var(--text-muted);text-align:center">No rounds configured</p>';
+  if (!CONFIG.dimensions || CONFIG.dimensions.length === 0) {
+    document.getElementById('playing-area').innerHTML = '<p style="color:var(--text-muted);text-align:center">No dimensions configured</p>';
     return;
   }
 
-  showRound(0);
+  startDimension(0);
 }
 
-function showRound(index) {
-  if (index >= CONFIG.rounds.length) {
+function startDimension(index) {
+  if (index >= CONFIG.dimensions.length) {
     showResult();
     return;
   }
 
-  currentRound = index;
-  const round = CONFIG.rounds[index];
+  currentDimensionIndex = index;
+  currentDimension = CONFIG.dimensions[index];
 
-  document.getElementById('emojiLeft').textContent = round.left.emoji;
-  document.getElementById('nameLeft').textContent = round.left.title;
-  document.getElementById('descLeft').textContent = round.left.description;
+  if (!currentDimension.candidates || currentDimension.candidates.length < 2) {
+    // Skip invalid dimension
+    startDimension(index + 1);
+    return;
+  }
 
-  document.getElementById('emojiRight').textContent = round.right.emoji;
-  document.getElementById('nameRight').textContent = round.right.title;
-  document.getElementById('descRight').textContent = round.right.description;
+  // Initialize arena: first candidate is champion, rest are challengers
+  champion = currentDimension.candidates[0];
+  challengerPool = currentDimension.candidates.slice(1);
+  eliminated = [];
 
-  const progress = ((index + 1) / CONFIG.rounds.length) * 100;
-  document.getElementById('progressCount').textContent = `第 ${index + 1} 轮 / 共 ${CONFIG.rounds.length} 轮`;
-  document.getElementById('progressFill').style.width = progress + '%';
+  showBattle();
+}
 
+function showBattle() {
+  if (challengerPool.length === 0) {
+    // Dimension complete, champion wins
+    dimensionResults.push({
+      dimensionName: currentDimension.name,
+      winner: champion,
+      eliminated: eliminated,
+    });
+    startDimension(currentDimensionIndex + 1);
+    return;
+  }
+
+  const challenger = challengerPool[0];
+
+  // Update cards
+  document.getElementById('emojiLeft').textContent = champion.emoji;
+  document.getElementById('nameLeft').textContent = champion.title;
+  document.getElementById('descLeft').textContent = champion.description;
+
+  document.getElementById('emojiRight').textContent = challenger.emoji;
+  document.getElementById('nameRight').textContent = challenger.title;
+  document.getElementById('descRight').textContent = challenger.description;
+
+  // Update progress
+  const totalDimensions = CONFIG.dimensions.length;
+  const currentRound = eliminated.length + 1;
+  const totalRounds = currentDimension.candidates.length - 1;
+
+  document.getElementById('progressCount').textContent =
+    `${currentDimension.name}（第 ${currentDimensionIndex + 1} / ${totalDimensions} 维度）· 第 ${currentRound} / ${totalRounds} 轮`;
+
+  const overallProgress = ((currentDimensionIndex + (currentRound / totalRounds)) / totalDimensions) * 100;
+  document.getElementById('progressFill').style.width = overallProgress + '%';
+
+  // Set click handlers
   document.getElementById('cardLeft').onclick = () => pick('left');
   document.getElementById('cardRight').onclick = () => pick('right');
 }
@@ -325,16 +368,20 @@ function pick(side) {
   if (isAnimating) return;
   isAnimating = true;
 
-  const round = CONFIG.rounds[currentRound];
-  const chosen = side === 'left' ? round.left : round.right;
-  const other = side === 'left' ? round.right : round.left;
+  const challenger = challengerPool[0];
+  const winner = side === 'left' ? champion : challenger;
+  const loser = side === 'left' ? challenger : champion;
 
-  selections.push({
-    round: currentRound + 1,
-    chosen: chosen,
-    other: other,
-  });
+  // Record elimination
+  eliminated.push(loser);
 
+  // Remove challenger from pool
+  challengerPool.shift();
+
+  // Winner becomes new champion
+  champion = winner;
+
+  // Animate loser exit
   const loserId = side === 'left' ? 'cardRight' : 'cardLeft';
   document.getElementById(loserId).classList.add(side === 'left' ? 'exit-right' : 'exit-left');
 
@@ -342,10 +389,17 @@ function pick(side) {
     document.getElementById(loserId).classList.remove('exit-left', 'exit-right');
     isAnimating = false;
 
-    if (currentRound + 1 >= CONFIG.rounds.length) {
-      showResult();
+    if (challengerPool.length === 0) {
+      // Dimension complete
+      dimensionResults.push({
+        dimensionName: currentDimension.name,
+        winner: champion,
+        eliminated: eliminated,
+      });
+      startDimension(currentDimensionIndex + 1);
     } else {
-      showRound(currentRound + 1);
+      // Next battle in same dimension
+      showBattle();
       document.getElementById(loserId).classList.add('enter');
       setTimeout(() => {
         document.getElementById(loserId).classList.remove('enter');
@@ -358,18 +412,33 @@ function showResult() {
   document.getElementById('playing-area').classList.add('hidden');
   document.getElementById('result-area').classList.remove('hidden');
 
+  // Build preference profile
+  const profileTags = dimensionResults.map(d => d.winner.title).join(' · ');
+
+  // Build detailed record
   const resultItems = document.getElementById('resultItems');
-  resultItems.innerHTML = selections.map(s => {
+  const detailHtml = dimensionResults.map(d => {
+    const eliminatedList = d.eliminated.map(e => e.title).join('、');
     return `<div class="result-item">
-      <span class="round">第${s.round}轮：</span>
-      <span class="choice">选了「${s.chosen.title}」</span>
-      <span class="vs">（vs ${s.other.title}）</span>
+      <span class="round">${d.dimensionName}：</span>
+      <span class="choice">${d.winner.title} ✓</span>
+      <span class="vs">（淘汰：${eliminatedList}）</span>
     </div>`;
   }).join('');
 
-  const promptText = selections.map(s => {
-    return `第${s.round}轮：选了「${s.chosen.title}」（vs ${s.other.title}）`;
-  }).join('\n');
+  resultItems.innerHTML = `
+    <div class="result-item" style="background:var(--accent-bg);border:1px solid var(--accent-soft);font-weight:600;color:var(--accent)">
+      偏好画像：${profileTags}
+    </div>
+    ${detailHtml}
+  `;
+
+  // Build prompt text
+  const promptText = `偏好画像：${profileTags}\n\n[详细记录]\n` +
+    dimensionResults.map(d => {
+      const eliminatedList = d.eliminated.map(e => e.title).join('、');
+      return `${d.dimensionName}：${d.winner.title} ✓（淘汰：${eliminatedList}）`;
+    }).join('\n');
 
   document.getElementById('promptText').textContent = promptText;
 
