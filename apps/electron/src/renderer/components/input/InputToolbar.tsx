@@ -523,7 +523,7 @@ export function InputToolbar() {
             onClick={() => togglePopup('workspace')}
           >
             {workingDirectory ? workingDirectory.split('/').pop() : 'Workspace'}
-            <span className="text-[10px] ml-1 opacity-50">▾</span>
+            <span className="ml-1 opacity-50">▾</span>
           </ToolbarTextButton>
 
           <ToolbarTextButton
@@ -532,7 +532,7 @@ export function InputToolbar() {
             highlight={permissionMode === 'allow-all'}
           >
             {permissionMode === 'ask' ? 'Ask' : 'Auto'}
-            <span className="text-[10px] ml-1 opacity-50">▾</span>
+            <span className="ml-1 opacity-50">▾</span>
           </ToolbarTextButton>
         </div>
 
@@ -543,7 +543,7 @@ export function InputToolbar() {
             onClick={() => togglePopup('model')}
           >
             {getModelDisplayName(selectedModel)}
-            <span className="text-[10px] ml-1 opacity-50">▾</span>
+            <span className="ml-1 opacity-50">▾</span>
           </ToolbarTextButton>
         </div>
 
