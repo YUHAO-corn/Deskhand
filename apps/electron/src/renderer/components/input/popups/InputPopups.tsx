@@ -301,7 +301,6 @@ export function ModelSelectorPopup({ isOpen, onClose }: ModelSelectorPopupProps)
         {models.map((model) => (
           <PopupItem
             key={model.id}
-            icon={selectedModel === model.id ? <CheckIcon className="text-[var(--accent-color)]" /> : undefined}
             label={model.name}
             selected={selectedModel === model.id}
             onClick={() => handleSelectModel(model.id)}
@@ -334,14 +333,12 @@ export function PermissionPopup({ isOpen, onClose }: PermissionPopupProps) {
       <PopupHeader title="Permission" />
       <div className="p-1.5">
         <PopupItem
-          icon={permissionMode === 'ask' ? <CheckIcon className="text-[var(--accent-color)]" /> : undefined}
           label="Ask"
           hint="Confirms dangerous operations"
           selected={permissionMode === 'ask'}
           onClick={() => handleSelect('ask')}
         />
         <PopupItem
-          icon={permissionMode === 'allow-all' ? <CheckIcon className="text-[var(--accent-color)]" /> : undefined}
           label="Auto"
           hint="Only confirms delete commands"
           selected={permissionMode === 'allow-all'}
@@ -857,10 +854,3 @@ function LayersIcon() {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={className}>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
