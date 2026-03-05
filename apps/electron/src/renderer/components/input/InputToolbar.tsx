@@ -109,14 +109,10 @@ export function InputToolbar() {
 
   // 获取模型显示名称
   const getModelDisplayName = (modelId: string) => {
-    const modelNames: Record<string, string> = {
-      'claude-opus-4-5-20251101': 'Opus 4.5',
-      'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
-      'claude-sonnet-4-20250514': 'Sonnet 4',
-      'claude-haiku-4-5-20251001': 'Haiku 4.5',
-      'claude-haiku-3-5-20241022': 'Haiku 3.5',
-    };
-    return modelNames[modelId] || modelId;
+    if (modelId.includes('opus')) return 'Opus';
+    if (modelId.includes('sonnet')) return 'Sonnet';
+    if (modelId.includes('haiku')) return 'Haiku';
+    return modelId;
   };
 
   // ============================================
@@ -625,14 +621,14 @@ function ToolbarTextButton({ children, active, highlight, onClick, title }: Tool
         px-2 py-1
         bg-transparent border-none rounded-[var(--radius-sm)]
         cursor-pointer
-        text-[11px] font-medium
+        text-[10px] font-medium
         transition-colors duration-[var(--transition-fast)]
         hover:bg-[var(--hover-bg)]
         ${highlight
           ? 'text-amber-600'
           : active
-            ? 'text-[var(--text-primary)]'
-            : 'text-[var(--text-secondary)]'
+            ? 'text-[var(--text-secondary)]'
+            : 'text-[var(--text-muted)]'
         }
       `}
     >
