@@ -458,9 +458,8 @@ export function InputToolbar() {
               active={activePopup === 'interact'}
               onClick={() => togglePopup('interact')}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M8 12l2 2 4-4" />
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="17" y1="5" x2="7" y2="19" />
               </svg>
             </ToolbarIconButton>
           </div>
