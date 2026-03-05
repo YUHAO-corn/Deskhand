@@ -315,7 +315,7 @@ export function InputToolbar() {
         />
         <ToolsPopup isOpen={activePopup === 'tools'} onBack={() => setActivePopup('attach-menu')} />
         <MCPPopup isOpen={activePopup === 'mcp'} onBack={() => setActivePopup('attach-menu')} />
-        <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} />
+        <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} onBack={() => setActivePopup('attach-menu')} />
 
         {/* ============================================
             区域：附件 / 标记预览

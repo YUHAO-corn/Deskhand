@@ -663,6 +663,7 @@ interface ClipboardEntry {
 interface ClipboardPopupProps {
   isOpen: boolean;
   onConfirm?: (entries: ClipboardEntry[]) => void;
+  onBack: () => void;
 }
 
 type TimeGroup = { label: string; entries: ClipboardEntry[] };
@@ -690,7 +691,7 @@ function groupByTime(entries: ClipboardEntry[]): TimeGroup[] {
   return order.map((label) => ({ label, entries: groups[label]! }));
 }
 
-export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
+export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProps) {
   const [entries, setEntries] = useState<ClipboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -742,23 +743,32 @@ export function ClipboardPopup({ isOpen, onConfirm }: ClipboardPopupProps) {
   };
 
   return (
-    <PopupContainer isOpen={isOpen} fullWidth>
-      {/* Header with search toggle */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-light)]">
-        <div>
-          <h3 className="text-[14px] font-semibold text-[var(--text-primary)] m-0">
-            Clipboard
-          </h3>
-          <p className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-0.5 m-0">
-            Click to attach
-          </p>
+    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={300}>
+      {/* Header with back button + search toggle */}
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border-light)]">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className="
+              w-6 h-6 flex items-center justify-center
+              border border-[var(--border-color)] bg-transparent
+              rounded-[var(--radius-sm)] cursor-pointer
+              text-[var(--text-muted)] hover:text-[var(--text-primary)]
+              hover:border-[var(--text-secondary)]
+            "
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <span className="text-[13px] font-semibold text-[var(--text-primary)]">Clipboard history</span>
         </div>
         {entries.length > 5 && (
           <button
             onClick={() => setShowSearch(!showSearch)}
             className={`
-              w-7 h-7 flex items-center justify-center
-              rounded-[var(--radius-md)] border-none cursor-pointer
+              w-6 h-6 flex items-center justify-center
+              rounded-[var(--radius-sm)] border-none cursor-pointer
               transition-colors
               ${showSearch
                 ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
@@ -870,7 +880,7 @@ function ClipboardRow({ entry, formatTime, formatSize, onAttach }: {
     <button
       onClick={onAttach}
       className="
-        flex items-center gap-3 w-full p-2.5
+        flex items-center gap-2.5 w-full p-1.5 px-2.5
         border-none bg-transparent
         rounded-[var(--radius-md)] cursor-pointer
         text-left
@@ -879,61 +889,36 @@ function ClipboardRow({ entry, formatTime, formatSize, onAttach }: {
         group
       "
     >
-      {/* Type indicator */}
+      {/* Type icon - compact */}
       {entry.type === 'image' ? (
-        <div className="w-10 h-10 rounded-[6px] overflow-hidden bg-[var(--hover-bg)] shrink-0 flex items-center justify-center">
+        <div className="w-6 h-6 rounded shrink-0 overflow-hidden bg-[var(--hover-bg)] flex items-center justify-center">
           {thumbSrc ? (
             <img src={thumbSrc} alt="" className="w-full h-full object-cover" />
           ) : (
-            <ImageIcon />
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
           )}
         </div>
       ) : (
-        <div className={`
-          w-10 h-10 rounded-[6px] shrink-0
-          flex items-center justify-center
-          ${entry.type === 'link'
-            ? 'bg-blue-500/10 text-blue-400'
-            : 'bg-[var(--hover-bg)] text-[var(--text-muted)]'
-          }
-        `}>
+        <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center text-[var(--text-muted)]">
           {entry.type === 'link' ? <LinkIcon /> : <TextIcon />}
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] leading-snug line-clamp-2 break-all">
-          {entry.type === 'image'
-            ? 'Screenshot'
-            : entry.preview}
-        </div>
-        <div className="flex items-center gap-1.5 mt-1 text-[var(--font-size-xs)] text-[var(--text-muted)]">
-          <span>{formatTime(entry.timestamp)}</span>
-          {entry.charCount && (
-            <>
-              <span className="opacity-40">·</span>
-              <span>{entry.charCount.toLocaleString()} chars</span>
-            </>
-          )}
-          {entry.fileSize && (
-            <>
-              <span className="opacity-40">·</span>
-              <span>{formatSize(entry.fileSize)}</span>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Content - single line truncated */}
+      <span className="flex-1 min-w-0 truncate text-[var(--font-size-sm)] text-[var(--text-primary)]">
+        {entry.type === 'image' ? 'Screenshot' : entry.preview}
+      </span>
 
-      {/* Attach hint on hover */}
-      <div className="
-        shrink-0 opacity-0 group-hover:opacity-100
-        transition-opacity
-        text-[var(--font-size-xs)] text-[var(--accent-color)]
-        font-medium
-      ">
-        +
-      </div>
+      {/* Meta info - compact */}
+      <span className="shrink-0 text-[var(--font-size-xs)] text-[var(--text-muted)]">
+        {entry.charCount ? `${entry.charCount.toLocaleString()} chars` :
+         entry.fileSize ? formatSize(entry.fileSize) :
+         entry.type === 'image' ? 'image' : formatTime(entry.timestamp)}
+      </span>
     </button>
   );
 }
