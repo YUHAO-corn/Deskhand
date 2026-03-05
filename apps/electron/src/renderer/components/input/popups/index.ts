@@ -3,6 +3,7 @@ export {
   AttachMenuPopup,
   InteractPopup,
   ToolsPopup,
+  MCPPopup,
   ModelSelectorPopup,
   ClipboardPopup,
 } from './InputPopups';

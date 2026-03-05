@@ -32,6 +32,7 @@ import {
   AttachMenuPopup,
   InteractPopup,
   ToolsPopup,
+  MCPPopup,
   ModelSelectorPopup,
   ClipboardPopup,
 } from './popups';
@@ -302,6 +303,8 @@ export function InputToolbar() {
             setActivePopup(null);
           }}
           onOpenClipboard={() => setActivePopup('clipboard')}
+          onOpenSkills={() => setActivePopup('tools')}
+          onOpenMCP={() => setActivePopup('mcp')}
         />
         <InteractPopup
           isOpen={activePopup === 'interact'}
@@ -310,7 +313,8 @@ export function InputToolbar() {
             setActivePopup(null);
           }}
         />
-        <ToolsPopup isOpen={activePopup === 'tools'} />
+        <ToolsPopup isOpen={activePopup === 'tools'} onBack={() => setActivePopup('attach-menu')} />
+        <MCPPopup isOpen={activePopup === 'mcp'} onBack={() => setActivePopup('attach-menu')} />
         <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} />
 
         {/* ============================================

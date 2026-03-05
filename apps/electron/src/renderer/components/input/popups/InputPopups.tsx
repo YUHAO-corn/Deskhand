@@ -93,66 +93,114 @@ interface AttachMenuPopupProps {
   isOpen: boolean;
   onSelectFiles: () => void;
   onOpenClipboard: () => void;
+  onOpenSkills: () => void;
+  onOpenMCP: () => void;
 }
 
-export function AttachMenuPopup({ isOpen, onSelectFiles, onOpenClipboard }: AttachMenuPopupProps) {
+export function AttachMenuPopup({ isOpen, onSelectFiles, onOpenClipboard, onOpenSkills, onOpenMCP }: AttachMenuPopupProps) {
   return (
-    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={220}>
+    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={240}>
       <div className="p-1.5">
+        {/* Attach section */}
+        <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          Attach
+        </div>
         <button
           onClick={onSelectFiles}
           className="
-            flex items-center gap-3 w-full p-2.5
+            flex items-center gap-3 w-full p-2 px-2.5
             border-none bg-transparent
             rounded-[var(--radius-md)] cursor-pointer
-            text-left
+            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
             transition-colors duration-[var(--transition-fast)]
             hover:bg-[var(--hover-bg)]
           "
         >
-          <div className="w-8 h-8 rounded-[6px] bg-[var(--hover-bg)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
+          <span className="text-[var(--text-muted)]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="12" y1="18" x2="12" y2="12" />
               <line x1="9" y1="15" x2="15" y2="15" />
             </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
-              Add files or photos
-            </div>
-            <div className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
-              Browse from your computer
-            </div>
-          </div>
+          </span>
+          <span className="flex-1">Upload files</span>
         </button>
-
         <button
           onClick={onOpenClipboard}
           className="
-            flex items-center gap-3 w-full p-2.5
+            flex items-center gap-3 w-full p-2 px-2.5
             border-none bg-transparent
             rounded-[var(--radius-md)] cursor-pointer
-            text-left
+            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
             transition-colors duration-[var(--transition-fast)]
             hover:bg-[var(--hover-bg)]
           "
         >
-          <div className="w-8 h-8 rounded-[6px] bg-[var(--hover-bg)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
+          <span className="text-[var(--text-muted)]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
               <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
             </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
-              Clipboard history
-            </div>
-            <div className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
-              Paste from recent copies
-            </div>
-          </div>
+          </span>
+          <span className="flex-1">Clipboard history</span>
+          <span className="text-[var(--text-muted)] text-[11px]">&gt;</span>
+        </button>
+
+        {/* Divider */}
+        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
+
+        {/* Skills section */}
+        <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          Skills
+        </div>
+        <button
+          onClick={onOpenSkills}
+          className="
+            flex items-center gap-3 w-full p-2 px-2.5
+            border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
+            transition-colors duration-[var(--transition-fast)]
+            hover:bg-[var(--hover-bg)]
+          "
+        >
+          <span className="text-[var(--text-muted)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
+          </span>
+          <span className="flex-1">Skills</span>
+          <span className="text-[var(--text-muted)] text-[11px]">&gt;</span>
+        </button>
+
+        {/* Divider */}
+        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
+
+        {/* MCP section */}
+        <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          MCP
+        </div>
+        <button
+          onClick={onOpenMCP}
+          className="
+            flex items-center gap-3 w-full p-2 px-2.5
+            border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
+            transition-colors duration-[var(--transition-fast)]
+            hover:bg-[var(--hover-bg)]
+          "
+        >
+          <span className="text-[var(--text-muted)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </span>
+          <span className="flex-1">MCP Connections</span>
+          <span className="text-[var(--text-muted)] text-[11px]">&gt;</span>
         </button>
       </div>
     </PopupContainer>
@@ -240,14 +288,15 @@ export function InteractPopup({ isOpen, onSelect }: InteractPopupProps) {
 }
 
 // ============================================
-// ToolsPopup - 统一工具选择（MCP Tools + Skills）
+// ToolsPopup - Skills 子面板（从 + 菜单进入）
 // ============================================
 
 interface ToolsPopupProps {
   isOpen: boolean;
+  onBack: () => void;
 }
 
-export function ToolsPopup({ isOpen }: ToolsPopupProps) {
+export function ToolsPopup({ isOpen, onBack }: ToolsPopupProps) {
   const [skills, setSkills] = useAtom(skillsAtom);
 
   // Refresh skills from disk when popup opens
@@ -257,32 +306,28 @@ export function ToolsPopup({ isOpen }: ToolsPopupProps) {
   }
   if (isOpen !== lastOpen) setLastOpen(isOpen);
 
-  // TODO: 从 MCP 配置加载工具列表
-  const mcpTools = [
-    { title: 'Web fetch', desc: 'Fetch the raw contents of a URL.' },
-    { title: 'Web search', desc: 'Search the web for fresh information.' },
-  ];
-
   return (
-    <PopupContainer isOpen={isOpen} position="left-[40px]" minWidth={300}>
-      <PopupHeader
-        title="Tools"
-        description="Tools and skills available for the next response."
-      />
+    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={260}>
+      {/* Header with back button */}
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-light)]">
+        <button
+          onClick={onBack}
+          className="
+            w-6 h-6 flex items-center justify-center
+            border border-[var(--border-color)] bg-transparent
+            rounded-[var(--radius-sm)] cursor-pointer
+            text-[var(--text-muted)] hover:text-[var(--text-primary)]
+            hover:border-[var(--text-secondary)]
+          "
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span className="text-[13px] font-semibold text-[var(--text-primary)]">Skills</span>
+      </div>
 
       <div className="p-2 max-h-80 overflow-y-auto">
-        {/* MCP Tools section */}
-        <div className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          MCP Tools
-        </div>
-        {mcpTools.map((tool) => (
-          <CheckboxItem key={tool.title} title={tool.title} desc={tool.desc} />
-        ))}
-
-        {/* Skills section */}
-        <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          Skills
-        </div>
         {skills.length === 0 ? (
           <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
             No skills installed
@@ -291,19 +336,124 @@ export function ToolsPopup({ isOpen }: ToolsPopupProps) {
           skills.map((skill) => (
             <div
               key={skill.id}
-              className="flex items-start gap-3 p-2.5 rounded-[var(--radius-md)] hover:bg-[var(--hover-bg)] transition-colors"
+              className="flex items-center gap-3 p-2 px-2.5 rounded-[var(--radius-md)] hover:bg-[var(--hover-bg)] transition-colors"
             >
-              <div className="flex-1 min-w-0">
-                <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-                  {skill.name}
-                </div>
-                <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight">
-                  {skill.description}
-                </div>
-              </div>
+              <span className="text-[var(--text-muted)]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>
+              </span>
+              <span className="flex-1 text-[var(--font-size-sm)] text-[var(--text-primary)]">
+                {skill.name}
+              </span>
+              <span className="text-[var(--font-size-xs)] text-[var(--text-muted)]">active</span>
             </div>
           ))
         )}
+
+        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
+
+        <button
+          className="
+            flex items-center gap-3 w-full p-2 px-2.5
+            border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            text-left text-[var(--font-size-sm)] text-[var(--text-secondary)]
+            transition-colors hover:bg-[var(--hover-bg)]
+          "
+        >
+          <PlusIcon />
+          Install skill...
+        </button>
+      </div>
+    </PopupContainer>
+  );
+}
+
+// ============================================
+// MCPPopup - MCP Connections 子面板（从 + 菜单进入）
+// ============================================
+
+interface MCPPopupProps {
+  isOpen: boolean;
+  onBack: () => void;
+}
+
+export function MCPPopup({ isOpen, onBack }: MCPPopupProps) {
+  // TODO: 从 MCP 配置加载 server 列表
+  const mcpServers = [
+    { name: 'Web fetch', toolCount: 1 },
+    { name: 'Web search', toolCount: 1 },
+  ];
+
+  return (
+    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={260}>
+      {/* Header with back button */}
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-light)]">
+        <button
+          onClick={onBack}
+          className="
+            w-6 h-6 flex items-center justify-center
+            border border-[var(--border-color)] bg-transparent
+            rounded-[var(--radius-sm)] cursor-pointer
+            text-[var(--text-muted)] hover:text-[var(--text-primary)]
+            hover:border-[var(--text-secondary)]
+          "
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span className="text-[13px] font-semibold text-[var(--text-primary)]">MCP Connections</span>
+      </div>
+
+      <div className="p-2 max-h-80 overflow-y-auto">
+        {mcpServers.length === 0 ? (
+          <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            No MCP servers connected
+          </div>
+        ) : (
+          <>
+            <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              Connected
+            </div>
+            {mcpServers.map((server) => (
+              <div
+                key={server.name}
+                className="flex items-center gap-3 p-2 px-2.5 rounded-[var(--radius-md)] hover:bg-[var(--hover-bg)] transition-colors"
+              >
+                <span className="text-[var(--text-muted)]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                  </svg>
+                </span>
+                <span className="flex-1 text-[var(--font-size-sm)] text-[var(--text-primary)]">
+                  {server.name}
+                </span>
+                <span className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
+                  {server.toolCount} tool{server.toolCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+            ))}
+          </>
+        )}
+
+        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
+
+        <button
+          className="
+            flex items-center gap-3 w-full p-2 px-2.5
+            border-none bg-transparent
+            rounded-[var(--radius-md)] cursor-pointer
+            text-left text-[var(--font-size-sm)] text-[var(--text-secondary)]
+            transition-colors hover:bg-[var(--hover-bg)]
+          "
+        >
+          <PlusIcon />
+          Add MCP server...
+        </button>
       </div>
     </PopupContainer>
   );

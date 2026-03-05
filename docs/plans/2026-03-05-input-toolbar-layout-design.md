@@ -5,6 +5,12 @@
 > 线框图：`wireframe.html`（项目根目录）
 
 ---
+## Q0：为什么要改？
+
+按更加清晰的功能层面划分
+1.资源层：文件、剪贴板、技能、MCP
+2.配置层：Workspace、Permission、Model
+3.交互层：playground, this or that
 
 ## Q1: 整体布局怎么调整？
 
