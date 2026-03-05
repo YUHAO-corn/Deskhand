@@ -286,7 +286,6 @@ export function InputToolbar() {
         {/* ============================================
             区域：弹窗容器
             ============================================ */}
-        <WorkspacePopup isOpen={activePopup === 'workspace'} />
         <AttachMenuPopup
           isOpen={activePopup === 'attach-menu'}
           onSelectFiles={async () => {
@@ -312,7 +311,6 @@ export function InputToolbar() {
           }}
         />
         <ToolsPopup isOpen={activePopup === 'tools'} />
-        <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
         <ClipboardPopup isOpen={activePopup === 'clipboard'} onConfirm={handleClipboardConfirm} />
 
         {/* ============================================
@@ -435,20 +433,21 @@ export function InputToolbar() {
             区域：工具栏 — 左(context) / 右(agent config)
             ============================================ */}
         <div className="flex items-center justify-between px-3 py-2">
-          {/* 左侧：图标按钮组 — context/输入 */}
+          {/* 左侧：[+] 附件/工具 + [/] 交互方式 */}
           <div className="flex items-center gap-0.5">
-            {/* 附件（文件/剪贴板） */}
+            {/* + 按钮（Attach + Skills + MCP） */}
             <ToolbarIconButton
-              title="Attach"
-              active={activePopup === 'attach-menu' || activePopup === 'clipboard'}
+              title="Attach & Tools"
+              active={activePopup === 'attach-menu' || activePopup === 'clipboard' || activePopup === 'tools'}
               onClick={() => togglePopup('attach-menu')}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </ToolbarIconButton>
 
-            {/* 交互方式（Interact 菜单） */}
+            {/* / 交互方式（Interact 菜单） */}
             <ToolbarIconButton
               title="Interact"
               active={activePopup === 'interact'}
@@ -459,56 +458,10 @@ export function InputToolbar() {
                 <path d="M8 12l2 2 4-4" />
               </svg>
             </ToolbarIconButton>
-
-            {/* 工具（Skills + MCP Tools 合并） */}
-            <ToolbarIconButton
-              title="Tools"
-              active={activePopup === 'tools'}
-              onClick={() => togglePopup('tools')}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-              </svg>
-            </ToolbarIconButton>
-
-            {/* 工作目录 */}
-            <ToolbarIconButton
-              title={workingDirectory ? `Workspace: ${workingDirectory}` : 'Select workspace'}
-              active={activePopup === 'workspace'}
-              onClick={() => togglePopup('workspace')}
-              badge={workingDirectory ? workingDirectory.split('/').pop() : undefined}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
-            </ToolbarIconButton>
           </div>
 
-          {/* 右侧：文字按钮组 — agent 配置 */}
-          <div className="flex items-center gap-1">
-            {/* 模型选择器 */}
-            <ToolbarTextButton
-              active={activePopup === 'model'}
-              onClick={() => togglePopup('model')}
-            >
-              {getModelDisplayName(selectedModel)}
-            </ToolbarTextButton>
-
-            {/* 分隔点 */}
-            <span className="text-[var(--border-color)] text-[10px] select-none">·</span>
-
-            {/* 权限模式 */}
-            <ToolbarTextButton
-              onClick={() => setPermissionMode(permissionMode === 'ask' ? 'allow-all' : 'ask')}
-              title={permissionMode === 'ask' ? 'Ask mode: confirms dangerous operations' : 'Auto mode: only confirms delete commands'}
-              highlight={permissionMode === 'allow-all'}
-            >
-              {permissionMode === 'ask' ? 'Ask' : 'Auto'}
-            </ToolbarTextButton>
-
-            {/* 分隔点 */}
-            <span className="text-[var(--border-color)] text-[10px] select-none">·</span>
-
+          {/* 右侧：发送 / 停止 */}
+          <div className="flex items-center">
             {/* 发送 / 停止 */}
             {isProcessing ? (
               <button
@@ -552,6 +505,49 @@ export function InputToolbar() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ============================================
+          区域：外部配置栏（输入框下方）
+          左：Workspace + Permission | 右：Model
+          ============================================ */}
+      <div className="flex items-center justify-between px-2 pt-1.5 relative">
+        {/* 左侧：Workspace + Permission */}
+        <div className="flex items-center gap-0.5">
+          <ToolbarTextButton
+            active={activePopup === 'workspace'}
+            onClick={() => togglePopup('workspace')}
+          >
+            {workingDirectory ? workingDirectory.split('/').pop() : 'Workspace'}
+            <span className="text-[9px] ml-1 opacity-50">▾</span>
+          </ToolbarTextButton>
+
+          <ToolbarTextButton
+            active={activePopup === 'permission'}
+            onClick={() => setPermissionMode(permissionMode === 'ask' ? 'allow-all' : 'ask')}
+            title={permissionMode === 'ask' ? 'Ask mode: confirms dangerous operations' : 'Auto mode: only confirms delete commands'}
+            highlight={permissionMode === 'allow-all'}
+          >
+            {permissionMode === 'ask' ? 'Ask' : 'Auto'}
+            <span className="text-[9px] ml-1 opacity-50">▾</span>
+          </ToolbarTextButton>
+        </div>
+
+        {/* 右侧：Model */}
+        <div className="flex items-center">
+          <ToolbarTextButton
+            active={activePopup === 'model'}
+            onClick={() => togglePopup('model')}
+          >
+            {getModelDisplayName(selectedModel)}
+            <span className="text-[9px] ml-1 opacity-50">▾</span>
+          </ToolbarTextButton>
+        </div>
+
+        {/* 弹窗锚点：Workspace */}
+        <WorkspacePopup isOpen={activePopup === 'workspace'} />
+        {/* 弹窗锚点：Model */}
+        <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
       </div>
     </div>
   );
