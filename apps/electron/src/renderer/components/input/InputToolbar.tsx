@@ -35,6 +35,7 @@ import {
   MCPPopup,
   ModelSelectorPopup,
   ClipboardPopup,
+  PermissionPopup,
 } from './popups';
 
 export function InputToolbar() {
@@ -109,10 +110,14 @@ export function InputToolbar() {
 
   // 获取模型显示名称
   const getModelDisplayName = (modelId: string) => {
-    if (modelId.includes('opus')) return 'Opus';
-    if (modelId.includes('sonnet')) return 'Sonnet';
-    if (modelId.includes('haiku')) return 'Haiku';
-    return modelId;
+    const modelNames: Record<string, string> = {
+      'claude-opus-4-5-20251101': 'Opus 4.5',
+      'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
+      'claude-sonnet-4-20250514': 'Sonnet 4',
+      'claude-haiku-4-5-20251001': 'Haiku 4.5',
+      'claude-haiku-3-5-20241022': 'Haiku 3.5',
+    };
+    return modelNames[modelId] || modelId;
   };
 
   // ============================================
@@ -519,17 +524,16 @@ export function InputToolbar() {
             onClick={() => togglePopup('workspace')}
           >
             {workingDirectory ? workingDirectory.split('/').pop() : 'Workspace'}
-            <span className="text-[9px] ml-1 opacity-50">▾</span>
+            <span className="text-[10px] ml-1 opacity-50">▾</span>
           </ToolbarTextButton>
 
           <ToolbarTextButton
             active={activePopup === 'permission'}
-            onClick={() => setPermissionMode(permissionMode === 'ask' ? 'allow-all' : 'ask')}
-            title={permissionMode === 'ask' ? 'Ask mode: confirms dangerous operations' : 'Auto mode: only confirms delete commands'}
+            onClick={() => togglePopup('permission')}
             highlight={permissionMode === 'allow-all'}
           >
             {permissionMode === 'ask' ? 'Ask' : 'Auto'}
-            <span className="text-[9px] ml-1 opacity-50">▾</span>
+            <span className="text-[10px] ml-1 opacity-50">▾</span>
           </ToolbarTextButton>
         </div>
 
@@ -540,12 +544,14 @@ export function InputToolbar() {
             onClick={() => togglePopup('model')}
           >
             {getModelDisplayName(selectedModel)}
-            <span className="text-[9px] ml-1 opacity-50">▾</span>
+            <span className="text-[10px] ml-1 opacity-50">▾</span>
           </ToolbarTextButton>
         </div>
 
         {/* 弹窗锚点：Workspace */}
         <WorkspacePopup isOpen={activePopup === 'workspace'} />
+        {/* 弹窗锚点：Permission */}
+        <PermissionPopup isOpen={activePopup === 'permission'} onClose={() => setActivePopup(null)} />
         {/* 弹窗锚点：Model */}
         <ModelSelectorPopup isOpen={activePopup === 'model'} onClose={() => setActivePopup(null)} />
       </div>
@@ -621,14 +627,14 @@ function ToolbarTextButton({ children, active, highlight, onClick, title }: Tool
         px-2 py-1
         bg-transparent border-none rounded-[var(--radius-sm)]
         cursor-pointer
-        text-[10px] font-medium
+        text-[var(--font-size-sm)] font-medium
         transition-colors duration-[var(--transition-fast)]
         hover:bg-[var(--hover-bg)]
         ${highlight
           ? 'text-amber-600'
           : active
-            ? 'text-[var(--text-secondary)]'
-            : 'text-[var(--text-muted)]'
+            ? 'text-[var(--text-primary)]'
+            : 'text-[var(--text-secondary)]'
         }
       `}
     >

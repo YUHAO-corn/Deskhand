@@ -6,4 +6,5 @@ export {
   MCPPopup,
   ModelSelectorPopup,
   ClipboardPopup,
+  PermissionPopup,
 } from './InputPopups';

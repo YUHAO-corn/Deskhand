@@ -18,6 +18,7 @@ import {
   selectedModelAtom,
   workingDirectoryAtom,
   skillsAtom,
+  permissionModeAtom,
 } from '../../../atoms/sessions';
 
 // ============================================
@@ -306,6 +307,46 @@ export function ModelSelectorPopup({ isOpen, onClose }: ModelSelectorPopupProps)
             onClick={() => handleSelectModel(model.id)}
           />
         ))}
+      </div>
+    </PopupContainer>
+  );
+}
+
+// ============================================
+// PermissionPopup - 权限模式选择
+// ============================================
+
+interface PermissionPopupProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function PermissionPopup({ isOpen, onClose }: PermissionPopupProps) {
+  const [permissionMode, setPermissionMode] = useAtom(permissionModeAtom);
+
+  const handleSelect = (mode: 'ask' | 'allow-all') => {
+    setPermissionMode(mode);
+    onClose();
+  };
+
+  return (
+    <PopupContainer isOpen={isOpen} position="left-[60px]" minWidth={260}>
+      <PopupHeader title="Permission" />
+      <div className="p-1.5">
+        <PopupItem
+          icon={permissionMode === 'ask' ? <CheckIcon className="text-[var(--accent-color)]" /> : undefined}
+          label="Ask"
+          hint="Confirms dangerous operations"
+          selected={permissionMode === 'ask'}
+          onClick={() => handleSelect('ask')}
+        />
+        <PopupItem
+          icon={permissionMode === 'allow-all' ? <CheckIcon className="text-[var(--accent-color)]" /> : undefined}
+          label="Auto"
+          hint="Only confirms delete commands"
+          selected={permissionMode === 'allow-all'}
+          onClick={() => handleSelect('allow-all')}
+        />
       </div>
     </PopupContainer>
   );
