@@ -35,7 +35,6 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
     const path = await window.electronAPI?.selectDirectory();
     if (path) {
       setWorkingDirectory(path);
-      // Persist to config
       window.electronAPI?.saveConfig({ lastWorkingDirectory: path });
     }
   };
@@ -43,43 +42,22 @@ export function WorkspacePopup({ isOpen }: WorkspacePopupProps) {
   const dirName = workingDirectory ? workingDirectory.split('/').pop() : null;
 
   return (
-    <PopupContainer isOpen={isOpen} position="left-[14px]">
-      {/* Header */}
-      <PopupHeader
-        title="Workspace"
-        description="All tool operations will use this directory as working directory"
-      />
-
-      <div className="p-2">
-        {/* Current directory */}
+    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={240}>
+      <PopupHeader title="Workspace" />
+      <div className="p-1.5">
         {workingDirectory && (
-          <div className="flex items-start gap-3 p-2.5 rounded-[var(--radius-md)] bg-[var(--accent-bg)]">
-            <FolderIcon />
-            <div className="flex-1 min-w-0">
-              <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-                {dirName}
-              </div>
-              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight truncate">
-                {workingDirectory}
-              </div>
-            </div>
-          </div>
+          <PopupItem
+            icon={<FolderIcon />}
+            label={dirName || workingDirectory}
+            hint="current"
+            selected
+          />
         )}
-
-        {/* Select directory button */}
-        <button
-          className="
-            flex items-center gap-2 w-full p-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-[var(--font-size-sm)] text-[var(--text-secondary)]
-            hover:bg-[var(--hover-bg)]
-          "
+        <PopupItem
+          icon={<PlusIcon />}
+          label={workingDirectory ? 'Change directory...' : 'Select directory...'}
           onClick={handleSelectDirectory}
-        >
-          <PlusIcon />
-          {workingDirectory ? 'Change Directory...' : 'Select Directory...'}
-        </button>
+        />
       </div>
     </PopupContainer>
   );
@@ -99,109 +77,40 @@ interface AttachMenuPopupProps {
 
 export function AttachMenuPopup({ isOpen, onSelectFiles, onOpenClipboard, onOpenSkills, onOpenMCP }: AttachMenuPopupProps) {
   return (
-    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={240}>
+    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={240}>
       <div className="p-1.5">
-        {/* Attach section */}
-        <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          Attach
-        </div>
-        <button
+        <PopupSectionLabel>Attach</PopupSectionLabel>
+        <PopupItem
+          icon={<FileUploadIcon />}
+          label="Upload files"
           onClick={onSelectFiles}
-          className="
-            flex items-center gap-3 w-full p-2 px-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
-            transition-colors duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)]
-          "
-        >
-          <span className="text-[var(--text-muted)]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-          </span>
-          <span className="flex-1">Upload files</span>
-        </button>
-        <button
+        />
+        <PopupItem
+          icon={<ClipboardIcon />}
+          label="Clipboard history"
+          arrow
           onClick={onOpenClipboard}
-          className="
-            flex items-center gap-3 w-full p-2 px-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
-            transition-colors duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)]
-          "
-        >
-          <span className="text-[var(--text-muted)]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-            </svg>
-          </span>
-          <span className="flex-1">Clipboard history</span>
-          <span className="text-[var(--text-muted)] text-[11px]">&gt;</span>
-        </button>
+        />
 
-        {/* Divider */}
-        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
+        <PopupDivider />
 
-        {/* Skills section */}
-        <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          Skills
-        </div>
-        <button
+        <PopupSectionLabel>Skills</PopupSectionLabel>
+        <PopupItem
+          icon={<WrenchIcon />}
+          label="Skills"
+          arrow
           onClick={onOpenSkills}
-          className="
-            flex items-center gap-3 w-full p-2 px-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
-            transition-colors duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)]
-          "
-        >
-          <span className="text-[var(--text-muted)]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-          </span>
-          <span className="flex-1">Skills</span>
-          <span className="text-[var(--text-muted)] text-[11px]">&gt;</span>
-        </button>
+        />
 
-        {/* Divider */}
-        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
+        <PopupDivider />
 
-        {/* MCP section */}
-        <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          MCP
-        </div>
-        <button
+        <PopupSectionLabel>MCP</PopupSectionLabel>
+        <PopupItem
+          icon={<LayersIcon />}
+          label="MCP Connections"
+          arrow
           onClick={onOpenMCP}
-          className="
-            flex items-center gap-3 w-full p-2 px-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-left text-[var(--font-size-sm)] text-[var(--text-primary)]
-            transition-colors duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)]
-          "
-        >
-          <span className="text-[var(--text-muted)]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-          </span>
-          <span className="flex-1">MCP Connections</span>
-          <span className="text-[var(--text-muted)] text-[11px]">&gt;</span>
-        </button>
+        />
       </div>
     </PopupContainer>
   );
@@ -249,38 +158,17 @@ const interactModes = [
 
 export function InteractPopup({ isOpen, onSelect }: InteractPopupProps) {
   return (
-    <PopupContainer isOpen={isOpen} position="left-[40px]" minWidth={260}>
-      <PopupHeader
-        title="Interact"
-        description="Not sure how to describe it? Try these"
-      />
-
+    <PopupContainer isOpen={isOpen} position="left-[32px]" minWidth={220}>
+      <PopupHeader title="Interact" />
       <div className="p-1.5">
         {interactModes.map((mode) => (
-          <button
+          <PopupItem
             key={mode.tag}
+            icon={mode.icon}
+            label={mode.label}
+            hint={mode.description}
             onClick={() => onSelect(mode.tag)}
-            className="
-              flex items-start gap-3 w-full p-2.5
-              border-none bg-transparent
-              rounded-[var(--radius-md)] cursor-pointer
-              text-left
-              transition-colors duration-[var(--transition-fast)]
-              hover:bg-[var(--hover-bg)]
-            "
-          >
-            <div className="text-[var(--text-muted)] mt-0.5 shrink-0">
-              {mode.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-                {mode.label}
-              </div>
-              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-snug">
-                {mode.description}
-              </div>
-            </div>
-          </button>
+          />
         ))}
       </div>
     </PopupContainer>
@@ -307,64 +195,28 @@ export function ToolsPopup({ isOpen, onBack }: ToolsPopupProps) {
   if (isOpen !== lastOpen) setLastOpen(isOpen);
 
   return (
-    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={260}>
-      {/* Header with back button */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-light)]">
-        <button
-          onClick={onBack}
-          className="
-            w-6 h-6 flex items-center justify-center
-            border border-[var(--border-color)] bg-transparent
-            rounded-[var(--radius-sm)] cursor-pointer
-            text-[var(--text-muted)] hover:text-[var(--text-primary)]
-            hover:border-[var(--text-secondary)]
-          "
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="text-[13px] font-semibold text-[var(--text-primary)]">Skills</span>
-      </div>
-
-      <div className="p-2 max-h-80 overflow-y-auto">
+    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={260}>
+      <PopupHeader title="Skills" onBack={onBack} />
+      <div className="p-1.5 max-h-80 overflow-y-auto">
         {skills.length === 0 ? (
           <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
             No skills installed
           </div>
         ) : (
           skills.map((skill) => (
-            <div
+            <PopupItem
               key={skill.id}
-              className="flex items-center gap-3 p-2 px-2.5 rounded-[var(--radius-md)] hover:bg-[var(--hover-bg)] transition-colors"
-            >
-              <span className="text-[var(--text-muted)]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-              </span>
-              <span className="flex-1 text-[var(--font-size-sm)] text-[var(--text-primary)]">
-                {skill.name}
-              </span>
-              <span className="text-[var(--font-size-xs)] text-[var(--text-muted)]">active</span>
-            </div>
+              icon={<WrenchIcon />}
+              label={skill.name}
+              hint="active"
+            />
           ))
         )}
-
-        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
-
-        <button
-          className="
-            flex items-center gap-3 w-full p-2 px-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-left text-[var(--font-size-sm)] text-[var(--text-secondary)]
-            transition-colors hover:bg-[var(--hover-bg)]
-          "
-        >
-          <PlusIcon />
-          Install skill...
-        </button>
+        <PopupDivider />
+        <PopupItem
+          icon={<PlusIcon />}
+          label="Install skill..."
+        />
       </div>
     </PopupContainer>
   );
@@ -387,73 +239,31 @@ export function MCPPopup({ isOpen, onBack }: MCPPopupProps) {
   ];
 
   return (
-    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={260}>
-      {/* Header with back button */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-light)]">
-        <button
-          onClick={onBack}
-          className="
-            w-6 h-6 flex items-center justify-center
-            border border-[var(--border-color)] bg-transparent
-            rounded-[var(--radius-sm)] cursor-pointer
-            text-[var(--text-muted)] hover:text-[var(--text-primary)]
-            hover:border-[var(--text-secondary)]
-          "
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="text-[13px] font-semibold text-[var(--text-primary)]">MCP Connections</span>
-      </div>
-
-      <div className="p-2 max-h-80 overflow-y-auto">
+    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={260}>
+      <PopupHeader title="MCP Connections" onBack={onBack} />
+      <div className="p-1.5 max-h-80 overflow-y-auto">
         {mcpServers.length === 0 ? (
           <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
             No MCP servers connected
           </div>
         ) : (
           <>
-            <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              Connected
-            </div>
+            <PopupSectionLabel>Connected</PopupSectionLabel>
             {mcpServers.map((server) => (
-              <div
+              <PopupItem
                 key={server.name}
-                className="flex items-center gap-3 p-2 px-2.5 rounded-[var(--radius-md)] hover:bg-[var(--hover-bg)] transition-colors"
-              >
-                <span className="text-[var(--text-muted)]">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                  </svg>
-                </span>
-                <span className="flex-1 text-[var(--font-size-sm)] text-[var(--text-primary)]">
-                  {server.name}
-                </span>
-                <span className="text-[var(--font-size-xs)] text-[var(--text-muted)]">
-                  {server.toolCount} tool{server.toolCount !== 1 ? 's' : ''}
-                </span>
-              </div>
+                icon={<LayersIcon />}
+                label={server.name}
+                hint={`${server.toolCount} tool${server.toolCount !== 1 ? 's' : ''}`}
+              />
             ))}
           </>
         )}
-
-        <div className="h-px bg-[var(--border-light)] mx-2 my-1" />
-
-        <button
-          className="
-            flex items-center gap-3 w-full p-2 px-2.5
-            border-none bg-transparent
-            rounded-[var(--radius-md)] cursor-pointer
-            text-left text-[var(--font-size-sm)] text-[var(--text-secondary)]
-            transition-colors hover:bg-[var(--hover-bg)]
-          "
-        >
-          <PlusIcon />
-          Add MCP server...
-        </button>
+        <PopupDivider />
+        <PopupItem
+          icon={<PlusIcon />}
+          label="Add MCP server..."
+        />
       </div>
     </PopupContainer>
   );
@@ -484,52 +294,17 @@ export function ModelSelectorPopup({ isOpen, onClose }: ModelSelectorPopupProps)
   };
 
   return (
-    <PopupContainer isOpen={isOpen} position="right-[14px]" minWidth={280}>
-      {/* 搜索框 */}
-      <div className="px-4 py-3 border-b border-[var(--border-light)]">
-        <input
-          type="text"
-          placeholder="Search models..."
-          className="
-            w-full px-3 py-2
-            border border-[var(--border-color)]
-            rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)]
-            outline-none
-            focus:border-[var(--accent-color)]
-          "
-        />
-      </div>
-
-      {/* 模型列表 */}
-      <div className="p-2 max-h-80 overflow-y-auto">
+    <PopupContainer isOpen={isOpen} position="right-[0px]" minWidth={220}>
+      <PopupHeader title="Model" />
+      <div className="p-1.5">
         {models.map((model) => (
-          <div
+          <PopupItem
             key={model.id}
+            icon={selectedModel === model.id ? <CheckIcon className="text-[var(--accent-color)]" /> : undefined}
+            label={model.name}
+            selected={selectedModel === model.id}
             onClick={() => handleSelectModel(model.id)}
-            className={`
-              flex items-start gap-3 p-2.5
-              rounded-[var(--radius-md)] cursor-pointer
-              transition-colors duration-[var(--transition-fast)]
-              hover:bg-[var(--hover-bg)]
-              ${selectedModel === model.id ? 'bg-[var(--accent-bg)]' : ''}
-            `}
-          >
-            {selectedModel === model.id && (
-              <CheckIcon className="text-[var(--accent-color)] mt-0.5" />
-            )}
-            <div
-              className="flex-1 min-w-0"
-              style={{ marginLeft: selectedModel === model.id ? '0' : '24px' }}
-            >
-              <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-                {model.name}
-              </div>
-              <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight">
-                {model.id}
-              </div>
-            </div>
-          </div>
+          />
         ))}
       </div>
     </PopupContainer>
@@ -574,75 +349,82 @@ function PopupContainer({ isOpen, position, minWidth = 240, fullWidth, children 
 
 interface PopupHeaderProps {
   title: string;
-  description?: string;
-  icon?: React.ReactNode;
+  onBack?: () => void;
 }
 
-function PopupHeader({ title, description, icon }: PopupHeaderProps) {
+function PopupHeader({ title, onBack }: PopupHeaderProps) {
   return (
-    <div className="px-4 py-3 pb-2.5 border-b border-[var(--border-light)]">
-      <h3 className="text-[14px] font-semibold text-[var(--text-primary)] flex items-center gap-2 mb-1">
-        {icon}
-        {title}
-      </h3>
-      {description && (
-        <p className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-snug">
-          {description}
-        </p>
+    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-light)]">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="
+            w-6 h-6 flex items-center justify-center
+            border border-[var(--border-color)] bg-transparent
+            rounded-[var(--radius-sm)] cursor-pointer
+            text-[var(--text-muted)] hover:text-[var(--text-primary)]
+            hover:border-[var(--text-secondary)]
+          "
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
       )}
+      <span className="text-[13px] font-semibold text-[var(--text-primary)]">{title}</span>
     </div>
   );
 }
 
-interface CheckboxItemProps {
-  title: string;
-  desc: string;
-  checked?: boolean;
-  onChange?: (checked: boolean) => void;
+function PopupSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+      {children}
+    </div>
+  );
 }
 
-function CheckboxItem({ title, desc, checked, onChange }: CheckboxItemProps) {
+interface PopupItemProps {
+  icon?: React.ReactNode;
+  label: string;
+  hint?: string;
+  arrow?: boolean;
+  selected?: boolean;
+  onClick?: () => void;
+}
+
+function PopupItem({ icon, label, hint, arrow, selected, onClick }: PopupItemProps) {
   return (
-    <div
-      className="
-        flex items-start gap-3 p-2.5
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center gap-2.5 w-full p-2 px-2.5
+        border-none bg-transparent
         rounded-[var(--radius-md)] cursor-pointer
+        text-left text-[var(--font-size-sm)]
         transition-colors duration-[var(--transition-fast)]
         hover:bg-[var(--hover-bg)]
-      "
-      onClick={() => onChange?.(!checked)}
+        ${selected ? 'bg-[var(--accent-bg)]' : ''}
+      `}
     >
-      <div
-        className={`
-          w-[18px] h-[18px]
-          border-2 rounded
-          flex items-center justify-center
-          ${checked
-            ? 'bg-[var(--accent-color)] border-[var(--accent-color)]'
-            : 'border-[var(--border-color)]'
-          }
-        `}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          className={`w-3 h-3 text-white ${checked ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-0.5">
-          {title}
-        </div>
-        <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] leading-tight">
-          {desc}
-        </div>
-      </div>
-    </div>
+      {icon && (
+        <span className="w-4 h-4 flex items-center justify-center text-[var(--text-muted)] shrink-0">
+          {icon}
+        </span>
+      )}
+      <span className="flex-1 min-w-0 truncate text-[var(--text-primary)]">{label}</span>
+      {hint && (
+        <span className="shrink-0 text-[var(--font-size-xs)] text-[var(--text-muted)]">{hint}</span>
+      )}
+      {arrow && (
+        <span className="shrink-0 text-[var(--text-muted)] text-[11px]">&gt;</span>
+      )}
+    </button>
   );
+}
+
+function PopupDivider() {
+  return <div className="h-px bg-[var(--border-light)] mx-2 my-1" />;
 }
 
 // ============================================
@@ -743,8 +525,8 @@ export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProp
   };
 
   return (
-    <PopupContainer isOpen={isOpen} position="left-[14px]" minWidth={300}>
-      {/* Header with back button + search toggle */}
+    <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={300}>
+      {/* Header: reuse PopupHeader style but add search toggle */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border-light)]">
         <div className="flex items-center gap-2">
           <button
@@ -981,11 +763,9 @@ function ImageIcon() {
 
 function FolderIcon() {
   return (
-    <div className="w-5 h-5 flex items-center justify-center text-[var(--text-muted)]">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-      </svg>
-    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
   );
 }
 
@@ -994,6 +774,44 @@ function PlusIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function FileUploadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="12" y1="18" x2="12" y2="12" />
+      <line x1="9" y1="15" x2="15" y2="15" />
+    </svg>
+  );
+}
+
+function ClipboardIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+    </svg>
+  );
+}
+
+function WrenchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  );
+}
+
+function LayersIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <path d="M2 17l10 5 10-5" />
+      <path d="M2 12l10 5 10-5" />
     </svg>
   );
 }
