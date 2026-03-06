@@ -10,7 +10,7 @@
 
 - Owner: `codex`
 - Start Date: `2026-03-07`
-- Last Updated: `2026-03-07 03:36 CST`
+- Last Updated: `2026-03-07 03:39 CST`
 - Current Phase: `P2`
 - Current Status: `doing`
 - Current Branch: `main`
@@ -54,6 +54,7 @@
 
 | Time | Commit | Phase | Scope | Files | Verification | Notes |
 |---|---|---|---|---|---|---|
+| `2026-03-07 03:39 CST` | `c4a17c1` | `P0` | `design docs` | `1` | `manual review` | `补充并纳入迁移设计总规范文档 design-plan` |
 | `2026-03-07 02:54 CST` | `c25e30a` | `P2` | `chat core cards` | `3` | `typecheck + targeted scans` | `完成 TurnCard / UserMessageBubble / ProcessingIndicator 的新 token 迁移与 phase 标签` |
 | `2026-03-07 02:51 CST` | `bfa9c09` | `P0+P1` | `token + shell` | `6` | `typecheck + 3 scans` | `完成全局 token / 字体 / App / TitleBar / Sidebar / ChatArea 第一批迁移` |
 
