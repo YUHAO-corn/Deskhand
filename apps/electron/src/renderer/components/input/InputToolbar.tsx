@@ -281,8 +281,9 @@ export function InputToolbar() {
 
       {/* 主容器 */}
       <div className="
-        bg-white rounded-[20px]
-        shadow-[0_2px_16px_rgba(0,0,0,0.08)]
+        bg-[var(--color-surface-elevated)] rounded-[var(--radius-card)]
+        border border-[var(--color-line-soft)]
+        shadow-[var(--elevation-2)]
         relative
       ">
         {/* ============================================
@@ -327,19 +328,19 @@ export function InputToolbar() {
               <div
                 className="
                   flex items-center gap-1.5 px-2.5 py-1
-                  bg-[var(--accent-color)]/10 rounded-full
-                  text-[var(--font-size-sm)] font-medium text-[var(--accent-color)]
-                  border border-[var(--accent-color)]/20
+                  bg-[var(--color-accent)]/10 rounded-full
+                  text-[var(--font-size-sm)] font-medium text-[var(--color-accent)]
+                  border border-[var(--color-accent)]/20
                 "
               >
-                <span className="text-[var(--accent-color)]/60">/</span>
+                <span className="text-[var(--color-accent)]/60">/</span>
                 <span>{interactTag.toLowerCase().replace(/\s+/g, '-')}</span>
                 <button
                   onClick={() => setInteractTag(null)}
                   className="
                     shrink-0 w-4 h-4 flex items-center justify-center
                     bg-transparent border-none cursor-pointer
-                    text-[var(--accent-color)]/50 hover:text-[var(--accent-color)]
+                    text-[var(--color-accent)]/50 hover:text-[var(--color-accent)]
                   "
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -353,9 +354,9 @@ export function InputToolbar() {
               <div
                 className="
                   flex items-center gap-2 px-3 py-1.5
-                  bg-[var(--accent-bg)] rounded-[var(--radius-md)]
-                  text-[var(--font-size-sm)] text-[var(--accent)]
-                  max-w-[240px] border border-[var(--accent)]/20
+                  bg-[var(--color-accent-soft)] rounded-[var(--radius-md)]
+                  text-[var(--font-size-sm)] text-[var(--color-accent)]
+                  max-w-[240px] border border-[var(--color-accent)]/20
                 "
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
@@ -372,7 +373,7 @@ export function InputToolbar() {
                   className="
                     shrink-0 w-4 h-4 flex items-center justify-center
                     bg-transparent border-none cursor-pointer
-                    text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                    text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]
                   "
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -387,8 +388,8 @@ export function InputToolbar() {
                 key={att.id}
                 className="
                   flex items-center gap-2 px-3 py-1.5
-                  bg-[var(--accent-bg)] rounded-[var(--radius-md)]
-                  text-[var(--font-size-sm)] text-[var(--text-primary)]
+                  bg-[var(--color-accent-soft)] rounded-[var(--radius-md)]
+                  text-[var(--font-size-sm)] text-[var(--color-text-primary)]
                   max-w-[240px]
                 "
               >
@@ -401,7 +402,7 @@ export function InputToolbar() {
                   className="
                     shrink-0 w-4 h-4 flex items-center justify-center
                     bg-transparent border-none cursor-pointer
-                    text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                    text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]
                   "
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -427,9 +428,9 @@ export function InputToolbar() {
           rows={1}
           className="
             w-full border-none outline-none resize-none
-            text-[15px] text-[var(--text-primary)]
+            text-[15px] text-[var(--color-text-primary)]
             bg-transparent
-            placeholder:text-[var(--text-muted)]
+            placeholder:text-[var(--color-text-muted)]
             px-[22px] pt-[18px] pb-[14px]
           "
         />
@@ -495,10 +496,10 @@ export function InputToolbar() {
                   border-none bg-transparent rounded-lg
                   cursor-pointer
                   flex items-center justify-center
-                  text-[var(--text-muted)]
+                  text-[var(--color-text-muted)]
                   transition-colors duration-[var(--transition-fast)]
-                  hover:bg-[var(--hover-bg)] hover:text-[var(--accent-color)]
-                  disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
+                  hover:bg-[var(--hover-bg)] hover:text-[var(--color-accent)]
+                  disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-muted)]
                 "
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -580,11 +581,11 @@ function ToolbarIconButton({ children, badge, active, onClick, title }: ToolbarI
         border-none bg-transparent rounded-lg
         cursor-pointer
         flex items-center justify-center
-        text-[var(--text-muted)]
+        text-[var(--color-text-muted)]
         transition-colors duration-[var(--transition-fast)]
         relative
-        hover:bg-[var(--hover-bg)] hover:text-[var(--text-secondary)]
-        ${active ? 'bg-[var(--hover-bg)] text-[var(--text-primary)]' : ''}
+        hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-secondary)]
+        ${active ? 'bg-[var(--hover-bg)] text-[var(--color-text-primary)]' : ''}
       `}
     >
       {children}
@@ -592,7 +593,7 @@ function ToolbarIconButton({ children, badge, active, onClick, title }: ToolbarI
         <span className="
           absolute -top-0.5 -right-0.5
           min-w-[14px] h-[14px] px-0.5
-          bg-[#c5d9d2] text-[#4a7c6f]
+          bg-[var(--color-accent-soft)] text-[var(--color-accent-strong)]
           text-[8px] font-semibold
           rounded-full
           flex items-center justify-center
@@ -630,10 +631,10 @@ function ToolbarTextButton({ children, active, highlight, onClick, title }: Tool
         transition-colors duration-[var(--transition-fast)]
         hover:bg-[var(--hover-bg)]
         ${highlight
-          ? 'text-amber-600'
+          ? 'text-[var(--color-accent-strong)]'
           : active
-            ? 'text-[var(--text-primary)]'
-            : 'text-[var(--text-secondary)]'
+            ? 'text-[var(--color-text-primary)]'
+            : 'text-[var(--color-text-secondary)]'
         }
       `}
     >

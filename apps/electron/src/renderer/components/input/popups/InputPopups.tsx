@@ -200,7 +200,7 @@ export function ToolsPopup({ isOpen, onBack }: ToolsPopupProps) {
       <PopupHeader title="Skills" onBack={onBack} />
       <div className="p-1.5 max-h-80 overflow-y-auto">
         {skills.length === 0 ? (
-          <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
+          <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
             No skills installed
           </div>
         ) : (
@@ -244,7 +244,7 @@ export function MCPPopup({ isOpen, onBack }: MCPPopupProps) {
       <PopupHeader title="MCP Connections" onBack={onBack} />
       <div className="p-1.5 max-h-80 overflow-y-auto">
         {mcpServers.length === 0 ? (
-          <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--text-muted)]">
+          <div className="px-2.5 py-3 text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
             No MCP servers connected
           </div>
         ) : (
@@ -367,10 +367,10 @@ function PopupContainer({ isOpen, position, minWidth = 240, fullWidth, children 
       className={`
         absolute bottom-[calc(100%+8px)]
         ${fullWidth ? 'left-0 right-0 max-w-[520px]' : position ?? ''}
-        bg-[var(--bg-secondary)]
+        bg-[var(--color-surface-panel)]
         rounded-[var(--radius-lg)]
         shadow-[var(--shadow-popup)]
-        border border-[var(--border-light)]
+        border border-[var(--color-line-soft)]
         z-[200]
         transition-all duration-[250ms]
         ${isOpen
@@ -392,16 +392,16 @@ interface PopupHeaderProps {
 
 function PopupHeader({ title, onBack }: PopupHeaderProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-light)]">
+    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--color-line-soft)]">
       {onBack && (
         <button
           onClick={onBack}
           className="
             w-6 h-6 flex items-center justify-center
-            border border-[var(--border-color)] bg-transparent
+            border border-[var(--color-line-soft)] bg-transparent
             rounded-[var(--radius-sm)] cursor-pointer
-            text-[var(--text-muted)] hover:text-[var(--text-primary)]
-            hover:border-[var(--text-secondary)]
+            text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]
+            hover:border-[var(--color-text-secondary)]
           "
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -409,14 +409,14 @@ function PopupHeader({ title, onBack }: PopupHeaderProps) {
           </svg>
         </button>
       )}
-      <span className="text-[13px] font-semibold text-[var(--text-primary)]">{title}</span>
+      <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">{title}</span>
     </div>
   );
 }
 
 function PopupSectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+    <div className="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
       {children}
     </div>
   );
@@ -442,27 +442,27 @@ function PopupItem({ icon, label, hint, arrow, selected, onClick }: PopupItemPro
         text-left text-[var(--font-size-sm)]
         transition-colors duration-[var(--transition-fast)]
         hover:bg-[var(--hover-bg)]
-        ${selected ? 'bg-[var(--accent-bg)]' : ''}
+        ${selected ? 'bg-[var(--color-accent-soft)]' : ''}
       `}
     >
       {icon && (
-        <span className="w-4 h-4 flex items-center justify-center text-[var(--text-muted)] shrink-0">
+        <span className="w-4 h-4 flex items-center justify-center text-[var(--color-text-muted)] shrink-0">
           {icon}
         </span>
       )}
-      <span className="flex-1 min-w-0 truncate text-[var(--text-primary)]">{label}</span>
+      <span className="flex-1 min-w-0 truncate text-[var(--color-text-primary)]">{label}</span>
       {hint && (
-        <span className="shrink-0 text-[var(--font-size-xs)] text-[var(--text-muted)]">{hint}</span>
+        <span className="shrink-0 text-[var(--font-size-xs)] text-[var(--color-text-muted)]">{hint}</span>
       )}
       {arrow && (
-        <span className="shrink-0 text-[var(--text-muted)] text-[11px]">&gt;</span>
+        <span className="shrink-0 text-[var(--color-text-muted)] text-[11px]">&gt;</span>
       )}
     </button>
   );
 }
 
 function PopupDivider() {
-  return <div className="h-px bg-[var(--border-light)] mx-2 my-1" />;
+  return <div className="h-px bg-[var(--color-line-soft)] mx-2 my-1" />;
 }
 
 // ============================================
@@ -565,23 +565,23 @@ export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProp
   return (
     <PopupContainer isOpen={isOpen} position="left-[0px]" minWidth={300}>
       {/* Header: reuse PopupHeader style but add search toggle */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border-light)]">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--color-line-soft)]">
         <div className="flex items-center gap-2">
           <button
             onClick={onBack}
             className="
               w-6 h-6 flex items-center justify-center
-              border border-[var(--border-color)] bg-transparent
+              border border-[var(--color-line-soft)] bg-transparent
               rounded-[var(--radius-sm)] cursor-pointer
-              text-[var(--text-muted)] hover:text-[var(--text-primary)]
-              hover:border-[var(--text-secondary)]
+              text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]
+              hover:border-[var(--color-text-secondary)]
             "
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <span className="text-[13px] font-semibold text-[var(--text-primary)]">Clipboard history</span>
+          <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">Clipboard history</span>
         </div>
         {entries.length > 5 && (
           <button
@@ -591,8 +591,8 @@ export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProp
               rounded-[var(--radius-sm)] border-none cursor-pointer
               transition-colors
               ${showSearch
-                ? 'bg-[var(--accent-bg)] text-[var(--accent-color)]'
-                : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'
+                ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                : 'bg-transparent text-[var(--color-text-muted)] hover:bg-[var(--hover-bg)]'
               }
             `}
           >
@@ -612,14 +612,14 @@ export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProp
             autoFocus
             className="
               w-full px-3 py-1.5
-              border border-[var(--border-light)]
+              border border-[var(--color-line-soft)]
               rounded-[var(--radius-md)]
               text-[var(--font-size-sm)]
-              bg-[var(--bg-primary)]
-              text-[var(--text-primary)]
-              placeholder:text-[var(--text-muted)]
+              bg-[var(--color-surface-canvas)]
+              text-[var(--color-text-primary)]
+              placeholder:text-[var(--color-text-muted)]
               outline-none
-              focus:border-[var(--accent-color)]
+              focus:border-[var(--color-accent)]
               transition-colors
             "
           />
@@ -629,27 +629,27 @@ export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProp
       {/* Content */}
       <div className="max-h-[380px] overflow-y-auto">
         {loading && (
-          <div className="p-8 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+          <div className="p-8 text-center text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
             Loading...
           </div>
         )}
 
         {!loading && entries.length === 0 && (
           <div className="p-8 text-center">
-            <div className="text-[var(--text-muted)] mb-2">
+            <div className="text-[var(--color-text-muted)] mb-2">
               <ClipboardEmptyIcon />
             </div>
-            <div className="text-[var(--font-size-sm)] text-[var(--text-muted)]">
+            <div className="text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
               No clipboard history yet
             </div>
-            <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-1 opacity-60">
+            <div className="text-[var(--font-size-xs)] text-[var(--color-text-muted)] mt-1 opacity-60">
               Copy something to see it here
             </div>
           </div>
         )}
 
         {!loading && entries.length > 0 && filteredEntries.length === 0 && (
-          <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--text-muted)]">
+          <div className="p-6 text-center text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
             No matches
           </div>
         )}
@@ -657,7 +657,7 @@ export function ClipboardPopup({ isOpen, onConfirm, onBack }: ClipboardPopupProp
         {!loading && groups.map((group) => (
           <div key={group.label}>
             {/* Time group header */}
-            <div className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+            <div className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
               {group.label}
             </div>
             {/* Items */}
@@ -723,18 +723,18 @@ function ClipboardRow({ entry, formatTime, formatSize, onAttach }: {
           )}
         </div>
       ) : (
-        <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center text-[var(--text-muted)]">
+        <div className="w-6 h-6 rounded shrink-0 flex items-center justify-center text-[var(--color-text-muted)]">
           {entry.type === 'link' ? <LinkIcon /> : <TextIcon />}
         </div>
       )}
 
       {/* Content - single line truncated */}
-      <span className="flex-1 min-w-0 truncate text-[var(--font-size-sm)] text-[var(--text-primary)]">
+      <span className="flex-1 min-w-0 truncate text-[var(--font-size-sm)] text-[var(--color-text-primary)]">
         {entry.type === 'image' ? 'Screenshot' : entry.preview}
       </span>
 
       {/* Meta info - compact */}
-      <span className="shrink-0 text-[var(--font-size-xs)] text-[var(--text-muted)]">
+      <span className="shrink-0 text-[var(--font-size-xs)] text-[var(--color-text-muted)]">
         {entry.charCount ? `${entry.charCount.toLocaleString()} chars` :
          entry.fileSize ? formatSize(entry.fileSize) :
          entry.type === 'image' ? 'image' : formatTime(entry.timestamp)}
