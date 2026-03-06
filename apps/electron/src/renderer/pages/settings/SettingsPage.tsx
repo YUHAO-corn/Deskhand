@@ -58,15 +58,15 @@ export function SettingsPage() {
       />
 
       {/* 设置面板 */}
-      <div className="relative z-10 flex w-[800px] h-[560px] rounded-xl overflow-hidden shadow-xl bg-[var(--bg-primary)]">
+      <div className="relative z-10 flex w-[800px] h-[560px] rounded-xl overflow-hidden shadow-xl bg-[var(--color-surface-canvas)]">
         {/* ============================================
             区域：侧边栏
             功能：导航菜单
             ============================================ */}
-        <div className="w-56 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] flex flex-col">
+        <div className="flex w-56 flex-col bg-[var(--color-surface-elevated)] shadow-[inset_-1px_0_0_var(--color-line-soft)]">
           {/* 标题 */}
           <div className="px-5 py-4">
-            <h2 className="text-[var(--font-size-sm)] font-semibold text-[var(--text-primary)]">Settings</h2>
+            <h2 className="text-[var(--font-size-sm)] font-semibold text-[var(--color-text-primary)]">Settings</h2>
           </div>
 
         {/* 导航菜单 */}
@@ -82,12 +82,12 @@ export function SettingsPage() {
                 transition-colors duration-[var(--transition-fast)]
                 border-none cursor-pointer
                 ${activeSection === item.id
-                  ? 'bg-[var(--hover-bg)] text-[var(--text-primary)]'
-                  : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--hover-bg)] text-[var(--color-text-primary)]'
+                  : 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]'
                 }
               `}
             >
-              <span className="text-[var(--text-muted)]">{item.icon}</span>
+              <span className="text-[var(--color-text-muted)]">{item.icon}</span>
               <span>{item.label}</span>
             </button>
           ))}
@@ -99,9 +99,9 @@ export function SettingsPage() {
           ============================================ */}
       <div className="flex-1 flex flex-col">
         {/* 头部 */}
-        <div className="flex items-center gap-2 px-8 py-6 bg-[var(--bg-sidebar)] border-b border-[var(--border-color)]">
-          <span className="text-[var(--text-secondary)]">{currentNav?.icon}</span>
-          <h1 className="text-lg font-semibold text-[var(--text-primary)]">
+        <div className="flex items-center gap-2 px-8 py-6 bg-[var(--color-surface-elevated)] border-b border-[var(--color-line-soft)]">
+          <span className="text-[var(--color-text-secondary)]">{currentNav?.icon}</span>
+          <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
             {currentNav?.label}
           </h1>
         </div>
@@ -179,12 +179,12 @@ function GeneralSection({
           onChange={(e) => setToolModel(e.target.value)}
           className="
             w-full px-4 py-3 pr-10
-            bg-[var(--bg-sidebar)] border border-[var(--border-color)]
+            bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
             rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] text-[var(--text-primary)]
+            text-[var(--font-size-sm)] text-[var(--color-text-primary)]
             appearance-none cursor-pointer
-            hover:border-[var(--text-muted)]
-            focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent
+            hover:border-[var(--color-text-muted)]
+            focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
           "
         >
           <option value="claude-haiku-4-5-20251001">claude-haiku-4-5-20251001</option>
@@ -200,12 +200,12 @@ function GeneralSection({
           onChange={(e) => setLanguage(e.target.value)}
           className="
             w-full px-4 py-3 pr-10
-            bg-[var(--bg-sidebar)] border border-[var(--border-color)]
+            bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
             rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] text-[var(--text-primary)]
+            text-[var(--font-size-sm)] text-[var(--color-text-primary)]
             appearance-none cursor-pointer
-            hover:border-[var(--text-muted)]
-            focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent
+            hover:border-[var(--color-text-muted)]
+            focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
           "
         >
           <option value="English">English</option>
@@ -222,9 +222,9 @@ function GeneralSection({
               type="checkbox"
               checked={autoStart}
               onChange={(e) => setAutoStart(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--accent-color)] focus:ring-2 focus:ring-[var(--accent-color)] cursor-pointer"
+              className="w-4 h-4 rounded border-[var(--color-line-soft)] text-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)] cursor-pointer"
             />
-            <span className="text-[var(--font-size-sm)] text-[var(--text-primary)] group-hover:text-[var(--text-secondary)]">
+            <span className="text-[var(--font-size-sm)] text-[var(--color-text-primary)] group-hover:text-[var(--color-text-secondary)]">
               Auto Start
             </span>
           </label>
@@ -233,9 +233,9 @@ function GeneralSection({
               type="checkbox"
               checked={startMinimized}
               onChange={(e) => setStartMinimized(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--accent-color)] focus:ring-2 focus:ring-[var(--accent-color)] cursor-pointer"
+              className="w-4 h-4 rounded border-[var(--color-line-soft)] text-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)] cursor-pointer"
             />
-            <span className="text-[var(--font-size-sm)] text-[var(--text-primary)] group-hover:text-[var(--text-secondary)]">
+            <span className="text-[var(--font-size-sm)] text-[var(--color-text-primary)] group-hover:text-[var(--color-text-secondary)]">
               Start minimized to system tray
             </span>
           </label>
@@ -266,12 +266,12 @@ function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey }: ApiSecti
           onChange={(e) => setApiProvider(e.target.value)}
           className="
             w-full px-4 py-3 pr-10
-            bg-[var(--bg-sidebar)] border border-[var(--border-color)]
+            bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
             rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] text-[var(--text-primary)]
+            text-[var(--font-size-sm)] text-[var(--color-text-primary)]
             appearance-none cursor-pointer
-            hover:border-[var(--text-muted)]
-            focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent
+            hover:border-[var(--color-text-muted)]
+            focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
           "
         >
           <option value="anthropic">Anthropic</option>
@@ -289,12 +289,12 @@ function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey }: ApiSecti
           placeholder="sk-..."
           className="
             w-full px-4 py-3
-            bg-[var(--bg-sidebar)] border border-[var(--border-color)]
+            bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
             rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] text-[var(--text-primary)]
-            placeholder-[var(--text-muted)]
-            hover:border-[var(--text-muted)]
-            focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-transparent
+            text-[var(--font-size-sm)] text-[var(--color-text-primary)]
+            placeholder-[var(--color-text-muted)]
+            hover:border-[var(--color-text-muted)]
+            focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
           "
         />
       </SettingsCard>
@@ -344,8 +344,8 @@ function PermissionsSection({ permissionMode, setPermissionMode }: PermissionsSe
               rounded-[var(--radius-md)] border cursor-pointer
               transition-colors duration-[var(--transition-fast)]
               ${permissionMode === mode.value
-                ? 'border-[var(--accent-color)] bg-[var(--accent-bg)]'
-                : 'border-[var(--border-color)] hover:border-[var(--text-muted)]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
+                : 'border-[var(--color-line-soft)] hover:border-[var(--color-text-muted)]'
               }
             `}
           >
@@ -354,13 +354,13 @@ function PermissionsSection({ permissionMode, setPermissionMode }: PermissionsSe
               name="permissionMode"
               checked={permissionMode === mode.value}
               onChange={() => setPermissionMode(mode.value)}
-              className="mt-0.5 w-4 h-4 text-[var(--accent-color)] border-[var(--border-color)] focus:ring-[var(--accent-color)]"
+              className="mt-0.5 w-4 h-4 text-[var(--color-accent)] border-[var(--color-line-soft)] focus:ring-[var(--color-accent)]"
             />
             <div>
-              <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
+              <div className="text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">
                 {mode.label}
               </div>
-              <div className="text-[var(--font-size-sm)] text-[var(--text-muted)]">
+              <div className="text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
                 {mode.description}
               </div>
             </div>
@@ -393,13 +393,13 @@ function SkillsSection() {
         {skills.map((skill) => (
           <div
             key={skill.name}
-            className="flex items-center justify-between p-4 rounded-[var(--radius-md)] border border-[var(--border-color)]"
+            className="flex items-center justify-between p-4 rounded-[var(--radius-md)] border border-[var(--color-line-soft)]"
           >
             <div>
-              <div className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
+              <div className="text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">
                 {skill.name}
               </div>
-              <div className="text-[var(--font-size-sm)] text-[var(--text-muted)]">
+              <div className="text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
                 {skill.desc}
               </div>
             </div>
@@ -411,15 +411,15 @@ function SkillsSection() {
                 // TODO: onChange → setSkillEnabled(skill.id, enabled)
               />
               <div className="
-                w-11 h-6 bg-[var(--border-color)]
-                peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--accent-color)]/30
+                w-11 h-6 bg-[var(--color-line-soft)]
+                peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--color-accent)]/30
                 rounded-full peer
                 peer-checked:after:translate-x-full
                 peer-checked:after:border-white
                 after:content-[''] after:absolute after:top-[2px] after:start-[2px]
-                after:bg-white after:border-[var(--border-color)] after:border
+                after:bg-[var(--color-surface-elevated)] after:border-[var(--color-line-soft)] after:border
                 after:rounded-full after:h-5 after:w-5 after:transition-all
-                peer-checked:bg-[var(--accent-color)]
+                peer-checked:bg-[var(--color-accent)]
               " />
             </label>
           </div>
@@ -441,10 +441,10 @@ interface SettingsCardProps {
 
 function SettingsCard({ title, description, children }: SettingsCardProps) {
   return (
-    <div className="bg-[var(--bg-sidebar)] rounded-[var(--radius-lg)] border border-[var(--border-color)] p-6 mb-6">
-      <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">{title}</h2>
+    <div className="bg-[var(--color-surface-elevated)] rounded-[var(--radius-lg)] border border-[var(--color-line-soft)] p-6 mb-6">
+      <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-2">{title}</h2>
       {description && (
-        <p className="text-[var(--font-size-sm)] text-[var(--text-secondary)] mb-4">
+        <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)] mb-4">
           {description}
         </p>
       )}

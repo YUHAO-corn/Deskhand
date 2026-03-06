@@ -190,8 +190,8 @@ export function ArtifactPanel() {
           minWidth: isOpen ? PANEL_MIN_WIDTH : 0,
         }}
         className="
-          bg-[var(--bg-secondary)]
-          border-l border-[var(--border-color)]
+          bg-[var(--color-surface-panel)]
+          border-l border-[var(--color-line-soft)]
           flex flex-col overflow-hidden flex-shrink-0
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         "
@@ -217,22 +217,22 @@ export function ArtifactPanel() {
           {/* Full-width preview area */}
           <div className="flex-1 overflow-auto">
             {artifacts.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
+              <div className="h-full flex items-center justify-center text-[var(--color-text-muted)] text-[var(--font-size-sm)]">
                 <div className="text-center leading-relaxed">
                   <div>No artifacts yet.</div>
                   <div className="mt-1 text-[var(--font-size-xs)] opacity-60">Files created by AI will appear here.</div>
                 </div>
               </div>
             ) : !selectedArtifact ? (
-              <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
+              <div className="h-full flex items-center justify-center text-[var(--color-text-muted)] text-[var(--font-size-sm)]">
                 Select a file to preview
               </div>
             ) : !fileExists ? (
-              <div className="h-full flex items-center justify-center text-[var(--text-muted)] text-[var(--font-size-sm)]">
+              <div className="h-full flex items-center justify-center text-[var(--color-text-muted)] text-[var(--font-size-sm)]">
                 File not found on disk
               </div>
             ) : viewMode === 'code' ? (
-              <pre className="p-4 text-[var(--font-size-sm)] text-[var(--text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
+              <pre className="p-4 text-[var(--font-size-sm)] text-[var(--color-text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
                 {fileContent}
               </pre>
             ) : (
@@ -291,7 +291,7 @@ function PreviewToolbar({
   };
 
   return (
-    <div className="h-10 border-b border-[var(--border-color)] flex items-center justify-between px-2 gap-1">
+    <div className="h-10 border-b border-[var(--color-line-soft)] flex items-center justify-between px-2 gap-1">
       {/* Left: view mode toggle + artifact dropdown */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
         {/* View mode toggle */}
@@ -303,8 +303,8 @@ function PreviewToolbar({
               flex items-center justify-center
               transition-all duration-[var(--transition-fast)]
               ${viewMode === 'code'
-                ? 'bg-white text-[var(--text-primary)] shadow-sm'
-                : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                ? 'bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] shadow-[var(--elevation-1)]'
+                : 'bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
               }
             `}
             title="Code"
@@ -321,8 +321,8 @@ function PreviewToolbar({
               flex items-center justify-center
               transition-all duration-[var(--transition-fast)]
               ${viewMode === 'preview'
-                ? 'bg-white text-[var(--text-primary)] shadow-sm'
-                : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                ? 'bg-[var(--color-surface-elevated)] text-[var(--color-text-primary)] shadow-[var(--elevation-1)]'
+                : 'bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
               }
             `}
             title="Preview"
@@ -345,8 +345,8 @@ function PreviewToolbar({
               text-[var(--font-size-xs)] cursor-pointer
               transition-colors duration-[var(--transition-fast)]
               ${artifacts.length === 0
-                ? 'bg-transparent text-[var(--text-muted)] cursor-default'
-                : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
+                ? 'bg-transparent text-[var(--color-text-muted)] cursor-default'
+                : 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]'
               }
             `}
           >
@@ -366,7 +366,7 @@ function PreviewToolbar({
           {dropdownOpen && (
             <div className="
               absolute top-full left-0 mt-1 z-50
-              bg-white rounded-lg shadow-lg border border-[var(--border-color)]
+              bg-[var(--color-surface-elevated)] rounded-[var(--radius-control)] shadow-[var(--elevation-2)] border border-[var(--color-line-soft)]
               max-h-[400px] overflow-y-auto
               min-w-[240px] max-w-[320px]
             ">
@@ -390,8 +390,8 @@ function PreviewToolbar({
                   >
                     <FileTypeIcon type={type} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--font-size-sm)] text-[var(--text-primary)] truncate">{name}</div>
-                      <div className="text-[var(--font-size-xs)] text-[var(--text-muted)] truncate mt-0.5">{dir}</div>
+                      <div className="text-[var(--font-size-sm)] text-[var(--color-text-primary)] truncate">{name}</div>
+                      <div className="text-[var(--font-size-xs)] text-[var(--color-text-muted)] truncate mt-0.5">{dir}</div>
                     </div>
                   </div>
                 );
@@ -411,9 +411,9 @@ function PreviewToolbar({
               w-7 h-7 border-none bg-transparent
               rounded-[var(--radius-md)] cursor-pointer
               flex items-center justify-center
-              text-[var(--text-muted)]
+              text-[var(--color-text-muted)]
               transition-all duration-[var(--transition-fast)]
-              hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+              hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
             "
             title="Show in Finder"
           >
@@ -432,9 +432,9 @@ function PreviewToolbar({
             w-7 h-7 border-none bg-transparent
             rounded-[var(--radius-md)] cursor-pointer
             flex items-center justify-center
-            text-[var(--text-muted)]
+            text-[var(--color-text-muted)]
             transition-all duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+            hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
           "
           title="Copy content"
         >
@@ -451,9 +451,9 @@ function PreviewToolbar({
             w-7 h-7 border-none bg-transparent
             rounded-[var(--radius-md)] cursor-pointer
             flex items-center justify-center
-            text-[var(--text-muted)]
+            text-[var(--color-text-muted)]
             transition-all duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+            hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
           "
           title="Refresh"
         >
@@ -470,9 +470,9 @@ function PreviewToolbar({
             w-7 h-7 border-none bg-transparent
             rounded-[var(--radius-md)] cursor-pointer
             flex items-center justify-center
-            text-[var(--text-muted)]
+            text-[var(--color-text-muted)]
             transition-all duration-[var(--transition-fast)]
-            hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
+            hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
           "
           title="Close panel"
         >
@@ -518,7 +518,7 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
         <iframe
           sandbox="allow-scripts"
           srcDoc={content}
-          className="w-full h-full border-none bg-white"
+          className="w-full h-full border-none bg-[var(--color-surface-elevated)]"
           title={fileName}
         />
       );
@@ -540,7 +540,7 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
               className="max-w-full max-h-full object-contain"
             />
           ) : (
-            <span className="text-[var(--text-muted)] text-[var(--font-size-sm)]">
+            <span className="text-[var(--color-text-muted)] text-[var(--font-size-sm)]">
               Unable to load image
             </span>
           )}
@@ -549,7 +549,7 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
 
     default:
       return (
-        <pre className="p-4 text-[var(--font-size-sm)] text-[var(--text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
+        <pre className="p-4 text-[var(--font-size-sm)] text-[var(--color-text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
           {content}
         </pre>
       );
@@ -565,7 +565,7 @@ function FileTypeIcon({ type }: { type: FileType }) {
     html: 'text-orange-500',
     markdown: 'text-blue-500',
     image: 'text-green-500',
-    text: 'text-[var(--text-muted)]',
+    text: 'text-[var(--color-text-muted)]',
   }[type];
 
   return (

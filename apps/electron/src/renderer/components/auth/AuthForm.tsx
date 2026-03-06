@@ -58,16 +58,16 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-[400px] p-6 bg-[var(--bg-sidebar)] rounded-[var(--radius-lg)] shadow-[var(--shadow-popup)]"
+      className="w-full max-w-[400px] p-6 bg-[var(--color-surface-elevated)] rounded-[var(--radius-lg)] shadow-[var(--shadow-popup)]"
     >
       {/* ============================================
           区域：标题
           ============================================ */}
       <div className="text-center mb-6">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
+        <h1 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">
           🔑 Deskhand
         </h1>
-        <p className="text-[var(--font-size-sm)] text-[var(--text-secondary)]">
+        <p className="text-[var(--font-size-sm)] text-[var(--color-text-secondary)]">
           Enter your API key to get started
         </p>
       </div>
@@ -77,7 +77,7 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
           功能：密码模式输入，可切换显示
           ============================================ */}
       <div className="mb-4">
-        <label className="block text-[var(--font-size-sm)] font-medium text-[var(--text-primary)] mb-1.5">
+        <label className="block text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)] mb-1.5">
           API Key
         </label>
         <div className="relative">
@@ -89,11 +89,11 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
             disabled={isValidating}
             className="
               w-full px-3 py-2.5
-              bg-[var(--bg-primary)] border border-[var(--border-color)]
+              bg-[var(--color-surface-canvas)] border border-[var(--color-line-soft)]
               rounded-[var(--radius-md)]
-              text-[var(--font-size-sm)] text-[var(--text-primary)]
-              placeholder:text-[var(--text-muted)]
-              focus:outline-none focus:border-[var(--accent-color)] focus:bg-[var(--bg-sidebar)]
+              text-[var(--font-size-sm)] text-[var(--color-text-primary)]
+              placeholder:text-[var(--color-text-muted)]
+              focus:outline-none focus:border-[var(--color-accent)] focus:bg-[var(--color-surface-elevated)]
               transition-colors duration-[var(--transition-fast)]
               disabled:opacity-50 disabled:cursor-not-allowed
               pr-10
@@ -105,7 +105,7 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
             onClick={() => setShowApiKey(!showApiKey)}
             className="
               absolute right-3 top-1/2 -translate-y-1/2
-              text-[var(--text-muted)] hover:text-[var(--text-secondary)]
+              text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]
               transition-colors duration-[var(--transition-fast)]
             "
           >
@@ -130,7 +130,7 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
           ============================================ */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-[var(--font-size-sm)] font-medium text-[var(--text-primary)]">
+          <label className="text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">
             Base URL
           </label>
           <select
@@ -138,7 +138,7 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
             onChange={(e) => setSelectedPreset(e.target.value)}
             disabled={isValidating}
             className="
-              text-[var(--font-size-xs)] text-[var(--text-secondary)]
+              text-[var(--font-size-xs)] text-[var(--color-text-secondary)]
               bg-transparent border-none
               cursor-pointer
               focus:outline-none
@@ -160,11 +160,11 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
           disabled={isValidating || selectedPreset !== 'custom'}
           className="
             w-full px-3 py-2.5
-            bg-[var(--bg-primary)] border border-[var(--border-color)]
+            bg-[var(--color-surface-canvas)] border border-[var(--color-line-soft)]
             rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] text-[var(--text-primary)]
-            placeholder:text-[var(--text-muted)]
-            focus:outline-none focus:border-[var(--accent-color)] focus:bg-[var(--bg-sidebar)]
+            text-[var(--font-size-sm)] text-[var(--color-text-primary)]
+            placeholder:text-[var(--color-text-muted)]
+            focus:outline-none focus:border-[var(--color-accent)] focus:bg-[var(--color-surface-elevated)]
             transition-colors duration-[var(--transition-fast)]
             disabled:opacity-50 disabled:cursor-not-allowed
           "
@@ -175,8 +175,8 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
           区域：错误信息
           ============================================ */}
       {errorMessage && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-[var(--radius-md)]">
-          <p className="text-[var(--font-size-sm)] text-red-600">
+        <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] p-3">
+          <p className="text-[var(--font-size-sm)] text-[var(--color-danger)]">
             ❌ {errorMessage}
           </p>
         </div>
@@ -191,7 +191,7 @@ export function AuthForm({ status, errorMessage, onSubmit }: AuthFormProps) {
         disabled={!apiKey.trim() || isValidating}
         className="
           w-full py-2.5
-          bg-[var(--accent-color)] text-white
+          bg-[var(--color-accent)] text-white
           rounded-[var(--radius-md)]
           text-[var(--font-size-sm)] font-medium
           hover:opacity-90

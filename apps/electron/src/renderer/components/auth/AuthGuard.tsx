@@ -86,11 +86,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Loading 状态
   if (appState === 'loading') {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-[var(--bg-primary)]">
+      <div className="h-full w-full flex items-center justify-center bg-[var(--color-surface-canvas)]">
         <div className="flex flex-col items-center gap-4">
           {/* TODO: 添加 loading spinner */}
-          <div className="w-8 h-8 border-2 border-[var(--accent-color)] border-t-transparent rounded-full animate-spin" />
-          <span className="text-[var(--text-muted)] text-[var(--font-size-sm)]">
+          <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
+          <span className="text-[var(--color-text-muted)] text-[var(--font-size-sm)]">
             Loading...
           </span>
         </div>
@@ -101,7 +101,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Onboarding 状态：显示 AuthForm
   if (appState === 'onboarding') {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-[var(--bg-primary)]">
+      <div className="h-full w-full flex items-center justify-center bg-[var(--color-surface-canvas)]">
         <AuthForm
           status={authStatus}
           errorMessage={authError}
