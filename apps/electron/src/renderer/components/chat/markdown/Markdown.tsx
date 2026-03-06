@@ -1,10 +1,3 @@
-/**
- * Markdown 渲染组件
- *
- * 使用 react-markdown + remark-gfm 渲染 Markdown 内容
- * 支持 GFM（GitHub Flavored Markdown）语法
- */
-
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { isValidElement, Children } from 'react';
@@ -15,9 +8,7 @@ interface MarkdownProps {
   className?: string;
 }
 
-// 自定义组件映射
 const components: Components = {
-  // 代码块
   code({ inline, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : '';
@@ -25,11 +16,7 @@ const components: Components = {
     if (inline) {
       return (
         <code
-          className="
-            px-1.5 py-0.5 rounded
-            bg-[var(--bg-tertiary)] text-[var(--text-primary)]
-            text-[0.875em] font-mono
-          "
+          className="rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-soft)] px-1.5 py-0.5 font-mono text-[0.875em] text-[var(--color-text-primary)]"
           {...props}
         >
           {children}
@@ -38,23 +25,14 @@ const components: Components = {
     }
 
     return (
-      <div className="my-3 rounded-lg overflow-hidden border border-[var(--border-light)]">
+      <div className="my-4 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line-soft)] shadow-[var(--elevation-1)]">
         {language && (
-          <div className="
-            px-3 py-1.5
-            bg-[var(--bg-tertiary)]
-            text-xs text-[var(--text-muted)]
-            border-b border-[var(--border-light)]
-          ">
+          <div className="border-b border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
             {language}
           </div>
         )}
-        <pre className="
-          p-3 overflow-x-auto
-          bg-[var(--bg-secondary)]
-          text-sm
-        ">
-          <code className="font-mono" {...props}>
+        <pre className="overflow-x-auto bg-[var(--color-surface-elevated)] p-3 text-[var(--font-size-sm)]">
+          <code className="font-mono text-[var(--color-text-primary)]" {...props}>
             {children}
           </code>
         </pre>
@@ -62,108 +40,83 @@ const components: Components = {
     );
   },
 
-  // 段落 — 如果子元素包含块级元素（如代码块的 div），用 div 代替 p 避免 DOM 嵌套警告
   p({ children }) {
     const hasBlockChild = Children.toArray(children).some(
       (child) => isValidElement(child) && typeof child.type === 'string' && ['div', 'pre'].includes(child.type)
     );
     if (hasBlockChild) {
-      return <div className="mb-3 last:mb-0">{children}</div>;
+      return <div className="mb-3 last:mb-0 text-[var(--color-text-primary)]">{children}</div>;
     }
-    return <p className="mb-3 last:mb-0">{children}</p>;
+    return <p className="mb-3 last:mb-0 text-[var(--font-size-base)] text-[var(--color-text-primary)]">{children}</p>;
   },
 
-  // 标题
   h1({ children }) {
-    return <h1 className="text-[22px] font-bold mb-3 mt-6 first:mt-0">{children}</h1>;
+    return <h1 className="font-display mb-3 mt-7 text-[28px] text-[var(--color-text-primary)] first:mt-0">{children}</h1>;
   },
   h2({ children }) {
-    return <h2 className="text-lg font-bold mb-2 mt-5 first:mt-0">{children}</h2>;
+    return <h2 className="font-display mb-2 mt-6 text-[22px] text-[var(--color-text-primary)] first:mt-0">{children}</h2>;
   },
   h3({ children }) {
-    return <h3 className="text-[15px] font-semibold mb-2 mt-4 first:mt-0">{children}</h3>;
+    return <h3 className="mb-2 mt-5 text-[16px] font-semibold text-[var(--color-text-primary)] first:mt-0">{children}</h3>;
   },
 
-  // 列表
   ul({ children }) {
-    return <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>;
+    return <ul className="mb-3 list-disc space-y-1 pl-5">{children}</ul>;
   },
   ol({ children }) {
-    return <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>;
+    return <ol className="mb-3 list-decimal space-y-1 pl-5">{children}</ol>;
   },
   li({ children }) {
-    return <li className="">{children}</li>;
+    return <li className="text-[var(--font-size-base)] text-[var(--color-text-primary)]">{children}</li>;
   },
 
-  // 链接
   a({ href, children }) {
     return (
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="
-          text-[var(--accent-color)]
-          hover:underline
-        "
+        className="text-[var(--color-accent)] hover:underline"
       >
         {children}
       </a>
     );
   },
 
-  // 引用块
   blockquote({ children }) {
     return (
-      <blockquote className="
-        pl-4 border-l-2 border-[var(--border-medium)]
-        text-[var(--text-secondary)] italic
-        my-3
-      ">
+      <blockquote className="my-4 rounded-r-[var(--radius-control)] border-l-[3px] border-[var(--color-accent)] bg-[var(--color-accent-soft)] px-3 py-2 text-[var(--color-text-secondary)] italic">
         {children}
       </blockquote>
     );
   },
 
-  // 水平线
   hr() {
-    return <hr className="my-4 border-[var(--border-light)]" />;
+    return <hr className="my-6 border-[var(--color-line-soft)]" />;
   },
 
-  // 强调
   strong({ children }) {
-    return <strong className="font-semibold">{children}</strong>;
+    return <strong className="font-semibold text-[var(--color-text-primary)]">{children}</strong>;
   },
   em({ children }) {
-    return <em className="italic">{children}</em>;
+    return <em className="italic text-[var(--color-text-secondary)]">{children}</em>;
   },
 
-  // 表格
   table({ children }) {
     return (
-      <div className="my-3 overflow-x-auto">
-        <table className="min-w-full border border-[var(--border-light)] text-sm">
-          {children}
-        </table>
+      <div className="my-4 overflow-x-auto rounded-[var(--radius-control)] border border-[var(--color-line-soft)]">
+        <table className="min-w-full text-[var(--font-size-sm)]">{children}</table>
       </div>
     );
   },
   thead({ children }) {
-    return <thead className="bg-[var(--bg-secondary)]">{children}</thead>;
+    return <thead className="bg-[var(--color-surface-soft)]">{children}</thead>;
   },
   th({ children }) {
-    return (
-      <th className="px-3 py-2 text-left font-semibold border-b border-[var(--border-light)]">
-        {children}
-      </th>
-    );
+    return <th className="border-b border-[var(--color-line-soft)] px-3 py-2 text-left font-semibold text-[var(--color-text-primary)]">{children}</th>;
   },
   td({ children }) {
-    return (
-      <td className="px-3 py-2 border-b border-[var(--border-light)]">
-        {children}
-      </td>
-    );
+    return <td className="border-b border-[var(--color-line-soft)] px-3 py-2 text-[var(--color-text-secondary)]">{children}</td>;
   },
 };
 

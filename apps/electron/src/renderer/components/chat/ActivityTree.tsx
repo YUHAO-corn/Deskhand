@@ -219,26 +219,24 @@ function ActivityTreeRow({
 
         {/* 内联权限确认 */}
         {hasPendingPermission && (
-          <div className="mx-2 mb-1 p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+          <div className="mx-2 mb-1 rounded-[var(--radius-control)] border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] p-3">
             <div className="flex items-center gap-2 mb-2">
-              <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-3.5 h-3.5 shrink-0 text-[var(--color-danger)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              <span className="text-xs text-amber-700 dark:text-amber-400">
+              <span className="text-xs text-[var(--color-danger)]">
                 {permissionRequest.description}
               </span>
             </div>
-            <div className="font-mono text-xs px-2.5 py-1.5 bg-[#1e1e1e] text-[#d4d4d4] rounded mb-2.5 overflow-x-auto">
+            <div className="mb-2.5 overflow-x-auto rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-2.5 py-1.5 font-mono text-xs text-[var(--color-text-primary)]">
               <code>{permissionRequest.toolName === 'Bash' ? '$ ' : ''}{permissionRequest.command}</code>
             </div>
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={handleDeny}
                 className="
-                  px-3 py-1 rounded-md text-xs font-medium
-                  border border-red-200 text-red-600 bg-transparent
-                  hover:bg-red-50 cursor-pointer
-                  transition-colors
+                  rounded-[var(--radius-pill)] border border-[var(--color-danger-line)] bg-[var(--color-surface-elevated)] px-3 py-1 text-xs font-medium
+                  text-[var(--color-danger)] transition-colors hover:bg-[var(--color-danger-soft)] cursor-pointer
                 "
               >
                 Deny
@@ -246,10 +244,8 @@ function ActivityTreeRow({
               <button
                 onClick={handleAllow}
                 className="
-                  px-3 py-1 rounded-md text-xs font-medium
-                  border-none text-white bg-[var(--accent-color)]
-                  hover:opacity-90 cursor-pointer
-                  transition-colors
+                  rounded-[var(--radius-pill)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-3 py-1 text-xs font-medium
+                  text-[var(--color-surface-elevated)] transition-colors hover:bg-[var(--color-accent-strong)] cursor-pointer
                 "
               >
                 Allow
@@ -276,11 +272,11 @@ function TreeConnector({ isLastChild, showExtender }: TreeConnectorProps) {
     <>
       {/* 垂直线 + 水平线 → ├ 或 └ */}
       <div
-        className="absolute left-0 top-0 h-1/2 border-l border-[var(--border-light)]"
+        className="absolute left-0 top-0 h-1/2 border-l border-[var(--color-line-soft)]"
         style={{ left: 8 }}
       />
       <div
-        className={`absolute left-0 border-b border-[var(--border-light)] ${
+        className={`absolute left-0 border-b border-[var(--color-line-soft)] ${
           isLastChild ? 'rounded-bl' : ''
         }`}
         style={{ left: 8, top: '50%', width: 12 }}
@@ -289,7 +285,7 @@ function TreeConnector({ isLastChild, showExtender }: TreeConnectorProps) {
       {/* 非最后子项：延伸到下一行的垂直线 */}
       {!isLastChild && (
         <div
-          className="absolute left-0 top-1/2 h-1/2 border-l border-[var(--border-light)]"
+          className="absolute left-0 top-1/2 h-1/2 border-l border-[var(--color-line-soft)]"
           style={{ left: 8 }}
         />
       )}
@@ -297,7 +293,7 @@ function TreeConnector({ isLastChild, showExtender }: TreeConnectorProps) {
       {/* 额外的垂直延伸线（用于父级 Task 还有更多兄弟） */}
       {showExtender && (
         <div
-          className="absolute left-0 top-full h-4 border-l border-[var(--border-light)]"
+          className="absolute left-0 top-full h-4 border-l border-[var(--color-line-soft)]"
           style={{ left: -16 }}
         />
       )}

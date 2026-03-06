@@ -60,11 +60,11 @@ export function ToolActivityRow({
 
       {/* 工具名称和描述 */}
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="font-medium text-[var(--text-primary)] truncate">
+        <span className="font-medium text-[var(--color-text-primary)] truncate">
           {toolDisplayName}
         </span>
         {description && (
-          <span className="text-[var(--text-muted)] truncate">
+          <span className="text-[var(--color-text-muted)] truncate">
             {description}
           </span>
         )}
@@ -72,22 +72,14 @@ export function ToolActivityRow({
 
       {/* 错误徽章 */}
       {status === 'error' && error && (
-        <span className="
-          px-1.5 py-0.5 rounded text-xs
-          bg-red-100 text-red-700
-          dark:bg-red-900/30 dark:text-red-400
-        ">
+        <span className="rounded-[var(--radius-pill)] border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] px-1.5 py-0.5 text-xs text-[var(--color-danger)]">
           Error
         </span>
       )}
 
       {/* 后台任务徽章 */}
       {activity.isBackground && (
-        <span className="
-          px-1.5 py-0.5 rounded text-xs
-          bg-purple-100 text-purple-700
-          dark:bg-purple-900/30 dark:text-purple-400
-        ">
+        <span className="rounded-[var(--radius-pill)] border border-[var(--color-line-soft)] bg-[var(--color-surface-soft)] px-1.5 py-0.5 text-xs text-[var(--color-text-secondary)]">
           Background
         </span>
       )}
@@ -108,7 +100,7 @@ export function ToolActivityRow({
           className="
             w-5 h-5 flex items-center justify-center
             rounded hover:bg-[var(--hover-bg)]
-            text-[var(--text-muted)]
+            text-[var(--color-text-muted)]
             transition-transform duration-200
           "
           aria-label={isExpanded ? 'Collapse' : 'Expand'}
@@ -139,7 +131,7 @@ function StatusIcon({ status }: { status: ActivityStatus }) {
     case 'pending':
       return (
         <div className="w-4 h-4 flex items-center justify-center">
-          <div className="w-2 h-2 rounded-full border border-[var(--text-muted)]" />
+          <div className="w-2 h-2 rounded-full border border-[var(--color-text-muted)]" />
         </div>
       );
 
@@ -148,7 +140,7 @@ function StatusIcon({ status }: { status: ActivityStatus }) {
         <div className="w-4 h-4 flex items-center justify-center">
           <div className="
             w-3 h-3 rounded-full
-            border-2 border-[var(--accent-color)] border-t-transparent
+            border-2 border-[var(--color-accent)] border-t-transparent
             animate-spin
           " />
         </div>
@@ -157,7 +149,7 @@ function StatusIcon({ status }: { status: ActivityStatus }) {
     case 'completed':
       return (
         <svg
-          className="w-4 h-4 text-green-600 dark:text-green-500"
+          className="h-4 w-4 text-[var(--color-accent)]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -170,7 +162,7 @@ function StatusIcon({ status }: { status: ActivityStatus }) {
     case 'error':
       return (
         <svg
-          className="w-4 h-4 text-red-600 dark:text-red-500"
+          className="h-4 w-4 text-[var(--color-danger)]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -185,7 +177,7 @@ function StatusIcon({ status }: { status: ActivityStatus }) {
     case 'backgrounded':
       return (
         <svg
-          className="w-4 h-4 text-purple-600 dark:text-purple-500"
+          className="h-4 w-4 text-[var(--color-text-secondary)]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -206,7 +198,7 @@ function StatusIcon({ status }: { status: ActivityStatus }) {
 // ============================================
 
 function ToolIcon({ toolName }: { toolName?: string }) {
-  const iconClass = 'w-4 h-4 text-[var(--text-secondary)]';
+  const iconClass = 'w-4 h-4 text-[var(--color-text-secondary)]';
 
   switch (toolName) {
     case 'Read':
@@ -376,7 +368,7 @@ function TaskOutputBadge({ data }: TaskOutputBadgeProps) {
   return (
     <span className="
       px-1.5 py-0.5 rounded text-xs
-      bg-[var(--bg-tertiary)] text-[var(--text-muted)]
+      bg-[var(--color-surface-soft)] text-[var(--color-text-muted)]
     ">
       {parts.join(' · ')}
     </span>
