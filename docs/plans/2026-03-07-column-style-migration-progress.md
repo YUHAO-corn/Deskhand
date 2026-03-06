@@ -10,9 +10,9 @@
 
 - Owner: `codex`
 - Start Date: `2026-03-07`
-- Last Updated: `2026-03-07 03:39 CST`
-- Current Phase: `P2`
-- Current Status: `doing`
+- Last Updated: `2026-03-07 03:48 CST`
+- Current Phase: `P3`
+- Current Status: `done`
 - Current Branch: `main`
 - Related PR: `tbd`
 
@@ -34,19 +34,19 @@
 ### P2 核心交互迁移
 - [x] TurnCard
 - [x] UserMessageBubble
-- [ ] Markdown
-- [ ] ActivityTree
-- [ ] ToolActivityRow
-- [ ] PermissionRequest
-- [ ] InputToolbar
-- [ ] InputPopups
+- [x] Markdown
+- [x] ActivityTree
+- [x] ToolActivityRow
+- [x] PermissionRequest
+- [x] InputToolbar
+- [x] InputPopups
 - [x] ProcessingIndicator
 
 ### P3 扩展与精修
-- [ ] ArtifactPanel
-- [ ] AuthForm
-- [ ] AuthGuard
-- [ ] SettingsPage
+- [x] ArtifactPanel
+- [x] AuthForm
+- [x] AuthGuard
+- [x] SettingsPage
 
 ---
 
@@ -54,6 +54,10 @@
 
 | Time | Commit | Phase | Scope | Files | Verification | Notes |
 |---|---|---|---|---|---|---|
+| `2026-03-07 03:47 CST` | `6082c3b` | `P3` | `artifact + auth + settings` | `4` | `typecheck + 3 scans` | `ArtifactPanel、AuthForm、AuthGuard、SettingsPage 完成 Column token 迁移` |
+| `2026-03-07 03:46 CST` | `7757455` | `P2` | `input system` | `2` | `typecheck + 3 scans` | `InputToolbar、InputPopups 完成统一控件语法和主题迁移` |
+| `2026-03-07 03:45 CST` | `9c78013` | `P2` | `chat system` | `4` | `typecheck + 3 scans` | `Markdown、ActivityTree、ToolActivityRow、PermissionRequest 完成迁移` |
+| `2026-03-07 03:39 CST` | `264d3df` | `P0` | `progress docs` | `1` | `manual review` | `进度台账补录 design-plan 提交信息` |
 | `2026-03-07 03:39 CST` | `c4a17c1` | `P0` | `design docs` | `1` | `manual review` | `补充并纳入迁移设计总规范文档 design-plan` |
 | `2026-03-07 02:54 CST` | `c25e30a` | `P2` | `chat core cards` | `3` | `typecheck + targeted scans` | `完成 TurnCard / UserMessageBubble / ProcessingIndicator 的新 token 迁移与 phase 标签` |
 | `2026-03-07 02:51 CST` | `bfa9c09` | `P0+P1` | `token + shell` | `6` | `typecheck + 3 scans` | `完成全局 token / 字体 / App / TitleBar / Sidebar / ChatArea 第一批迁移` |
@@ -66,20 +70,20 @@
 
 ### 4.1 硬编码颜色扫描
 - Command: `rg -n "#[0-9a-fA-F]{3,8}|rgb\(|rgba\(" apps/electron/src/renderer`
-- Result: `19 hits`
+- Result: `15 hits`
 - Summary:
-  - `index.css` 中语义 token 定义命中（预期内）。
-  - `UserMessageBubble.tsx` 已清零；仍有遗留硬编码：`ActivityTree.tsx`、`InputToolbar.tsx`、`PermissionRequest.tsx`。
+  - 仅命中 `index.css` 中语义 token 常量定义（预期内）。
+  - 业务组件/页面层无硬编码颜色。
 
 ### 4.2 旧变量引用扫描
 - Command: `rg -n "var\(--bg-|var\(--text-|var\(--border-" apps/electron/src/renderer/components apps/electron/src/renderer/pages`
-- Result: `158 hits`
-- Summary: `P2/P3 组件仍大量使用旧变量命名，需分阶段清理。`
+- Result: `0 hits`
+- Summary: `已清零。`
 
 ### 4.3 旧视觉 class 扫描
 - Command: `rg -n "bg-white|border-r|shadow-sm" apps/electron/src/renderer/components apps/electron/src/renderer/pages`
-- Result: `10 hits`
-- Summary: `主要分布在 ArtifactPanel / InputToolbar / Settings / Auth / PermissionRequest / ActivityTree。`
+- Result: `0 hits`
+- Summary: `已清零。`
 
 ---
 
@@ -90,7 +94,7 @@
 - Latest:
   - `tbd`
 - Diff Notes:
-  - `本次先完成代码迁移与门禁扫描，截图基线尚未补齐。`
+  - `本轮交付以代码迁移完成 + typecheck 通过 + 门禁扫描清零（组件层）为准。`
 
 ---
 
@@ -98,8 +102,7 @@
 
 | Time | Type | Description | Owner | Mitigation | Status |
 |---|---|---|---|---|---|
-| `2026-03-07 02:51 CST` | `risk` | `未建立截图基线，后续视觉回归证据不完整` | `codex` | `下一原子任务前先补 6 个关键页面基线截图` | `open` |
-| `2026-03-07 02:54 CST` | `risk` | `P2/P3 旧变量引用量高（158 命中），存在“两不像”风险` | `codex` | `按组件分批迁移并在每批后跑扫描` | `open` |
+| `2026-03-07 03:48 CST` | `risk` | `视觉截图证据尚未沉淀到磁盘` | `codex` | `后续在可视化回归环节补 6 个关键页面截图` | `open` |
 
 ---
 
@@ -107,9 +110,9 @@
 
 > 新会话只看这 3 行即可继续执行。
 
-1. `进入 P2 第二批：迁移 Markdown + ActivityTree + ToolActivityRow 到新 token/排版语法。`
-2. `验证命令：npm run typecheck && rg -n "var\(--bg-|var\(--text-|var\(--border-" apps/electron/src/renderer/components/chat/{markdown/Markdown.tsx,ActivityTree.tsx,ToolActivityRow.tsx}`
-3. `完成标准：上述 3 文件无旧变量引用，并通过聊天区手工回归。`
+1. `执行视觉回归截图：主界面 / 会话 / 聊天 / 输入 / Artifact / Settings。`
+2. `验证命令：npm run typecheck && rg -n "var\(--bg-|var\(--text-|var\(--border-" apps/electron/src/renderer/components apps/electron/src/renderer/pages && rg -n "bg-white|border-r|shadow-sm" apps/electron/src/renderer/components apps/electron/src/renderer/pages`
+3. `完成标准：截图落盘，门禁扫描维持 0 命中（组件层）。`
 
 ---
 
