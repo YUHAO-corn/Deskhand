@@ -1,12 +1,3 @@
-/**
- * Root App component
- *
- * Handles:
- * - App state (loading → onboarding → ready)
- * - AuthGuard for authentication
- * - Layout with TitleBar, SessionSidebar, ChatArea, ArtifactPanel
- */
-
 import { useState, useEffect } from 'react';
 import { Provider, useAtom, useSetAtom } from 'jotai';
 import type { SetupNeeds } from '@deskhand/core';
@@ -43,19 +34,15 @@ function AppContent() {
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Load sessions from disk
         const metas = await window.electronAPI.listSessions();
 
         if (metas.length > 0) {
-          // Populate atoms with existing sessions
           const metaMap = new Map(metas.map((m) => [m.id, m]));
           const ids = metas.map((m) => m.id);
           setSessionMetaMap(metaMap);
           setSessionIds(ids);
-          // Select the most recent session
           setActiveSessionId(ids[0]!);
         } else {
-          // No existing sessions — create an in-memory session
           const newId = generateSessionId();
           const now = Date.now();
           setSessionMetaMap(new Map([[newId, { id: newId, createdAt: now }]]));
@@ -64,13 +51,11 @@ function AppContent() {
           setMemoryOnlySessions(new Set([newId]));
         }
 
-        // Restore last working directory from config
         const config = await window.electronAPI.getConfig();
         if (config?.lastWorkingDirectory) {
           setWorkingDirectory(config.lastWorkingDirectory);
         }
 
-        // Load skills from disk
         const skills = await window.electronAPI.loadSkills();
         setSkills(skills);
 
@@ -91,10 +76,8 @@ function AppContent() {
     initialize();
   }, [setActiveSessionId, setWorkingDirectory, setSkills, setSessionMetaMap, setSessionIds, setMemoryOnlySessions]);
 
-  // Global listener for non-active session events (persistence + unread marking)
   useBackgroundSessionEvents();
 
-  // Listen for session list refresh events (e.g., after insight pipeline creates a session)
   useEffect(() => {
     const unsubscribe = window.electronAPI.onSessionsRefresh(async () => {
       const metas = await window.electronAPI.listSessions();
@@ -106,36 +89,34 @@ function AppContent() {
     return unsubscribe;
   }, [setSessionMetaMap, setSessionIds]);
 
-  // Loading state
   if (appState === 'loading') {
     return (
-      <div className="flex items-center justify-center h-screen bg-[var(--bg-primary)] text-[var(--text-muted)]">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-[var(--border-color)] border-t-[var(--accent-color)] rounded-full mx-auto mb-4" />
-          <p>Loading...</p>
+      <div className="flex h-screen items-center justify-center bg-[var(--color-surface-canvas)] text-[var(--color-text-muted)]">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-10 py-8 text-center shadow-[var(--elevation-1)]">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-line-soft)] border-t-[var(--color-accent)]" />
+          <p className="font-display text-[22px] text-[var(--color-text-primary)]">Loading Deskhand</p>
         </div>
       </div>
     );
   }
 
-  // Onboarding state (needs API key)
   if (appState === 'onboarding' && setupNeeds?.needsAuth) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <div className="w-full max-w-md p-8">
-          <h1 className="text-2xl font-bold mb-6">Welcome to Deskhand</h1>
-          <p className="text-[var(--text-secondary)] mb-6">
-            Enter your Anthropic API key to get started.
+      <div className="flex h-screen items-center justify-center bg-[var(--color-surface-canvas)] px-6">
+        <div className="w-full max-w-[520px] rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] p-8 shadow-[var(--elevation-2)]">
+          <p className="font-display text-[32px] text-[var(--color-text-primary)]">Welcome to Deskhand</p>
+          <p className="mt-3 text-[var(--font-size-base)] text-[var(--color-text-secondary)]">
+            Add your Anthropic API key to unlock the editorial command center.
           </p>
-          <div className="space-y-4">
+          <div className="mt-6 space-y-4">
             <input
               type="password"
               placeholder="sk-ant-..."
-              className="w-full px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-color)]"
+              className="w-full rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] px-4 py-2.5 text-[var(--font-size-base)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] outline-none focus:border-[var(--color-accent)]"
             />
             <button
               onClick={() => setAppState('ready')}
-              className="w-full px-4 py-2 bg-[var(--accent-color)] hover:opacity-90 rounded-lg font-medium text-white transition-opacity"
+              className="w-full rounded-[var(--radius-pill)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 py-2.5 text-[var(--font-size-base)] font-medium text-[var(--color-surface-elevated)] transition-colors hover:bg-[var(--color-accent-strong)]"
             >
               Continue
             </button>
@@ -145,16 +126,14 @@ function AppContent() {
     );
   }
 
-  // Ready state - main app with full layout
   return (
-    <div className="w-full h-screen bg-[var(--bg-primary)] flex flex-col overflow-hidden">
+    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-[var(--color-surface-canvas)]">
       <TitleBar />
-      <div className="main-content flex-1 flex overflow-hidden relative">
+      <div className="main-content relative z-10 flex flex-1 overflow-hidden">
         <SessionSidebar />
         <ChatArea />
         <ArtifactPanel />
       </div>
-      {/* Settings overlay */}
       {settingsOpen && <SettingsPage />}
     </div>
   );

@@ -1,16 +1,3 @@
-/**
- * 会话侧边栏
- *
- * 📐 SPEC: docs/SPEC_SessionSidebar.md
- * 🎨 原型: deskhand-prototype/src/components/SessionSidebar.tsx
- *
- * 职责：
- * - 显示会话列表（按时间排序）
- * - 切换当前会话
- * - 会话操作菜单（Rename / Archive / Delete）
- * - 提供设置入口
- */
-
 import { useState, useRef, useEffect } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import {
@@ -31,22 +18,16 @@ export function SessionSidebar() {
   const [sessionIds, setSessionIds] = useAtom(sessionIdsAtom);
   const setMemoryOnlySessions = useSetAtom(memoryOnlySessionsAtom);
 
-  // Menu state: which session's menu is open
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  // Rename state: which session is being renamed
   const [renamingId, setRenamingId] = useState<string | null>(null);
-  // Delete confirmation
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const sessions: SessionMeta[] = sessionIds
     .map((id) => sessionMetaMap.get(id))
     .filter((s): s is SessionMeta => s != null && !s.hidden);
 
-  // ─── Actions ───
-
   const handleSessionClick = (sessionId: string) => {
     setActiveSessionId(sessionId);
-    // Clear unread indicator
     const meta = sessionMetaMap.get(sessionId);
     if (meta?.hasUnread) {
       setSessionMetaMap((prev) => {
@@ -62,27 +43,24 @@ export function SessionSidebar() {
   const handleRename = async (sessionId: string, newName: string) => {
     setRenamingId(null);
     if (!newName.trim()) return;
-    // Update atom
     setSessionMetaMap((prev) => {
       const next = new Map(prev);
       const existing = next.get(sessionId);
       if (existing) next.set(sessionId, { ...existing, name: newName.trim() });
       return next;
     });
-    // Persist
     await window.electronAPI?.updateSessionMeta(sessionId, { name: newName.trim() });
   };
 
   const handleArchive = async (sessionId: string) => {
     setMenuOpenId(null);
-    // Update atom
     setSessionMetaMap((prev) => {
       const next = new Map(prev);
       const existing = next.get(sessionId);
       if (existing) next.set(sessionId, { ...existing, hidden: true });
       return next;
     });
-    // If archived session was active, switch to next
+
     if (activeSessionId === sessionId) {
       const remaining = sessionIds.filter((id) => {
         if (id === sessionId) return false;
@@ -91,61 +69,55 @@ export function SessionSidebar() {
       });
       setActiveSessionId(remaining[0] ?? null);
     }
-    // Persist
+
     await window.electronAPI?.updateSessionMeta(sessionId, { hidden: true });
   };
 
   const handleDelete = async (sessionId: string) => {
     setDeletingId(null);
     setMenuOpenId(null);
-    // Remove from atoms
+
     setSessionIds((prev) => prev.filter((id) => id !== sessionId));
     setSessionMetaMap((prev) => {
       const next = new Map(prev);
       next.delete(sessionId);
       return next;
     });
-    // If deleted session was active, switch to next
+
     if (activeSessionId === sessionId) {
       const remaining = sessionIds.filter((id) => id !== sessionId);
       setActiveSessionId(remaining[0] ?? null);
     }
-    // Remove from memory-only if applicable
+
     setMemoryOnlySessions((prev) => {
       const next = new Set(prev);
       next.delete(sessionId);
       return next;
     });
-    // Delete from disk
+
     await window.electronAPI?.deleteSession(sessionId);
   };
 
   return (
     <aside
-      className={`
-        flex-shrink-0 overflow-hidden
-        transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-        relative z-10
-        ${isOpen ? 'w-[calc(var(--sidebar-width)+16px)] min-w-[calc(var(--sidebar-width)+16px)]' : 'w-0 min-w-0'}
-      `}
+      className={[
+        'relative z-10 flex-shrink-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+        isOpen ? 'w-[calc(var(--sidebar-width)+20px)] min-w-[calc(var(--sidebar-width)+20px)]' : 'w-0 min-w-0',
+      ].join(' ')}
     >
-      <div className="
-        w-[var(--sidebar-width)] h-[calc(100%-16px)]
-        m-2 ml-2
-        bg-[var(--bg-sidebar)] rounded-2xl
-        shadow-[0_2px_16px_rgba(0,0,0,0.06)]
-        flex flex-col pt-2 overflow-hidden
-      ">
-        {/* 会话列表 */}
-        <div className="flex-1 overflow-y-auto px-2">
+      <div className="m-2.5 flex h-[calc(100%-20px)] w-[var(--sidebar-width)] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] shadow-[var(--elevation-2)]">
+        <div className="border-b border-[var(--color-line-soft)] px-4 py-3">
+          <p className="font-display text-[12px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Session Ledger</p>
+          <p className="mt-1 text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">
+            {sessions.length} active {sessions.length === 1 ? 'session' : 'sessions'}
+          </p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-2 py-2.5">
           {sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-4 text-center">
-              <p className="text-[var(--font-size-sm)] text-[var(--text-muted)]">
-                No conversations yet
-              </p>
-              <p className="text-[var(--font-size-xs)] text-[var(--text-muted)] mt-1 opacity-60">
-                Start a new conversation to get going
-              </p>
+            <div className="flex h-full flex-col items-center justify-center px-5 text-center">
+              <p className="font-display text-[18px] text-[var(--color-text-secondary)]">No Brief Yet</p>
+              <p className="mt-2 text-[var(--font-size-sm)] text-[var(--color-text-muted)]">Create a new session to start your first decision trail.</p>
             </div>
           ) : (
             sessions.map((session) => (
@@ -159,11 +131,17 @@ export function SessionSidebar() {
                 onClick={() => handleSessionClick(session.id)}
                 onMenuToggle={() => setMenuOpenId(menuOpenId === session.id ? null : session.id)}
                 onMenuClose={() => setMenuOpenId(null)}
-                onRenameStart={() => { setMenuOpenId(null); setRenamingId(session.id); }}
+                onRenameStart={() => {
+                  setMenuOpenId(null);
+                  setRenamingId(session.id);
+                }}
                 onRenameConfirm={(name) => handleRename(session.id, name)}
                 onRenameCancel={() => setRenamingId(null)}
                 onArchive={() => handleArchive(session.id)}
-                onDeleteStart={() => { setMenuOpenId(null); setDeletingId(session.id); }}
+                onDeleteStart={() => {
+                  setMenuOpenId(null);
+                  setDeletingId(session.id);
+                }}
                 onDeleteConfirm={() => handleDelete(session.id)}
                 onDeleteCancel={() => setDeletingId(null)}
               />
@@ -171,48 +149,30 @@ export function SessionSidebar() {
           )}
         </div>
 
-        {/* 底部操作栏 */}
-        <div className="px-3 py-2.5 flex items-center justify-between">
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="
-              text-[16px] text-[var(--text-muted)]
-              px-2 py-1 rounded-[var(--radius-sm)]
-              tracking-[1.5px]
-              hover:bg-[var(--hover-bg)] hover:text-[var(--text-secondary)]
-              transition-colors duration-[var(--transition-fast)]
-              border-none bg-transparent cursor-pointer
-            "
-          >
-            ···
-          </button>
-          <button
-            onClick={() => {}}
-            className="
-              text-[var(--font-size-xs)] text-[var(--text-secondary)]
-              px-3 py-1.5 rounded-[var(--radius-md)]
-              hover:bg-[var(--hover-bg)]
-              transition-colors duration-[var(--transition-fast)]
-              border-none bg-transparent cursor-pointer
-              font-medium flex items-center gap-1
-            "
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="16 12 12 8 8 12" />
-              <line x1="12" y1="16" x2="12" y2="8" />
-            </svg>
-            Update
-          </button>
+        <div className="border-t border-[var(--color-line-soft)] px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <GhostPillButton onClick={() => setSettingsOpen(true)} title="Settings">
+              <svg className="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              Settings
+            </GhostPillButton>
+
+            <GhostPillButton onClick={() => {}} title="Update">
+              <svg className="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              Update
+            </GhostPillButton>
+          </div>
         </div>
       </div>
     </aside>
   );
 }
-
-// ============================================
-// SessionItem
-// ============================================
 
 interface SessionItemProps {
   session: SessionMeta;
@@ -233,12 +193,23 @@ interface SessionItemProps {
 }
 
 function SessionItem({
-  session, isActive, isRenaming, isMenuOpen, isDeleting,
-  onClick, onMenuToggle, onMenuClose,
-  onRenameStart, onRenameConfirm, onRenameCancel,
-  onArchive, onDeleteStart, onDeleteConfirm, onDeleteCancel,
+  session,
+  isActive,
+  isRenaming,
+  isMenuOpen,
+  isDeleting,
+  onClick,
+  onMenuToggle,
+  onMenuClose,
+  onRenameStart,
+  onRenameConfirm,
+  onRenameCancel,
+  onArchive,
+  onDeleteStart,
+  onDeleteConfirm,
+  onDeleteCancel,
 }: SessionItemProps) {
-  const displayName = session.name || session.preview || 'New Chat';
+  const displayName = session.name || session.preview || 'Untitled Decision';
   const timeAgo = formatRelativeTime(session.lastMessageAt ?? session.createdAt);
   const [renameValue, setRenameValue] = useState(displayName);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -250,21 +221,20 @@ function SessionItem({
     }
   }, [isRenaming, session.name, session.preview]);
 
-  // Delete confirmation overlay
   if (isDeleting) {
     return (
-      <div className="rounded-[var(--radius-md)] px-[14px] py-[10px] mb-1 bg-red-50 border border-red-200">
-        <p className="text-[var(--font-size-xs)] text-red-700 mb-2">Delete this conversation?</p>
-        <div className="flex gap-2">
+      <div className="mb-1.5 rounded-[var(--radius-control)] border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] px-3 py-2.5">
+        <p className="text-[var(--font-size-xs)] font-medium text-[var(--color-danger)]">Delete this session permanently?</p>
+        <div className="mt-2 flex gap-2">
           <button
             onClick={onDeleteConfirm}
-            className="text-[var(--font-size-xs)] px-2.5 py-1 rounded bg-red-500 text-white border-none cursor-pointer hover:bg-red-600"
+            className="rounded-[var(--radius-pill)] border border-[var(--color-danger)] bg-[var(--color-danger)] px-2.5 py-1 text-[var(--font-size-xs)] font-medium text-[var(--color-surface-elevated)] transition-colors hover:bg-[var(--color-accent-strong)]"
           >
             Delete
           </button>
           <button
             onClick={onDeleteCancel}
-            className="text-[var(--font-size-xs)] px-2.5 py-1 rounded bg-transparent text-[var(--text-secondary)] border border-[var(--border-color)] cursor-pointer hover:bg-[var(--hover-bg)]"
+            className="rounded-[var(--radius-pill)] border border-[var(--color-line-strong)] bg-[var(--color-surface-elevated)] px-2.5 py-1 text-[var(--font-size-xs)] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--hover-bg)]"
           >
             Cancel
           </button>
@@ -273,10 +243,9 @@ function SessionItem({
     );
   }
 
-  // Rename mode
   if (isRenaming) {
     return (
-      <div className="rounded-[var(--radius-md)] px-[14px] py-[8px] mb-1 bg-[var(--selected-bg)]">
+      <div className="mb-1.5 rounded-[var(--radius-control)] border border-[var(--color-accent)] bg-[var(--color-accent-soft)] px-3 py-2">
         <input
           ref={renameInputRef}
           value={renameValue}
@@ -286,11 +255,7 @@ function SessionItem({
             if (e.key === 'Escape') onRenameCancel();
           }}
           onBlur={() => onRenameConfirm(renameValue)}
-          className="
-            w-full bg-white border border-[var(--border-color)] rounded px-2 py-1
-            text-[var(--font-size-sm)] text-[var(--text-primary)]
-            outline-none focus:border-[var(--accent-color)]
-          "
+          className="w-full rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-2.5 py-1.5 text-[var(--font-size-sm)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
         />
       </div>
     );
@@ -299,57 +264,44 @@ function SessionItem({
   return (
     <div
       onClick={onClick}
-      className={`
-        group relative
-        rounded-[var(--radius-md)] cursor-pointer
-        text-[var(--font-size-sm)] font-medium
-        px-[14px] py-[10px] mb-1
-        transition-colors duration-[var(--transition-fast)]
-        flex items-center justify-between gap-2
-        ${isActive
-          ? 'bg-[var(--selected-bg)] text-[var(--text-primary)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
-          : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]'
-        }
-      `}
+      className={[
+        'group relative mb-1.5 cursor-pointer rounded-[var(--radius-control)] border px-3 py-2.5 transition-all',
+        'duration-200',
+        isActive
+          ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-[var(--elevation-1)]'
+          : 'border-transparent bg-[var(--color-surface-elevated)] hover:-translate-y-px hover:border-[var(--color-line-soft)] hover:bg-[var(--hover-bg)]',
+      ].join(' ')}
     >
-      {/* Unread indicator */}
-      {session.hasUnread && (
-        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-      )}
-      <span className="whitespace-nowrap overflow-hidden text-ellipsis flex-1">
-        {displayName}
-      </span>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">{displayName}</p>
+          <div className="mt-1 flex items-center gap-1.5 text-[var(--font-size-xs)] text-[var(--color-text-muted)]">
+            <span>{timeAgo || 'just now'}</span>
+            {session.hasUnread && <span className="inline-flex rounded-[var(--radius-pill)] bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-elevated)]">New</span>}
+          </div>
+        </div>
 
-      {/* Time / ··· button area */}
-      <span className="flex-shrink-0 relative">
-        {/* Time (hidden when menu button visible on hover) */}
-        {timeAgo && (
-          <span className="text-[var(--font-size-xs)] text-[var(--text-muted)] group-hover:invisible">
-            {timeAgo}
-          </span>
-        )}
-        {/* ··· button (visible on hover) */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onMenuToggle(); }}
-          className={`
-            absolute right-0 top-1/2 -translate-y-1/2
-            text-[14px] text-[var(--text-muted)] tracking-[1px]
-            px-1 py-0.5 rounded
-            border-none bg-transparent cursor-pointer
-            hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]
-            transition-colors
-            ${isMenuOpen ? 'visible' : 'invisible group-hover:visible'}
-          `}
-        >
-          ···
-        </button>
-      </span>
+        <span className="relative flex-shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMenuToggle();
+            }}
+            className={[
+              'rounded-[var(--radius-pill)] border border-transparent px-1.5 py-0.5 text-[14px] text-[var(--color-text-muted)] transition-colors',
+              'hover:border-[var(--color-line-soft)] hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]',
+              isMenuOpen ? 'visible border-[var(--color-line-soft)] bg-[var(--hover-bg)]' : 'invisible group-hover:visible',
+            ].join(' ')}
+          >
+            ···
+          </button>
+        </span>
+      </div>
 
-      {/* Dropdown menu */}
       {isMenuOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); onMenuClose(); }} />
-          <div className="absolute right-2 top-full z-50 mt-1 py-1 bg-white rounded-lg shadow-lg border border-[var(--border-color)] min-w-[140px]">
+          <div className="absolute right-1 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] py-1 shadow-[var(--elevation-2)]">
             <MenuItem onClick={onRenameStart}>
               <PencilIcon /> Rename
             </MenuItem>
@@ -366,24 +318,47 @@ function SessionItem({
   );
 }
 
-// ============================================
-// Menu helpers
-// ============================================
-
-function MenuItem({ children, onClick, danger }: { children: React.ReactNode; onClick: () => void; danger?: boolean }) {
+function GhostPillButton({
+  children,
+  onClick,
+  title,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  title?: string;
+}) {
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      className={`
-        w-full text-left px-3 py-1.5
-        text-[var(--font-size-sm)] flex items-center gap-2
-        border-none bg-transparent cursor-pointer
-        transition-colors
-        ${danger
-          ? 'text-red-500 hover:bg-red-50'
-          : 'text-[var(--text-secondary)] hover:bg-[var(--hover-bg)]'
-        }
-      `}
+      onClick={onClick}
+      title={title}
+      className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-2.5 py-1.5 text-[var(--font-size-xs)] font-medium text-[var(--color-text-secondary)] transition-all duration-200 hover:-translate-y-px hover:border-[var(--color-line-strong)] hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]"
+    >
+      {children}
+    </button>
+  );
+}
+
+function MenuItem({
+  children,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={[
+        'flex w-full items-center gap-2 border-none bg-transparent px-3 py-1.5 text-left text-[var(--font-size-sm)] transition-colors',
+        danger
+          ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)]'
+          : 'text-[var(--color-text-secondary)] hover:bg-[var(--hover-bg)]',
+      ].join(' ')}
     >
       {children}
     </button>
@@ -392,7 +367,7 @@ function MenuItem({ children, onClick, danger }: { children: React.ReactNode; on
 
 function PencilIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
     </svg>
   );
@@ -400,7 +375,7 @@ function PencilIcon() {
 
 function ArchiveIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <polyline points="21 8 21 21 3 21 3 8" />
       <rect x="1" y="3" width="22" height="5" />
       <line x1="10" y1="12" x2="14" y2="12" />
@@ -410,14 +385,13 @@ function ArchiveIcon() {
 
 function TrashIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   );
 }
 
-/** Format timestamp to relative time (2m / 1h / 3d) */
 function formatRelativeTime(timestamp?: number): string {
   if (!timestamp) return '';
   const diff = Date.now() - timestamp;

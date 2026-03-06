@@ -1,19 +1,5 @@
-/**
- * 对话区域
- *
- * 📐 SPEC: docs/SPEC_ChatArea.md
- * 🎨 原型: deskhand-prototype/src/components/ChatArea.tsx
- *
- * 职责：
- * - 渲染会话中的所有消息（用户、AI、工具、系统）
- * - 处理流式响应的实时更新
- * - 展示工具调用过程和结果
- * - 显示权限请求并收集用户响应
- * - 提供会话控制操作（停止、重新生成）
- */
-
 import { useMemo, useEffect, useRef } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
+import { useAtom } from 'jotai';
 import {
   activeSessionIdAtom,
   artifactPanelOpenAtom,
@@ -22,42 +8,36 @@ import {
   loadedSessionsAtom,
 } from '../../atoms/sessions';
 import { groupMessagesByTurn, type Turn, type AssistantTurn } from './turn-utils';
-
-/** Get unique key for a turn */
-function getTurnKey(turn: Turn): string {
-  if (turn.type === 'assistant') {
-    return (turn as AssistantTurn).turnId;
-  }
-  return turn.message.id;
-}
 import { useAgentEvents } from '../../hooks/useAgentEvents';
 import { InputToolbar } from '../input/InputToolbar';
 import { UserMessageBubble } from './UserMessageBubble';
 import { TurnCard } from './TurnCard';
 import { ProcessingIndicator } from './ProcessingIndicator';
 
+function getTurnKey(turn: Turn): string {
+  if (turn.type === 'assistant') {
+    return (turn as AssistantTurn).turnId;
+  }
+  return turn.message.id;
+}
+
 export function ChatArea() {
   const [activeSessionId] = useAtom(activeSessionIdAtom);
   const [artifactPanelOpen, setArtifactPanelOpen] = useAtom(artifactPanelOpenAtom);
 
-  // 订阅 Agent 事件
   useAgentEvents({
     sessionId: activeSessionId ?? '',
     enabled: !!activeSessionId,
   });
 
-  // 获取消息列表 - 使用固定的 atom key 避免 hooks 规则问题
   const messagesAtom = sessionMessagesFamily(activeSessionId ?? '__empty__');
   const [messages, setMessages] = useAtom(messagesAtom);
 
-  // 获取处理状态
   const processingAtom = sessionProcessingFamily(activeSessionId ?? '__empty__');
   const [isProcessing] = useAtom(processingAtom);
 
-  // Lazy loading state
   const [loadedSessions, setLoadedSessions] = useAtom(loadedSessionsAtom);
 
-  // Lazy load messages when switching to an existing session
   useEffect(() => {
     if (!activeSessionId) return;
     if (loadedSessions.has(activeSessionId)) return;
@@ -66,7 +46,6 @@ export function ChatArea() {
       try {
         const stored = await window.electronAPI?.getSession(activeSessionId);
         if (stored?.messages?.length) {
-          // Convert StoredMessage[] to Message[]
           const msgs = stored.messages.map((sm) => ({
             id: sm.id,
             role: sm.type,
@@ -93,31 +72,18 @@ export function ChatArea() {
       } catch (err) {
         console.error('[ChatArea] Failed to load session messages:', err);
       }
-      // Mark as loaded regardless (avoid retry loops)
       setLoadedSessions((prev) => new Set([...prev, activeSessionId]));
     };
 
     loadMessages();
   }, [activeSessionId, loadedSessions, setLoadedSessions, setMessages]);
 
-  // ============================================
-  // 打开 Artifact 面板
-  // ============================================
-  const toggleArtifactPanel = () => {
-    setArtifactPanelOpen(!artifactPanelOpen);
-  };
-
-  // 将消息分组为 Turn
   const turns = useMemo(() => groupMessagesByTurn(messages), [messages]);
   const isEmpty = turns.length === 0;
 
-  // 判断是否需要显示等待首个响应的 ProcessingIndicator
-  // 条件：正在处理 + 最后一个 turn 不是 AssistantTurn
-  // 如果已有 AssistantTurn，则由 TurnCard 内部处理
   const lastTurn = turns[turns.length - 1];
   const showPendingThinking = isProcessing && lastTurn?.type !== 'assistant';
 
-  // 自动滚动到底部
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (scrollRef.current) {
@@ -126,23 +92,22 @@ export function ChatArea() {
   }, [messages]);
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--bg-primary)] relative" style={{ minWidth: 400 }}>
-      {/* ============================================
-          区域：消息列表
-          功能：渲染所有 Turn（用户消息 + AI 回复）
-          数据：turns 数组（由 groupMessagesByTurn 生成）
-          ============================================ */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+    <div className="relative flex min-w-[400px] flex-1 flex-col overflow-hidden bg-[var(--color-surface-canvas)]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-[14%] top-[-22%] h-[64%] w-[66%] rounded-full bg-[radial-gradient(circle,_var(--color-accent-soft)_0%,_transparent_72%)]" />
+        <div className="absolute right-[-20%] top-[8%] h-[48%] w-[60%] rounded-full bg-[radial-gradient(circle,_var(--color-surface-elevated)_0%,_transparent_68%)]" />
+      </div>
+
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-5">
         {isEmpty ? (
-          // 空状态
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-[var(--text-muted)] text-[var(--font-size-base)]">
-              <p>Start a conversation...</p>
+          <div className="flex h-full items-center justify-center">
+            <div className="max-w-[440px] rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[var(--elevation-1)]">
+              <p className="font-display text-[26px] text-[var(--color-text-primary)]">Decision Desk</p>
+              <p className="mt-2 text-[var(--font-size-base)] text-[var(--color-text-muted)]">Start a conversation and this workspace will build your decision trail step by step.</p>
             </div>
           </div>
         ) : (
-          // 消息列表
-          <div className="max-w-3xl mx-auto py-6 px-4">
+          <div className="mx-auto max-w-[880px] py-8">
             {turns.map((turn, index) => (
               <TurnRenderer
                 key={getTurnKey(turn)}
@@ -150,7 +115,6 @@ export function ChatArea() {
                 prevTurnType={index > 0 ? turns[index - 1].type : undefined}
               />
             ))}
-            {/* 等待首个响应时的 ProcessingIndicator */}
             {showPendingThinking && (
               <div className="mb-2">
                 <ProcessingIndicator />
@@ -160,47 +124,25 @@ export function ChatArea() {
         )}
       </div>
 
-      {/* ============================================
-          区域：右侧工具栏
-          功能：切换 Artifact 面板
-          状态：Artifact 面板打开时隐藏
-          ============================================ */}
       <div
-        className={`
-          absolute right-4 top-1/2 -translate-y-1/2
-          flex flex-col gap-[1px]
-          bg-[var(--bg-secondary)] rounded-[10px] p-1.5
-          shadow-[0_2px_8px_rgba(0,0,0,0.08)]
-          border border-[var(--border-light)]
-          z-40
-          transition-opacity duration-[var(--transition-fast)]
-          ${artifactPanelOpen ? 'opacity-0 pointer-events-none' : ''}
-        `}
+        className={[
+          'absolute right-5 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-1.5 rounded-[var(--radius-card)] border border-[var(--color-line-soft)]',
+          'bg-[var(--color-surface-panel)] p-2 shadow-[var(--elevation-1)] transition-opacity duration-200',
+          artifactPanelOpen ? 'pointer-events-none opacity-0' : 'opacity-100',
+        ].join(' ')}
       >
-        <RightToolbarButton
-          onClick={toggleArtifactPanel}
-          title="Artifacts"
-        >
-          <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <RightToolbarButton onClick={() => setArtifactPanelOpen(!artifactPanelOpen)} title="Artifacts">
+          <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
         </RightToolbarButton>
       </div>
 
-      {/* ============================================
-          区域：输入区域
-          功能：消息输入、附件、发送
-          组件：InputToolbar
-          ============================================ */}
       <InputToolbar />
     </div>
   );
 }
-
-// ============================================
-// TurnRenderer - 根据 Turn 类型渲染不同组件
-// ============================================
 
 interface TurnRendererProps {
   turn: Turn;
@@ -208,9 +150,8 @@ interface TurnRendererProps {
 }
 
 function TurnRenderer({ turn, prevTurnType }: TurnRendererProps) {
-  // 连续 assistant turn 用小间距，角色切换用大间距
   const isConsecutiveAssistant = turn.type === 'assistant' && prevTurnType === 'assistant';
-  const spacing = isConsecutiveAssistant ? 'mb-2' : 'mb-6';
+  const spacing = isConsecutiveAssistant ? 'mb-3' : 'mb-7';
 
   switch (turn.type) {
     case 'user':
@@ -230,7 +171,7 @@ function TurnRenderer({ turn, prevTurnType }: TurnRendererProps) {
     case 'system':
       return (
         <div className={spacing}>
-          <div className="text-center text-[var(--text-muted)] text-sm py-2">
+          <div className="py-2 text-center text-[var(--font-size-sm)] text-[var(--color-text-muted)]">
             {turn.message.content}
           </div>
         </div>
@@ -241,30 +182,20 @@ function TurnRenderer({ turn, prevTurnType }: TurnRendererProps) {
   }
 }
 
-// ============================================
-// RightToolbarButton - 右侧工具栏按钮
-// ============================================
-
-interface RightToolbarButtonProps {
+function RightToolbarButton({
+  children,
+  onClick,
+  title,
+}: {
   children: React.ReactNode;
   onClick: () => void;
   title?: string;
-}
-
-function RightToolbarButton({ children, onClick, title }: RightToolbarButtonProps) {
+}) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className="
-        w-[36px] h-[36px]
-        border-none bg-transparent
-        rounded-[var(--radius-md)] cursor-pointer
-        flex items-center justify-center
-        text-[var(--text-secondary)]
-        transition-colors duration-[var(--transition-fast)]
-        hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]
-      "
+      className="flex h-[38px] w-[38px] items-center justify-center rounded-[var(--radius-pill)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] transition-all duration-200 hover:-translate-y-px hover:border-[var(--color-line-strong)] hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]"
     >
       {children}
     </button>
