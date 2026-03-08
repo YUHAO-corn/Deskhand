@@ -102,8 +102,13 @@ export function ChatArea() {
         {isEmpty ? (
           <div className="flex h-full items-center justify-center">
             <div className="max-w-[440px] rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[var(--elevation-1)]">
-              <p className="font-display text-[26px] text-[var(--color-text-primary)]">Decision Desk</p>
-              <p className="mt-2 text-[var(--font-size-base)] text-[var(--color-text-muted)]">Start a conversation and this workspace will build your decision trail step by step.</p>
+              <p className="font-display text-[26px] text-[var(--color-text-primary)]">New Conversation</p>
+              <p className="mt-2 text-[var(--font-size-base)] text-[var(--color-text-muted)]">
+                Ask a question, describe a task, or paste context to get started.
+              </p>
+              <p className="mt-1 text-[var(--font-size-sm)] text-[var(--color-text-muted)] opacity-80">
+                Generated files will appear in Artifacts when they are created.
+              </p>
             </div>
           </div>
         ) : (
