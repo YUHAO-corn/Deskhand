@@ -10,7 +10,7 @@
 
 - Owner: `codex`
 - Start Date: `2026-03-07`
-- Last Updated: `2026-03-08 23:33 CST`
+- Last Updated: `2026-03-08 23:48 CST`
 - Current Phase: `P3`
 - Current Status: `done`
 - Current Branch: `main`
@@ -54,6 +54,7 @@
 
 | Time | Commit | Phase | Scope | Files | Verification | Notes |
 |---|---|---|---|---|---|---|
+| `2026-03-08 23:48 CST` | `921f9a0` | `P3` | `sidebar + artifact hotfix` | `2` | `typecheck` | `移除无效 Update 按钮；修复新会话下 Artifact 仍显示旧会话内容的问题` |
 | `2026-03-08 23:33 CST` | `52e914d` | `P3` | `session sidebar hotfix` | `1` | `typecheck` | `修复会话菜单交互链路（outside-click 关闭 + 菜单按钮常显），恢复删除会话入口` |
 | `2026-03-07 03:47 CST` | `6082c3b` | `P3` | `artifact + auth + settings` | `4` | `typecheck + 3 scans` | `ArtifactPanel、AuthForm、AuthGuard、SettingsPage 完成 Column token 迁移` |
 | `2026-03-07 03:46 CST` | `7757455` | `P2` | `input system` | `2` | `typecheck + 3 scans` | `InputToolbar、InputPopups 完成统一控件语法和主题迁移` |
