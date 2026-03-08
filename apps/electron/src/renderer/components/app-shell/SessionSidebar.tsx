@@ -27,6 +27,7 @@ export function SessionSidebar() {
     .filter((s): s is SessionMeta => s != null && !s.hidden);
 
   const handleSessionClick = (sessionId: string) => {
+    setMenuOpenId(null);
     setActiveSessionId(sessionId);
     const meta = sessionMetaMap.get(sessionId);
     if (meta?.hasUnread) {
@@ -39,6 +40,19 @@ export function SessionSidebar() {
       window.electronAPI?.updateSessionMeta(sessionId, { hasUnread: false });
     }
   };
+
+  // Close session menu on outside click
+  useEffect(() => {
+    if (!menuOpenId) return;
+    const handleDocumentMouseDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('[data-session-menu]')) {
+        setMenuOpenId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+    return () => document.removeEventListener('mousedown', handleDocumentMouseDown);
+  }, [menuOpenId]);
 
   const handleRename = async (sessionId: string, newName: string) => {
     setRenamingId(null);
@@ -283,14 +297,16 @@ function SessionItem({
 
         <span className="relative flex-shrink-0">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onMenuToggle();
             }}
+            data-session-menu
             className={[
               'rounded-[var(--radius-pill)] border border-transparent px-1.5 py-0.5 text-[14px] text-[var(--color-text-muted)] transition-colors',
               'hover:border-[var(--color-line-soft)] hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]',
-              isMenuOpen ? 'visible border-[var(--color-line-soft)] bg-[var(--hover-bg)]' : 'invisible group-hover:visible',
+              isMenuOpen ? 'border-[var(--color-line-soft)] bg-[var(--hover-bg)]' : '',
             ].join(' ')}
           >
             ···
@@ -299,20 +315,20 @@ function SessionItem({
       </div>
 
       {isMenuOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); onMenuClose(); }} />
-          <div className="absolute right-1 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] py-1 shadow-[var(--elevation-2)]">
-            <MenuItem onClick={onRenameStart}>
-              <PencilIcon /> Rename
-            </MenuItem>
-            <MenuItem onClick={onArchive}>
-              <ArchiveIcon /> Archive
-            </MenuItem>
-            <MenuItem onClick={onDeleteStart} danger>
-              <TrashIcon /> Delete
-            </MenuItem>
-          </div>
-        </>
+        <div
+          data-session-menu
+          className="absolute right-1 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] py-1 shadow-[var(--elevation-2)]"
+        >
+          <MenuItem onClick={onRenameStart}>
+            <PencilIcon /> Rename
+          </MenuItem>
+          <MenuItem onClick={onArchive}>
+            <ArchiveIcon /> Archive
+          </MenuItem>
+          <MenuItem onClick={onDeleteStart} danger>
+            <TrashIcon /> Delete
+          </MenuItem>
+        </div>
       )}
     </div>
   );
