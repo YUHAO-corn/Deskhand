@@ -281,6 +281,7 @@ function SessionItem({
       className={[
         'group relative mb-1.5 cursor-pointer rounded-[var(--radius-control)] border px-3 py-2.5 transition-all',
         'duration-200',
+        isMenuOpen || isDeleting || isRenaming ? 'z-30' : 'z-0',
         isActive
           ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-[var(--elevation-1)]'
           : 'border-transparent bg-[var(--color-surface-elevated)] hover:-translate-y-px hover:border-[var(--color-line-soft)] hover:bg-[var(--hover-bg)]',
@@ -317,7 +318,7 @@ function SessionItem({
       {isMenuOpen && (
         <div
           data-session-menu
-          className="absolute right-1 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] py-1 shadow-[var(--elevation-2)]"
+          className="absolute right-1 top-full z-[60] mt-1.5 min-w-[160px] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] py-1 shadow-[var(--elevation-2)]"
         >
           <MenuItem onClick={onRenameStart}>
             <PencilIcon /> Rename
