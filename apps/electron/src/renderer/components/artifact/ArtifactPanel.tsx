@@ -103,6 +103,26 @@ export function ArtifactPanel() {
     }
   }, [activeSessionId, sessionMetaMap, artifacts.length, setArtifacts, setSelectedArtifact]);
 
+  // Keep selected artifact scoped to current session artifacts.
+  // When switching to a session with no artifacts, clear stale selection from previous session.
+  useEffect(() => {
+    if (!activeSessionId) {
+      setSelectedArtifact(null);
+      return;
+    }
+
+    if (artifacts.length === 0) {
+      if (selectedArtifact !== null) {
+        setSelectedArtifact(null);
+      }
+      return;
+    }
+
+    if (!selectedArtifact || !artifacts.includes(selectedArtifact)) {
+      setSelectedArtifact(artifacts[artifacts.length - 1] ?? null);
+    }
+  }, [activeSessionId, artifacts, selectedArtifact, setSelectedArtifact]);
+
   // Load file content when selected artifact changes
   const loadFileContent = useCallback(async (filePath: string) => {
     const result = await window.electronAPI?.readFile(filePath);
