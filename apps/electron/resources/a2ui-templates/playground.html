@@ -5,138 +5,708 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A2UI Playground</title>
 <style>
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   :root {
-    --bg: #f5f8f7; --bg-card: #fff; --bg-muted: #eef4f2; --bg-surface: #f9fbfa;
-    --text: #1b2a2a; --text-secondary: #5a6b6b; --text-muted: #8a9a9a;
-    --accent: #10a37f; --accent-soft: #d4ede5; --accent-bg: #edf7f3;
-    --accent-hover: #0d8f6e; --accent-glow: rgba(16,163,127,0.12);
-    --border: #dce6e3; --border-light: #e8efec;
-    --radius-sm: 8px; --radius-md: 10px; --radius-lg: 14px;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-accent: 0 2px 12px rgba(16,163,127,0.2);
-    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-    --mono: 'SF Mono', ui-monospace, monospace;
-    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --a2ui-bg-canvas: #f4efe6;
+    --a2ui-bg-panel: #fff9f0;
+    --a2ui-bg-elevated: #fffdf7;
+    --a2ui-bg-soft: #f3eee3;
+    --a2ui-text-strong: #1f2522;
+    --a2ui-text-normal: #4f5a54;
+    --a2ui-text-muted: #6a746d;
+    --a2ui-line: #d6cec0;
+    --a2ui-line-strong: #c8bda9;
+    --a2ui-accent: #0b6a60;
+    --a2ui-accent-strong: #084d46;
+    --a2ui-accent-soft: #e9f6f3;
+    --a2ui-shadow-soft: 0 10px 30px rgba(31, 37, 34, 0.08);
+    --a2ui-shadow-elevated: 0 16px 40px rgba(31, 37, 34, 0.14);
+    --radius-xs: 8px;
+    --radius-sm: 12px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+    --font-display: 'Fraunces', 'Iowan Old Style', 'Times New Roman', serif;
+    --font-body: 'IBM Plex Sans', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+    --ease-out: cubic-bezier(0.2, 0.84, 0.24, 1);
   }
-  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
 
-  /* Header */
-  .header { padding: 14px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-light); animation: fadeIn 0.3s var(--ease); }
-  .header-content { display: flex; align-items: center; gap: 10px; }
-  .header-icon { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--accent-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .header-text h1 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
-  .header-text p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  body {
+    font-family: var(--font-body);
+    min-height: 100vh;
+    color: var(--a2ui-text-strong);
+    background:
+      radial-gradient(1200px 500px at 8% -12%, rgba(11, 106, 96, 0.2), transparent 55%),
+      radial-gradient(950px 450px at 92% -20%, rgba(164, 126, 59, 0.2), transparent 58%),
+      var(--a2ui-bg-canvas);
+    -webkit-font-smoothing: antialiased;
+  }
 
-  /* Layout */
-  .main { flex: 1; display: flex; overflow: hidden; }
-  .controls { width: 260px; flex-shrink: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; background: var(--bg-card); border-right: 1px solid var(--border-light); }
-  .preview-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .preview-content { flex: 1; overflow: auto; padding: 20px; background: var(--bg); }
+  .page-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    gap: 12px;
+  }
 
-  /* Presets */
-  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
-  .preset-btn { padding: 5px 12px; font-size: 12px; border-radius: 100px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; transition: all 0.2s var(--ease); font-family: var(--font); font-weight: 500; }
-  .preset-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-soft); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-  .preset-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--shadow-accent); }
+  .header {
+    background: linear-gradient(145deg, rgba(255, 253, 247, 0.9), rgba(255, 249, 240, 0.96));
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--a2ui-shadow-soft);
+    padding: 16px 18px;
+    animation: lift-in 0.35s var(--ease-out);
+  }
 
-  /* Options mode */
-  .options-grid { display: flex; flex-direction: column; gap: 6px; padding: 12px; }
-  .option-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg-card); cursor: pointer; transition: all 0.15s var(--ease); animation: fadeIn 0.25s var(--ease) both; text-align: left; }
-  .option-card:hover { border-color: var(--accent-soft); background: var(--bg-surface); }
-  .option-card.selected { border-color: var(--accent); background: var(--accent-bg); }
-  .option-text { flex: 1; min-width: 0; }
-  .option-label { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .option-desc { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .option-check { display: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); flex-shrink: 0; align-items: center; justify-content: center; }
-  .option-card.selected .option-check { display: flex; }
+  .header-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
 
-  /* Options layout: gallery left, preview right */
-  .options-layout { flex: 1; display: flex; overflow: hidden; }
-  .options-sidebar { width: 260px; flex-shrink: 0; overflow-y: auto; background: var(--bg-card); border-right: 1px solid var(--border-light); display: flex; flex-direction: column; }
-  .options-controls { padding: 12px 16px; border-top: 1px solid var(--border-light); }
+  .kicker {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--a2ui-accent);
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: var(--a2ui-text-muted);
+    line-height: 1.5;
+    margin-top: 7px;
+    max-width: 62ch;
+  }
+
+  .mode-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid var(--a2ui-line);
+    background: var(--a2ui-bg-elevated);
+    color: var(--a2ui-text-normal);
+    padding: 6px 12px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(292px, 320px) minmax(0, 1fr);
+    gap: 12px;
+    animation: lift-in 0.4s var(--ease-out) both;
+  }
+
+  .controls-panel {
+    min-height: 0;
+    overflow: auto;
+    padding: 14px;
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(255, 253, 247, 0.95), rgba(255, 249, 240, 0.92));
+    box-shadow: var(--a2ui-shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .panel-block {
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-md);
+    background: var(--a2ui-bg-elevated);
+    padding: 10px;
+  }
+
+  .block-head {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--a2ui-text-muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  .controls-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .preview-area {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stage-wrap {
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-lg);
+    background: var(--a2ui-bg-panel);
+    box-shadow: var(--a2ui-shadow-soft);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stage-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--a2ui-line);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--a2ui-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  .stage-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(11, 106, 96, 0.28);
+    background: var(--a2ui-accent-soft);
+    color: var(--a2ui-accent);
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 3px 10px;
+    font-weight: 500;
+  }
+
+  .preview-content {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 20px;
+    background:
+      linear-gradient(180deg, rgba(255, 253, 247, 0.82), rgba(255, 249, 240, 0.64));
+  }
+
+  .preview-summary {
+    max-width: 560px;
+    margin: 0 auto;
+    display: grid;
+    gap: 8px;
+  }
+
+  .preview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--a2ui-line);
+    background: var(--a2ui-bg-elevated);
+    font-size: 13px;
+    color: var(--a2ui-text-normal);
+  }
+
+  .preview-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    color: var(--a2ui-accent);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .preview-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid var(--a2ui-line);
+  }
+
+  .placeholder {
+    height: 100%;
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    color: var(--a2ui-text-muted);
+    font-size: 14px;
+  }
+
+  .prompt-bar {
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(255, 249, 240, 0.94));
+    box-shadow: var(--a2ui-shadow-soft);
+    padding: 10px;
+  }
+
+  .prompt-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--a2ui-text-muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  .prompt-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-md);
+    background: var(--a2ui-bg-elevated);
+    padding: 10px;
+  }
+
+  .prompt-text {
+    flex: 1;
+    min-height: 40px;
+    max-height: 110px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--a2ui-text-normal);
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+  }
+
+  .send-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--a2ui-accent);
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--a2ui-accent), var(--a2ui-accent-strong));
+    color: #f8fffc;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out), filter 0.18s var(--ease-out);
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(11, 106, 96, 0.28);
+    filter: brightness(1.03);
+  }
+
+  .send-btn:active { transform: translateY(0); }
+
+  .send-btn.sent {
+    border-color: #2f7b5f;
+    background: linear-gradient(180deg, #3e9675, #2f7b5f);
+    box-shadow: 0 8px 20px rgba(63, 151, 116, 0.24);
+  }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .preset-btn {
+    border: 1px solid var(--a2ui-line);
+    border-radius: 999px;
+    background: var(--a2ui-bg-soft);
+    color: var(--a2ui-text-normal);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+    font-family: var(--font-body);
+  }
+
+  .preset-btn:hover {
+    border-color: rgba(11, 106, 96, 0.4);
+    background: var(--a2ui-accent-soft);
+    color: var(--a2ui-accent);
+    transform: translateY(-1px);
+  }
+
+  .preset-btn.active {
+    border-color: var(--a2ui-accent);
+    background: var(--a2ui-accent);
+    color: #f4fffd;
+    box-shadow: 0 8px 20px rgba(11, 106, 96, 0.2);
+  }
+
+  .control-group {
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    transition: border-color 0.18s var(--ease-out), background 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+    animation: fade-up 0.28s var(--ease-out) both;
+  }
+
+  .control-group:hover {
+    border-color: rgba(11, 106, 96, 0.2);
+    background: rgba(11, 106, 96, 0.03);
+    transform: translateY(-1px);
+  }
+
+  .control-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    color: var(--a2ui-text-normal);
+    font-size: 12px;
+    font-weight: 500;
+    gap: 10px;
+  }
+
+  .control-group .value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--a2ui-accent);
+    background: var(--a2ui-accent-soft);
+    border: 1px solid rgba(11, 106, 96, 0.2);
+    border-radius: 999px;
+    padding: 1px 7px;
+    white-space: nowrap;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    appearance: none;
+    border-radius: 999px;
+    background: var(--a2ui-line);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fefcf6;
+    border: 2px solid var(--a2ui-accent);
+    box-shadow: 0 4px 10px rgba(11, 106, 96, 0.22);
+    cursor: pointer;
+    transition: transform 0.15s var(--ease-out);
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+  }
+
+  select {
+    width: 100%;
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-xs);
+    background: var(--a2ui-bg-elevated);
+    color: var(--a2ui-text-strong);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 8px 11px;
+    outline: none;
+    transition: border-color 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out);
+  }
+
+  select:focus {
+    border-color: rgba(11, 106, 96, 0.42);
+    box-shadow: 0 0 0 3px rgba(11, 106, 96, 0.12);
+  }
+
+  .color-picker-wrap { display: flex; align-items: center; gap: 10px; }
+
+  .color-swatch {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--a2ui-line);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+    position: relative;
+  }
+
+  .color-swatch input {
+    opacity: 0;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .color-hex {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--a2ui-text-muted);
+  }
+
+  .toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  .toggle-track {
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: #d6d1c6;
+    position: relative;
+    transition: background 0.2s var(--ease-out);
+    border: 1px solid var(--a2ui-line);
+  }
+
+  .toggle-track.on {
+    background: var(--a2ui-accent);
+    border-color: var(--a2ui-accent);
+  }
+
+  .toggle-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fffdf8;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s var(--ease-out);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .toggle-track.on .toggle-thumb { transform: translateX(18px); }
+
+  .toggle-label {
+    color: var(--a2ui-text-normal);
+    font-size: 13px;
+  }
+
+  .options-grid {
+    display: grid;
+    gap: 7px;
+  }
+
+  .option-card {
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-sm);
+    background: var(--a2ui-bg-elevated);
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.18s var(--ease-out);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    animation: fade-up 0.25s var(--ease-out) both;
+  }
+
+  .option-card:hover {
+    border-color: rgba(11, 106, 96, 0.35);
+    background: rgba(11, 106, 96, 0.04);
+    transform: translateY(-1px);
+  }
+
+  .option-card.selected {
+    border-color: var(--a2ui-accent);
+    background: var(--a2ui-accent-soft);
+    box-shadow: 0 6px 18px rgba(11, 106, 96, 0.14);
+  }
+
+  .option-text {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .option-label {
+    font-size: 13px;
+    color: var(--a2ui-text-strong);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .option-desc {
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--a2ui-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .option-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--a2ui-accent);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .option-card.selected .option-check { display: inline-flex; }
+
+  .empty-note {
+    font-size: 12px;
+    color: var(--a2ui-text-muted);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--a2ui-line);
+    background: var(--a2ui-bg-soft);
+  }
+
+  @keyframes lift-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 980px) {
+    .main {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .controls-panel {
+      max-height: 38vh;
+    }
+
+    .header-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .header h1 {
+      font-size: 21px;
+    }
+
+    .prompt-inner {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .send-btn {
+      width: 100%;
+    }
+  }
+
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-thumb { background: rgba(84, 87, 77, 0.24); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(84, 87, 77, 0.34); }
 </style>
 </head>
 <body>
-<div class="header"><div class="header-content">
-  <div class="header-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".2"/></svg></div>
-  <div class="header-text"><h1 id="title"></h1><p id="description"></p></div>
-</div></div>
-<div class="main" id="controls-layout">
-  <div class="controls"><div id="presets-container"></div><div id="controls-container"></div></div>
-  <div class="preview-area">
-    <div id="preview" class="preview-content"></div>
-    <div class="prompt-bar"><div class="prompt-inner">
-      <div id="prompt-text" class="prompt-text"></div>
-      <button id="copy-btn" class="send-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Send to Chat</span></button>
-    </div></div>
-  </div>
-</div>
-<div class="main options-layout" id="options-layout" style="display:none">
-  <div class="options-sidebar">
-    <div id="options-grid" class="options-grid"></div>
-    <div id="options-controls" class="options-controls" style="display:none">
-      <div id="options-controls-container"></div>
+<div class="page-shell">
+  <header class="header">
+    <div class="header-main">
+      <div>
+        <p class="kicker">A2UI Lab</p>
+        <h1 id="title"></h1>
+        <p id="description"></p>
+      </div>
+      <span class="mode-pill" id="mode-pill">Controls Studio</span>
     </div>
-  </div>
-  <div class="preview-area">
-    <div id="options-preview" class="preview-content"></div>
-    <div class="prompt-bar"><div class="prompt-inner">
-      <div id="options-prompt-text" class="prompt-text"></div>
-      <button id="options-copy-btn" class="send-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Send to Chat</span></button>
-    </div></div>
-  </div>
+  </header>
+
+  <section class="main" id="controls-layout">
+    <aside class="controls-panel">
+      <div class="panel-block">
+        <div class="block-head">Presets</div>
+        <div id="presets-container"></div>
+      </div>
+      <div class="panel-block">
+        <div class="block-head">Controls</div>
+        <div id="controls-container" class="controls-stack"></div>
+      </div>
+    </aside>
+
+    <div class="preview-area">
+      <div class="stage-wrap">
+        <div class="stage-head">
+          <span>Preview Stage</span>
+        </div>
+        <div id="preview" class="preview-content"></div>
+      </div>
+
+      <div class="prompt-bar">
+        <div class="prompt-label">Prompt Composer</div>
+        <div class="prompt-inner">
+          <div id="prompt-text" class="prompt-text"></div>
+          <button id="copy-btn" class="send-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0">
+              <path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Send to Chat</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="main" id="options-layout" style="display:none">
+    <aside class="controls-panel">
+      <div class="panel-block">
+        <div class="block-head">Options</div>
+        <div id="options-grid" class="options-grid"></div>
+      </div>
+      <div id="options-controls" class="panel-block" style="display:none">
+        <div class="block-head">Fine Tune</div>
+        <div id="options-controls-container" class="controls-stack"></div>
+      </div>
+    </aside>
+
+    <div class="preview-area">
+      <div class="stage-wrap">
+        <div class="stage-head">
+          <span>Selection Preview</span>
+          <span class="stage-chip" id="selected-option-chip">Ready</span>
+        </div>
+        <div id="options-preview" class="preview-content"></div>
+      </div>
+
+      <div class="prompt-bar">
+        <div class="prompt-label">Prompt Composer</div>
+        <div class="prompt-inner">
+          <div id="options-prompt-text" class="prompt-text"></div>
+          <button id="options-copy-btn" class="send-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0">
+              <path d="M1 7h9.5M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Send to Chat</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-
-<style>
-  /* Control group */
-  .control-group { margin-bottom: 2px; padding: 10px 12px; border-radius: var(--radius-md); transition: background 0.15s var(--ease); animation: slideIn 0.3s var(--ease) both; }
-  .control-group:hover { background: var(--bg-surface); }
-  .control-group label { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
-  .control-group .value { font-family: var(--mono); font-size: 11px; color: var(--accent); background: var(--accent-bg); padding: 1px 6px; border-radius: 4px; font-weight: 500; }
-
-  /* Slider */
-  input[type="range"] { width: 100%; height: 5px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 3px; outline: none; transition: opacity 0.15s; }
-  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: white; border: 2px solid var(--accent); border-radius: 50%; cursor: pointer; box-shadow: var(--shadow-md); transition: transform 0.15s var(--ease), box-shadow 0.15s; }
-  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); box-shadow: var(--shadow-accent); }
-  input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.1); }
-
-  /* Select */
-  select { width: 100%; padding: 8px 12px; font-size: 13px; background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none; cursor: pointer; font-family: var(--font); transition: border-color 0.15s, box-shadow 0.15s; }
-  select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-
-  /* Color picker */
-  .color-picker-wrap { display: flex; align-items: center; gap: 10px; }
-  .color-swatch { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 2px solid var(--border); cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.15s, transform 0.15s; box-shadow: var(--shadow-sm); }
-  .color-swatch:hover { border-color: var(--accent); transform: scale(1.05); }
-  .color-swatch input { opacity: 0; position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
-  .color-hex { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
-
-  /* Toggle */
-  .toggle-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-  .toggle-track { width: 38px; height: 22px; border-radius: 11px; background: var(--border); position: relative; transition: background 0.2s var(--ease); flex-shrink: 0; }
-  .toggle-track.on { background: var(--accent); }
-  .toggle-thumb { width: 18px; height: 18px; border-radius: 50%; background: white; position: absolute; top: 2px; left: 2px; transition: transform 0.2s var(--ease); box-shadow: var(--shadow-sm); }
-  .toggle-track.on .toggle-thumb { transform: translateX(16px); }
-  .toggle-label { font-size: 13px; color: var(--text); }
-
-  /* Prompt bar */
-  .prompt-bar { border-top: 1px solid var(--border-light); padding: 12px 16px; background: var(--bg-card); }
-  .prompt-inner { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-light); }
-  .prompt-text { flex: 1; font-size: 12px; color: var(--text-muted); font-family: var(--mono); white-space: pre-wrap; max-height: 72px; overflow-y: auto; line-height: 1.5; }
-  .send-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; flex-shrink: 0; font-family: var(--font); font-weight: 600; transition: all 0.2s var(--ease); letter-spacing: -0.01em; }
-  .send-btn:hover { background: var(--accent-hover); box-shadow: var(--shadow-accent); transform: translateY(-1px); }
-  .send-btn:active { transform: translateY(0); }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
-</style>
 
 <script>
 const CONFIG = window.__A2UI_CONFIG__ || {};
@@ -152,8 +722,11 @@ function syncCssVar(id, value, unit) {
 function init() {
   document.getElementById('title').textContent = CONFIG.title || 'Playground';
   const descEl = document.getElementById('description');
-  if (CONFIG.description) descEl.textContent = CONFIG.description;
-  else descEl.style.display = 'none';
+  if (CONFIG.description) {
+    descEl.textContent = CONFIG.description;
+  } else {
+    descEl.style.display = 'none';
+  }
 
   // Initialize control state and CSS variables
   (CONFIG.controls || []).forEach(c => {
@@ -162,20 +735,20 @@ function init() {
   });
 
   if (isOptionsMode) {
-    // Options mode: show gallery layout
+    document.getElementById('mode-pill').textContent = 'Options Gallery';
     document.getElementById('controls-layout').style.display = 'none';
-    document.getElementById('options-layout').style.display = 'flex';
+    document.getElementById('options-layout').style.display = 'grid';
     state.selected = CONFIG.options[0].id;
     state.selectedLabel = CONFIG.options[0].label;
     renderOptions();
-    // Render optional controls in options sidebar
+
     if (CONFIG.controls && CONFIG.controls.length > 0) {
       document.getElementById('options-controls').style.display = 'block';
       renderControlsInto(document.getElementById('options-controls-container'));
     }
     updateOptionsMode();
   } else {
-    // Controls mode: existing behavior
+    document.getElementById('mode-pill').textContent = 'Controls Studio';
     renderPresets();
     renderControlsInto(document.getElementById('controls-container'));
     updateAll();
@@ -184,28 +757,31 @@ function init() {
 
 function renderOptions() {
   const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+
   CONFIG.options.forEach((opt, i) => {
     const card = document.createElement('div');
     card.className = 'option-card' + (i === 0 ? ' selected' : '');
     card.dataset.optionId = opt.id;
-    card.style.animationDelay = (i * 0.04) + 's';
+    card.style.animationDelay = (i * 0.03) + 's';
 
-    // Text content (left side)
     const text = document.createElement('div');
     text.className = 'option-text';
+
     const label = document.createElement('div');
     label.className = 'option-label';
     label.textContent = opt.label;
     text.appendChild(label);
+
     if (opt.description) {
       const desc = document.createElement('div');
       desc.className = 'option-desc';
       desc.textContent = opt.description;
       text.appendChild(desc);
     }
+
     card.appendChild(text);
 
-    // Check mark (right side)
     const check = document.createElement('div');
     check.className = 'option-check';
     check.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -224,17 +800,19 @@ function renderOptions() {
 }
 
 function updateOptionsMode() {
-  // Show preview: selected option's previewHtml > top-level previewHtml > fallback
   const selectedOpt = CONFIG.options.find(o => o.id === state.selected);
   const previewEl = document.getElementById('options-preview');
+  const selectedChip = document.getElementById('selected-option-chip');
+
   if (selectedOpt) {
     const html = selectedOpt.previewHtml || CONFIG.previewHtml ||
-      `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:14px;">${selectedOpt.label}</div>`;
+      `<div class="placeholder">${selectedOpt.label}</div>`;
     previewEl.innerHTML = html;
+    selectedChip.textContent = selectedOpt.label;
   }
-  // Sync CSS variables
+
   (CONFIG.controls || []).forEach(c => syncCssVar(c.id, state[c.id], c.unit));
-  // Auto-generate prompt from selection + controls
+
   const parts = [];
   if (selectedOpt) {
     parts.push(`I chose: ${selectedOpt.label}${selectedOpt.description ? ' — ' + selectedOpt.description : ''}`);
@@ -244,8 +822,9 @@ function updateOptionsMode() {
     const display = c.type === 'toggle' ? (v ? 'Yes' : 'No') : c.type === 'slider' ? v + (c.unit || '') : String(v);
     parts.push(`${c.label}: ${display}`);
   });
+
   document.getElementById('options-prompt-text').textContent = parts.join('\n');
-  // Update control value displays
+
   (CONFIG.controls || []).forEach(c => {
     const valEl = document.getElementById(`val-${c.id}`);
     if (!valEl) return;
@@ -258,9 +837,16 @@ function updateOptionsMode() {
 
 function renderPresets() {
   const container = document.getElementById('presets-container');
-  if (!CONFIG.presets || CONFIG.presets.length === 0) { container.style.display = 'none'; return; }
+  container.innerHTML = '';
+
+  if (!CONFIG.presets || CONFIG.presets.length === 0) {
+    container.innerHTML = '<div class="empty-note">No presets configured</div>';
+    return;
+  }
+
   const wrap = document.createElement('div');
   wrap.className = 'presets';
+
   CONFIG.presets.forEach(p => {
     const btn = document.createElement('button');
     btn.className = 'preset-btn';
@@ -275,6 +861,7 @@ function renderPresets() {
     };
     wrap.appendChild(btn);
   });
+
   container.appendChild(wrap);
 }
 
@@ -283,7 +870,7 @@ function renderControlsInto(container) {
     const group = document.createElement('div');
     group.className = 'control-group';
     group.dataset.controlId = c.id;
-    group.style.animationDelay = (i * 0.05) + 's';
+    group.style.animationDelay = (i * 0.04) + 's';
 
     if (c.type !== 'toggle') {
       const label = document.createElement('label');
@@ -294,59 +881,93 @@ function renderControlsInto(container) {
     switch (c.type) {
       case 'slider': {
         const input = document.createElement('input');
-        input.type = 'range'; input.min = c.min; input.max = c.max;
-        input.step = c.step || 1; input.value = c.defaultValue;
+        input.type = 'range';
+        input.min = c.min;
+        input.max = c.max;
+        input.step = c.step || 1;
+        input.value = c.defaultValue;
+
         const updateFill = () => {
           const pct = ((input.value - c.min) / (c.max - c.min)) * 100;
-          input.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--border) ${pct}%)`;
+          input.style.background = `linear-gradient(to right, var(--a2ui-accent) ${pct}%, var(--a2ui-line) ${pct}%)`;
         };
-        input.oninput = () => { state[c.id] = Number(input.value); updateFill(); updateAll(); };
+
+        input.oninput = () => {
+          state[c.id] = Number(input.value);
+          updateFill();
+          updateAll();
+        };
+
         group.appendChild(input);
         setTimeout(updateFill, 0);
         break;
       }
+
       case 'select': {
         const input = document.createElement('select');
         c.options.forEach(o => {
           const opt = document.createElement('option');
-          opt.value = o.value; opt.textContent = o.label;
+          opt.value = o.value;
+          opt.textContent = o.label;
           if (o.value === c.defaultValue) opt.selected = true;
           input.appendChild(opt);
         });
-        input.onchange = () => { state[c.id] = input.value; updateAll(); };
+        input.onchange = () => {
+          state[c.id] = input.value;
+          updateAll();
+        };
         group.appendChild(input);
         break;
       }
+
       case 'color': {
-        const wrap = document.createElement('div'); wrap.className = 'color-picker-wrap';
-        const swatch = document.createElement('div'); swatch.className = 'color-swatch';
+        const wrap = document.createElement('div');
+        wrap.className = 'color-picker-wrap';
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
         swatch.style.backgroundColor = c.defaultValue;
         const input = document.createElement('input');
-        input.type = 'color'; input.value = c.defaultValue;
-        const hex = document.createElement('span'); hex.className = 'color-hex';
+        input.type = 'color';
+        input.value = c.defaultValue;
+        const hex = document.createElement('span');
+        hex.className = 'color-hex';
         hex.textContent = c.defaultValue;
         input.oninput = () => {
-          state[c.id] = input.value; swatch.style.backgroundColor = input.value;
-          hex.textContent = input.value; updateAll();
+          state[c.id] = input.value;
+          swatch.style.backgroundColor = input.value;
+          hex.textContent = input.value;
+          updateAll();
         };
-        swatch.appendChild(input); wrap.appendChild(swatch); wrap.appendChild(hex);
+        swatch.appendChild(input);
+        wrap.appendChild(swatch);
+        wrap.appendChild(hex);
         group.appendChild(wrap);
         break;
       }
+
       case 'toggle': {
-        const wrap = document.createElement('div'); wrap.className = 'toggle-wrap';
+        const wrap = document.createElement('div');
+        wrap.className = 'toggle-wrap';
         const track = document.createElement('div');
         track.className = 'toggle-track' + (c.defaultValue ? ' on' : '');
-        const thumb = document.createElement('div'); thumb.className = 'toggle-thumb';
+        const thumb = document.createElement('div');
+        thumb.className = 'toggle-thumb';
         track.appendChild(thumb);
-        const lbl = document.createElement('span'); lbl.className = 'toggle-label';
+        const lbl = document.createElement('span');
+        lbl.className = 'toggle-label';
         lbl.textContent = c.label;
-        wrap.appendChild(track); wrap.appendChild(lbl);
-        wrap.onclick = () => { state[c.id] = !state[c.id]; track.classList.toggle('on', state[c.id]); updateAll(); };
+        wrap.appendChild(track);
+        wrap.appendChild(lbl);
+        wrap.onclick = () => {
+          state[c.id] = !state[c.id];
+          track.classList.toggle('on', state[c.id]);
+          updateAll();
+        };
         group.appendChild(wrap);
         break;
       }
     }
+
     container.appendChild(group);
   });
 }
@@ -361,28 +982,30 @@ function syncControlsToState() {
         const input = group.querySelector('input');
         input.value = val;
         const pct = ((val - c.min) / (c.max - c.min)) * 100;
-        input.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--border) ${pct}%)`;
+        input.style.background = `linear-gradient(to right, var(--a2ui-accent) ${pct}%, var(--a2ui-line) ${pct}%)`;
         break;
       }
-      case 'select': group.querySelector('select').value = val; break;
-      case 'color': {
+      case 'select':
+        group.querySelector('select').value = val;
+        break;
+      case 'color':
         group.querySelector('input').value = val;
         group.querySelector('.color-swatch').style.backgroundColor = val;
         group.querySelector('.color-hex').textContent = val;
         break;
-      }
-      case 'toggle': group.querySelector('.toggle-track').classList.toggle('on', val); break;
+      case 'toggle':
+        group.querySelector('.toggle-track').classList.toggle('on', val);
+        break;
     }
   });
 }
-
 
 function updateAll() {
   if (isOptionsMode) {
     updateOptionsMode();
     return;
   }
-  // Sync CSS variables and update control value displays
+
   (CONFIG.controls || []).forEach(c => {
     syncCssVar(c.id, state[c.id], c.unit);
     const valEl = document.getElementById(`val-${c.id}`);
@@ -392,24 +1015,31 @@ function updateAll() {
     else if (c.type === 'toggle') valEl.textContent = v ? 'On' : 'Off';
     else valEl.textContent = String(v);
   });
-  // Preview: use previewHtml if provided, otherwise auto-generate parameter list
+
   const previewEl = document.getElementById('preview');
   if (CONFIG.previewHtml) {
     previewEl.innerHTML = CONFIG.previewHtml;
   } else {
     const previewParts = (CONFIG.controls || []).map(c => {
       const v = state[c.id];
-      const display = c.type === 'toggle' ? (v ? 'Yes' : 'No') : c.type === 'color' ? `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:${v};vertical-align:middle;margin-right:4px;border:1px solid var(--border)"></span>${v}` : c.type === 'slider' ? v + (c.unit || '') : String(v);
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:var(--radius-sm);background:var(--bg-surface);font-size:13px;"><span style="color:var(--text-secondary)">${c.label}</span><span style="font-family:var(--mono);color:var(--accent);font-weight:500">${display}</span></div>`;
+      let display = '';
+      if (c.type === 'toggle') display = v ? 'Yes' : 'No';
+      else if (c.type === 'slider') display = v + (c.unit || '');
+      else if (c.type === 'color') display = `<span class="preview-swatch" style="background:${v}"></span>${v}`;
+      else display = String(v);
+
+      return `<div class="preview-row"><span>${c.label}</span><span class="preview-value">${display}</span></div>`;
     });
-    previewEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;max-width:400px;margin:0 auto;padding-top:20px">${previewParts.join('')}</div>`;
+
+    previewEl.innerHTML = `<div class="preview-summary">${previewParts.join('')}</div>`;
   }
-  // Auto-generate prompt from control values
+
   const promptParts = (CONFIG.controls || []).map(c => {
     const v = state[c.id];
     const display = c.type === 'toggle' ? (v ? 'Yes' : 'No') : c.type === 'slider' ? v + (c.unit || '') : String(v);
     return `${c.label}: ${display}`;
   });
+
   document.getElementById('prompt-text').textContent = promptParts.join('\n');
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
 }
@@ -417,9 +1047,24 @@ function updateAll() {
 function handleSend(btnId, textId) {
   const text = document.getElementById(textId).textContent;
   window.parent.postMessage({ type: 'a2ui-send', text }, '*');
+
   const btn = document.getElementById(btnId);
-  btn.querySelector('span').textContent = '✓ Sent!';
-  setTimeout(() => { btn.querySelector('span').textContent = 'Send to Chat'; }, 1500);
+  const label = btn.querySelector('span');
+  if (!label) return;
+
+  btn.classList.add('sent');
+  label.textContent = 'Sent';
+
+  if (btn.dataset.resetTimer) {
+    clearTimeout(Number(btn.dataset.resetTimer));
+  }
+
+  const timer = window.setTimeout(() => {
+    btn.classList.remove('sent');
+    label.textContent = 'Send to Chat';
+  }, 1500);
+
+  btn.dataset.resetTimer = String(timer);
 }
 
 document.getElementById('copy-btn').onclick = () => handleSend('copy-btn', 'prompt-text');

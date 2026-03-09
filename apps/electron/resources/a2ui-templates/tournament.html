@@ -5,240 +5,488 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A2UI Tournament</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   :root {
-    --bg: #f5f8f7; --bg-card: #fff; --bg-muted: #eef4f2; --bg-surface: #f9fbfa;
-    --text: #1b2a2a; --text-secondary: #5a6b6b; --text-muted: #8a9a9a;
-    --accent: #10a37f; --accent-soft: #d4ede5; --accent-bg: #edf7f3;
-    --accent-hover: #0d8f6e; --accent-glow: rgba(16,163,127,0.12);
-    --border: #dce6e3; --border-light: #e8efec;
-    --radius-sm: 8px; --radius-md: 10px; --radius-lg: 14px;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-accent: 0 2px 12px rgba(16,163,127,0.2);
-    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --a2ui-bg-canvas: #f4efe6;
+    --a2ui-bg-panel: #fff9f0;
+    --a2ui-bg-elevated: #fffdf7;
+    --a2ui-bg-soft: #f3eee3;
+    --a2ui-text-strong: #1f2522;
+    --a2ui-text-normal: #4f5a54;
+    --a2ui-text-muted: #6a746d;
+    --a2ui-line: #d6cec0;
+    --a2ui-line-strong: #c8bda9;
+    --a2ui-accent: #0b6a60;
+    --a2ui-accent-strong: #084d46;
+    --a2ui-accent-soft: #e9f6f3;
+    --a2ui-shadow-soft: 0 12px 30px rgba(31, 37, 34, 0.09);
+    --a2ui-shadow-elevated: 0 18px 38px rgba(31, 37, 34, 0.15);
+    --radius-xs: 8px;
+    --radius-sm: 12px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --font-display: 'Fraunces', 'Iowan Old Style', 'Times New Roman', serif;
+    --font-body: 'IBM Plex Sans', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+    --ease-out: cubic-bezier(0.2, 0.84, 0.24, 1);
   }
+
   body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     min-height: 100vh;
-    padding: 40px 20px;
+    font-family: var(--font-body);
+    color: var(--a2ui-text-strong);
+    background:
+      radial-gradient(1100px 500px at 8% -15%, rgba(11, 106, 96, 0.22), transparent 57%),
+      radial-gradient(800px 460px at 92% -18%, rgba(158, 122, 61, 0.2), transparent 55%),
+      var(--a2ui-bg-canvas);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
     -webkit-font-smoothing: antialiased;
   }
 
-  .app { width: 600px; max-width: 100%; }
+  .arena-shell {
+    width: min(940px, 100%);
+    border: 1px solid var(--a2ui-line);
+    border-radius: 30px;
+    background: linear-gradient(160deg, rgba(255, 253, 247, 0.95), rgba(255, 249, 240, 0.94));
+    box-shadow: var(--a2ui-shadow-elevated);
+    padding: 24px;
+    animation: lift-in 0.38s var(--ease-out);
+  }
 
-  /* Header */
   .header {
-    margin-bottom: 32px;
-    animation: fadeUp 0.4s var(--ease) both;
-  }
-  .header h1 {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin-bottom: 4px;
-  }
-  .header p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.5;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--a2ui-line);
+    margin-bottom: 18px;
   }
 
-  /* Progress */
-  .progress-area {
-    margin-bottom: 28px;
-    animation: fadeUp 0.4s var(--ease) 0.1s both;
+  .kicker {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--a2ui-accent);
+    font-weight: 600;
+    margin-bottom: 6px;
   }
-  .progress-header {
+
+  .header-top {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    align-items: flex-start;
+    gap: 12px;
   }
-  .progress-label {
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: 30px;
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .header p {
+    margin-top: 8px;
+    color: var(--a2ui-text-muted);
+    font-size: 14px;
+    line-height: 1.55;
+    max-width: 62ch;
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mode-pill,
+  .round-pill {
+    border-radius: 999px;
+    border: 1px solid var(--a2ui-line);
+    background: var(--a2ui-bg-elevated);
+    color: var(--a2ui-text-normal);
     font-size: 12px;
-    color: var(--text-muted);
+    padding: 6px 12px;
     font-weight: 500;
+    white-space: nowrap;
   }
-  .progress-count {
+
+  .mode-pill {
+    border-color: rgba(11, 106, 96, 0.28);
+    background: var(--a2ui-accent-soft);
+    color: var(--a2ui-accent);
+  }
+
+  .stage-hint {
+    margin-top: 10px;
     font-size: 12px;
-    color: var(--text-secondary);
-    font-weight: 500;
+    color: var(--a2ui-text-normal);
   }
+
+  .playing-area {
+    animation: fade-up 0.3s var(--ease-out);
+  }
+
+  .progress-area {
+    margin-bottom: 20px;
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-md);
+    background: var(--a2ui-bg-elevated);
+    padding: 10px 12px;
+  }
+
   .progress-bar {
     width: 100%;
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
+    height: 7px;
+    border-radius: 999px;
+    background: #ddd4c6;
     overflow: hidden;
   }
+
   .progress-fill {
     height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 0.4s var(--ease);
+    width: 0;
+    background: linear-gradient(90deg, var(--a2ui-accent), #2f7b71);
+    border-radius: 999px;
+    transition: width 0.35s var(--ease-out);
   }
 
-  /* Battle */
-  .battle {
-    display: flex;
-    gap: 16px;
-    align-items: stretch;
-    margin-bottom: 20px;
+  .progress-count {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--a2ui-text-muted);
+    letter-spacing: 0.01em;
   }
+
+  .battle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
   .card {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--a2ui-line);
     border-radius: var(--radius-lg);
-    padding: 24px 20px;
+    background: linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(255, 249, 240, 0.96));
+    box-shadow: var(--a2ui-shadow-soft);
+    padding: 18px;
     cursor: pointer;
-    transition: all 0.25s var(--ease);
+    transition: transform 0.22s var(--ease-out), border-color 0.22s var(--ease-out), box-shadow 0.22s var(--ease-out), background 0.22s var(--ease-out);
     display: flex;
     flex-direction: column;
+    min-height: 240px;
+    position: relative;
+    overflow: hidden;
   }
-  .card:hover {
-    border-color: var(--accent);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-  }
-  .card:active { transform: translateY(0); }
-  .card.exit-left { animation: exitLeft 0.28s var(--ease) both; }
-  .card.exit-right { animation: exitRight 0.28s var(--ease) both; }
-  .card.enter { animation: enterCard 0.28s var(--ease) both; }
 
-  .card-emoji { font-size: 32px; margin-bottom: 12px; }
-  .card-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: auto -40% -45% -40%;
+    height: 120px;
+    background: radial-gradient(circle at 50% 0%, rgba(11, 106, 96, 0.12), transparent 72%);
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-out);
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(11, 106, 96, 0.5);
+    box-shadow: 0 18px 30px rgba(11, 106, 96, 0.16);
+  }
+
+  .card:hover::after {
+    opacity: 1;
+  }
+
+  .card:active {
+    transform: translateY(0);
+  }
+
+  .card.chosen {
+    border-color: var(--a2ui-accent);
+    background: linear-gradient(180deg, #f3fbf8, #ebf7f4);
+  }
+
+  .card.exit-left { animation: exit-left 0.28s var(--ease-out) both; }
+  .card.exit-right { animation: exit-right 0.28s var(--ease-out) both; }
+  .card.enter { animation: enter-card 0.28s var(--ease-out) both; }
+
+  .card-emoji {
+    font-size: 38px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .card-name {
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.12;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
   .card-desc {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    flex-grow: 1;
+    color: var(--a2ui-text-normal);
+    font-size: 13px;
+    line-height: 1.65;
   }
 
   .vs {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    flex-shrink: 0;
-    width: 32px;
-    justify-content: center;
+    display: grid;
+    place-items: center;
   }
 
-  /* Result */
+  .vs span {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--a2ui-line);
+    background: var(--a2ui-bg-elevated);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--a2ui-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+  }
+
   .result-area {
-    animation: fadeUp 0.5s var(--ease) both;
+    animation: fade-up 0.36s var(--ease-out);
   }
+
   .result-list {
-    background: var(--bg-card);
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--a2ui-line);
     border-radius: var(--radius-lg);
-    padding: 20px;
-    margin-bottom: 20px;
+    background: var(--a2ui-bg-elevated);
+    padding: 16px;
+    margin-bottom: 12px;
   }
+
   .result-label {
     font-size: 11px;
-    color: var(--text-muted);
-    font-weight: 500;
-    margin-bottom: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.1em;
+    color: var(--a2ui-text-muted);
+    margin-bottom: 10px;
+    font-weight: 600;
   }
-  .result-item {
-    padding: 10px 12px;
-    background: var(--bg-surface);
-    border-radius: var(--radius-sm);
-    margin-bottom: 6px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  .result-item:last-child { margin-bottom: 0; }
-  .result-item .round { color: var(--text-muted); font-weight: 500; }
-  .result-item .choice { color: var(--text); font-weight: 600; }
-  .result-item .vs { color: var(--text-secondary); }
 
-  /* Prompt bar */
-  .prompt-bar {
-    background: var(--bg-card);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 16px;
+  .result-hero {
+    border: 1px solid rgba(11, 106, 96, 0.28);
+    background: var(--a2ui-accent-soft);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 10px;
   }
-  .prompt-text {
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-    padding: 12px 14px;
-    background: var(--bg-surface);
+
+  .result-hero-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--a2ui-accent);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .result-hero-text {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1.2;
+    color: var(--a2ui-accent-strong);
+    letter-spacing: -0.01em;
+  }
+
+  .result-item {
+    border: 1px solid var(--a2ui-line);
     border-radius: var(--radius-sm);
-    margin-bottom: 12px;
-    min-height: 60px;
-    white-space: pre-wrap;
+    background: #fcf8ef;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 7px;
+    color: var(--a2ui-text-normal);
   }
+
+  .result-item:last-child { margin-bottom: 0; }
+
+  .result-item .round {
+    color: var(--a2ui-text-muted);
+    font-weight: 500;
+  }
+
+  .result-item .choice {
+    color: var(--a2ui-text-strong);
+    font-weight: 600;
+  }
+
+  .result-item .vs {
+    color: var(--a2ui-text-muted);
+    font-size: 12px;
+  }
+
+  .prompt-bar {
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(255, 249, 240, 0.94));
+    box-shadow: var(--a2ui-shadow-soft);
+    padding: 12px;
+  }
+
+  .prompt-text {
+    min-height: 92px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--a2ui-line);
+    border-radius: var(--radius-md);
+    background: var(--a2ui-bg-elevated);
+    padding: 10px;
+    color: var(--a2ui-text-normal);
+    font-size: 12px;
+    line-height: 1.58;
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    margin-bottom: 10px;
+  }
+
   .send-btn {
     width: 100%;
-    padding: 10px 16px;
-    background: var(--accent);
-    border: none;
-    border-radius: var(--radius-md);
-    color: white;
-    font-family: var(--font);
+    border: 1px solid var(--a2ui-accent);
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--a2ui-accent), var(--a2ui-accent-strong));
+    color: #f8fffc;
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
+    padding: 10px 16px;
     cursor: pointer;
-    transition: all 0.2s var(--ease);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 7px;
+    transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out), filter 0.18s var(--ease-out);
   }
+
   .send-btn:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(11, 106, 96, 0.28);
+    filter: brightness(1.03);
+  }
+
+  .send-btn:active { transform: translateY(0); }
+
+  .send-btn.sent {
+    border-color: #2f7b5f;
+    background: linear-gradient(180deg, #3e9675, #2f7b5f);
+    box-shadow: 0 8px 20px rgba(63, 151, 116, 0.24);
   }
 
   .hidden { display: none !important; }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
+  @keyframes lift-in {
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes exitLeft {
-    to { opacity: 0; transform: translateX(-20px) scale(0.95); }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes exitRight {
-    to { opacity: 0; transform: translateX(20px) scale(0.95); }
+
+  @keyframes exit-left {
+    to { opacity: 0; transform: translateX(-24px) scale(0.95); }
   }
-  @keyframes enterCard {
-    from { opacity: 0; transform: scale(0.95); }
+
+  @keyframes exit-right {
+    to { opacity: 0; transform: translateX(24px) scale(0.95); }
+  }
+
+  @keyframes enter-card {
+    from { opacity: 0; transform: scale(0.96); }
     to { opacity: 1; transform: scale(1); }
   }
+
+  @media (max-width: 920px) {
+    body {
+      padding: 12px;
+      align-items: flex-start;
+    }
+
+    .arena-shell {
+      padding: 16px;
+      border-radius: 22px;
+    }
+
+    .header h1 {
+      font-size: 26px;
+    }
+
+    .header-top {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .battle {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .vs {
+      min-height: 18px;
+    }
+
+    .vs span {
+      width: 36px;
+      height: 36px;
+      font-size: 10px;
+    }
+
+    .card {
+      min-height: 170px;
+    }
+
+    .card-name {
+      font-size: 22px;
+    }
+  }
+
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-thumb { background: rgba(84, 87, 77, 0.24); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(84, 87, 77, 0.34); }
 </style>
 </head>
 <body>
 
-<div class="app" id="app">
+<div class="arena-shell" id="app">
   <div class="header">
-    <h1 id="title"></h1>
-    <p id="description"></p>
+    <p class="kicker">Preference Arena</p>
+    <div class="header-top">
+      <div>
+        <h1 id="title"></h1>
+        <p id="description"></p>
+      </div>
+      <div class="header-meta">
+        <span class="mode-pill" id="dimensionChip">Dimension</span>
+        <span class="round-pill" id="roundMeta">Round 0 / 0</span>
+      </div>
+    </div>
+    <div class="stage-hint" id="stageHint">Pick what feels closer to your taste.</div>
   </div>
 
-  <div id="playing-area">
+  <div id="playing-area" class="playing-area">
     <div class="progress-area">
-      <div class="progress-header">
-        <span class="progress-label">选择中...</span>
-        <span class="progress-count" id="progressCount"></span>
-      </div>
       <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        <div class="progress-fill" id="progressFill"></div>
       </div>
+      <span class="progress-count" id="progressCount"></span>
     </div>
 
     <div class="battle">
@@ -247,7 +495,7 @@
         <div class="card-name" id="nameLeft"></div>
         <div class="card-desc" id="descLeft"></div>
       </div>
-      <div class="vs">or</div>
+      <div class="vs"><span>OR</span></div>
       <div class="card" id="cardRight">
         <div class="card-emoji" id="emojiRight"></div>
         <div class="card-name" id="nameRight"></div>
@@ -258,9 +506,10 @@
 
   <div id="result-area" class="result-area hidden">
     <div class="result-list">
-      <div class="result-label">偏好画像</div>
+      <div class="result-label">Preference Profile</div>
       <div id="resultItems"></div>
     </div>
+
     <div class="prompt-bar">
       <div class="prompt-text" id="promptText"></div>
       <button id="sendBtn" class="send-btn">
@@ -295,7 +544,7 @@ function init() {
   }
 
   if (!CONFIG.dimensions || CONFIG.dimensions.length === 0) {
-    document.getElementById('playing-area').innerHTML = '<p style="color:var(--text-muted);text-align:center">No dimensions configured</p>';
+    document.getElementById('playing-area').innerHTML = '<p style="color:var(--a2ui-text-muted);text-align:center;padding:30px">No dimensions configured</p>';
     return;
   }
 
@@ -353,8 +602,11 @@ function showBattle() {
   const currentRound = eliminated.length + 1;
   const totalRounds = currentDimension.candidates.length - 1;
 
+  document.getElementById('dimensionChip').textContent = currentDimension.name;
+  document.getElementById('roundMeta').textContent = `Round ${currentRound} / ${totalRounds}`;
+  document.getElementById('stageHint').textContent = `Dimension ${currentDimensionIndex + 1} of ${totalDimensions}: choose the option that better matches your style.`;
   document.getElementById('progressCount').textContent =
-    `${currentDimension.name}（第 ${currentDimensionIndex + 1} / ${totalDimensions} 维度）· 第 ${currentRound} / ${totalRounds} 轮`;
+    `${currentDimension.name} · Dimension ${currentDimensionIndex + 1}/${totalDimensions} · Round ${currentRound}/${totalRounds}`;
 
   const overallProgress = ((currentDimensionIndex + (currentRound / totalRounds)) / totalDimensions) * 100;
   document.getElementById('progressFill').style.width = overallProgress + '%';
@@ -372,6 +624,11 @@ function pick(side) {
   const winner = side === 'left' ? champion : challenger;
   const loser = side === 'left' ? challenger : champion;
 
+  const winnerId = side === 'left' ? 'cardLeft' : 'cardRight';
+  const loserId = side === 'left' ? 'cardRight' : 'cardLeft';
+
+  document.getElementById(winnerId).classList.add('chosen');
+
   // Record elimination
   eliminated.push(loser);
 
@@ -382,11 +639,11 @@ function pick(side) {
   champion = winner;
 
   // Animate loser exit
-  const loserId = side === 'left' ? 'cardRight' : 'cardLeft';
   document.getElementById(loserId).classList.add(side === 'left' ? 'exit-right' : 'exit-left');
 
   setTimeout(() => {
     document.getElementById(loserId).classList.remove('exit-left', 'exit-right');
+    document.getElementById(winnerId).classList.remove('chosen');
     isAnimating = false;
 
     if (challengerPool.length === 0) {
@@ -427,8 +684,9 @@ function showResult() {
   }).join('');
 
   resultItems.innerHTML = `
-    <div class="result-item" style="background:var(--accent-bg);border:1px solid var(--accent-soft);font-weight:600;color:var(--accent)">
-      偏好画像：${profileTags}
+    <div class="result-hero">
+      <div class="result-hero-title">Preference Signature</div>
+      <div class="result-hero-text">${profileTags}</div>
     </div>
     ${detailHtml}
   `;
@@ -442,11 +700,29 @@ function showResult() {
 
   document.getElementById('promptText').textContent = promptText;
 
+  document.getElementById('stageHint').textContent = 'Profile ready. You can send this summary back to chat.';
+  document.getElementById('dimensionChip').textContent = 'Completed';
+  document.getElementById('roundMeta').textContent = `${dimensionResults.length} Dimensions`;
+
   document.getElementById('sendBtn').onclick = () => {
     window.parent.postMessage({ type: 'a2ui-send', text: promptText }, '*');
     const btn = document.getElementById('sendBtn');
-    btn.querySelector('span').textContent = '✓ Sent!';
-    setTimeout(() => { btn.querySelector('span').textContent = 'Send to Chat'; }, 1500);
+    const label = btn.querySelector('span');
+    if (!label) return;
+
+    btn.classList.add('sent');
+    label.textContent = 'Sent';
+
+    if (btn.dataset.resetTimer) {
+      clearTimeout(Number(btn.dataset.resetTimer));
+    }
+
+    const timer = window.setTimeout(() => {
+      btn.classList.remove('sent');
+      label.textContent = 'Send to Chat';
+    }, 1500);
+
+    btn.dataset.resetTimer = String(timer);
   };
 }
 
