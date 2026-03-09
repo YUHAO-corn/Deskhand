@@ -35,6 +35,18 @@ export interface UseAgentEventsOptions {
   enabled?: boolean;
 }
 
+function resolveArtifactPath(filePath: string, workingDirectory: string | null): string {
+  if (!workingDirectory) return filePath;
+  if (!filePath.startsWith('/')) {
+    return `${workingDirectory}/${filePath}`;
+  }
+  if (!filePath.startsWith(workingDirectory)) {
+    // SDK paths like "/hello.html" are relative to cwd with leading slash
+    return `${workingDirectory}${filePath}`;
+  }
+  return filePath;
+}
+
 /**
  * Agent 事件订阅 Hook
  */
@@ -172,6 +184,19 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
 
       // ─── 工具事件 ───
       case 'tool_start': {
+        const toolNameLower = event.toolName?.toLowerCase() ?? '';
+        const isFileTool = toolNameLower === 'write' || toolNameLower === 'edit';
+        let resolvedFilePath: string | null = null;
+
+        let toolInput = event.input;
+        if (isFileTool && event.input?.file_path) {
+          resolvedFilePath = resolveArtifactPath(String(event.input.file_path), workingDirectory);
+          toolInput = {
+            ...event.input,
+            file_path_resolved: resolvedFilePath,
+          };
+        }
+
         const toolMessage: Message = {
           id: generateMessageId(),
           role: 'tool',
@@ -179,7 +204,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           timestamp: Date.now(),
           toolName: event.toolName,
           toolUseId: event.toolUseId,
-          toolInput: event.input,
+          toolInput,
           toolStatus: 'executing',
           turnId: event.turnId,
           toolIntent: event.intent,
@@ -190,26 +215,17 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
         persistMessage(toolMessage);
 
         // Capture file artifacts from Write/Edit tools
-        const toolNameLower = event.toolName?.toLowerCase() ?? '';
-        if ((toolNameLower === 'write' || toolNameLower === 'edit') && event.input?.file_path) {
-          let filePath = String(event.input.file_path);
-          // Resolve relative paths against working directory
-          if (!filePath.startsWith('/') && workingDirectory) {
-            filePath = `${workingDirectory}/${filePath}`;
-          } else if (filePath.startsWith('/') && workingDirectory && !filePath.startsWith(workingDirectory)) {
-            // SDK paths like "/hello.html" are relative to cwd with leading slash
-            filePath = `${workingDirectory}${filePath}`;
-          }
+        if (resolvedFilePath) {
           setArtifacts((prev) => {
-            const filtered = prev.filter((p) => p !== filePath);
-            const updated = [...filtered, filePath];
+            const filtered = prev.filter((p) => p !== resolvedFilePath);
+            const updated = [...filtered, resolvedFilePath];
             // Persist artifacts to session metadata
             if (!memoryOnlySessions.has(sessionId)) {
               window.electronAPI?.updateSessionMeta(sessionId, { artifacts: updated }).catch(() => {});
             }
             return updated;
           });
-          setSelectedArtifact(filePath);
+          setSelectedArtifact(resolvedFilePath);
           setArtifactPanelOpen(true);
         }
         break;

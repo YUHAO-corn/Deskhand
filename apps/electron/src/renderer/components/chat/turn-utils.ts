@@ -123,6 +123,79 @@ export interface AuthRequestTurn {
 
 export type Turn = AssistantTurn | UserTurn | SystemTurn | AuthRequestTurn
 
+export interface TurnArtifact {
+  path: string
+  fileName: string
+  timestamp: number
+}
+
+function getBasename(filePath: string): string {
+  const segments = filePath.split(/[\\/]/)
+  return segments[segments.length - 1] || filePath
+}
+
+function parseA2UIResultFilePath(resultText: string | undefined): string | undefined {
+  if (!resultText) return undefined
+
+  try {
+    let raw = resultText
+    const outer = JSON.parse(raw)
+    if (Array.isArray(outer) && outer[0]?.type === 'text' && typeof outer[0].text === 'string') {
+      raw = outer[0].text
+    }
+    const parsed = JSON.parse(raw)
+    if (parsed?.a2ui && typeof parsed.filePath === 'string') {
+      return parsed.filePath
+    }
+  } catch {
+    // Not an A2UI JSON payload
+  }
+
+  return undefined
+}
+
+/**
+ * Extract file artifacts from one assistant turn.
+ * Includes Write/Edit inputs and A2UI tool results, deduped by path.
+ */
+export function extractArtifactsFromTurn(turn: AssistantTurn): TurnArtifact[] {
+  const deduped = new Map<string, TurnArtifact>()
+
+  for (const activity of turn.activities) {
+    if (activity.type !== 'tool') continue
+
+    const toolNameLower = activity.toolName?.toLowerCase() ?? ''
+    const input = activity.toolInput as Record<string, unknown> | undefined
+
+    const filePathFromToolInput = (toolNameLower === 'write' || toolNameLower === 'edit')
+      ? (typeof input?.file_path_resolved === 'string'
+        ? input.file_path_resolved
+        : typeof input?.file_path === 'string'
+          ? input.file_path
+          : undefined)
+      : undefined
+
+    const filePath = filePathFromToolInput ?? parseA2UIResultFilePath(activity.content)
+    if (!filePath) continue
+
+    const normalizedPath = filePath.trim()
+    if (!normalizedPath) continue
+
+    const artifact: TurnArtifact = {
+      path: normalizedPath,
+      fileName: getBasename(normalizedPath),
+      timestamp: activity.timestamp,
+    }
+
+    const existing = deduped.get(normalizedPath)
+    if (!existing || artifact.timestamp >= existing.timestamp) {
+      deduped.set(normalizedPath, artifact)
+    }
+  }
+
+  return [...deduped.values()].sort((a, b) => b.timestamp - a.timestamp)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Turn 生命周期阶段
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useSetAtom } from 'jotai';
-import { ChevronRight } from 'lucide-react';
+import { useSetAtom, useAtomValue } from 'jotai';
+import { ChevronRight, FileText, ExternalLink } from 'lucide-react';
 import type { AssistantTurn, TurnPhase } from './turn-utils';
-import { deriveTurnPhase, shouldShowThinkingIndicator, getTurnIntent } from './turn-utils';
+import { deriveTurnPhase, shouldShowThinkingIndicator, getTurnIntent, extractArtifactsFromTurn } from './turn-utils';
 import { ActivityTree } from './ActivityTree';
 import { Markdown } from './markdown/Markdown';
 import { ProcessingIndicator } from './ProcessingIndicator';
-import { pendingActionMessageAtom } from '../../atoms/sessions';
+import { pendingActionMessageAtom, artifactPanelOpenAtom, selectedArtifactAtom, workingDirectoryAtom } from '../../atoms/sessions';
 
 interface TurnCardProps {
   turn: AssistantTurn;
@@ -61,10 +61,23 @@ function getPhaseChipClass(phase: TurnPhase): string {
   return 'border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)]';
 }
 
+function getDisplayPath(filePath: string, workingDirectory: string | null): string {
+  if (!workingDirectory) return filePath;
+  if (filePath === workingDirectory) return '.';
+  const prefix = workingDirectory.endsWith('/') ? workingDirectory : `${workingDirectory}/`;
+  if (filePath.startsWith(prefix)) {
+    return filePath.slice(prefix.length);
+  }
+  return filePath;
+}
+
 export function TurnCard({ turn }: TurnCardProps) {
   const { response, activities, timestamp } = turn;
   const phase = deriveTurnPhase(turn);
   const setPendingAction = useSetAtom(pendingActionMessageAtom);
+  const setArtifactPanelOpen = useSetAtom(artifactPanelOpenAtom);
+  const setSelectedArtifact = useSetAtom(selectedArtifactAtom);
+  const workingDirectory = useAtomValue(workingDirectoryAtom);
 
   const [isExpanded, setIsExpanded] = useState(true);
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
@@ -75,6 +88,14 @@ export function TurnCard({ turn }: TurnCardProps) {
   const isResponseStreaming = response?.isStreaming ?? false;
 
   const previewText = useMemo(() => getPreviewText(turn, turn.isStreaming, !!response), [turn, response]);
+  const artifacts = useMemo(() => extractArtifactsFromTurn(turn), [turn]);
+  const visibleArtifacts = artifacts.slice(0, 3);
+
+  const openArtifact = useCallback((filePath: string) => {
+    if (!filePath) return;
+    setSelectedArtifact(filePath);
+    setArtifactPanelOpen(true);
+  }, [setArtifactPanelOpen, setSelectedArtifact]);
 
   return (
     <div className="group rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-4 py-3 shadow-[var(--elevation-1)]">
@@ -112,6 +133,52 @@ export function TurnCard({ turn }: TurnCardProps) {
                 }}
               />
               {showThinking && !hasContent && <ProcessingIndicator startTime={timestamp} />}
+            </div>
+          )}
+        </div>
+      )}
+
+      {artifacts.length > 0 && (
+        <div className="mb-2 rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] p-2.5">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="inline-flex items-center rounded-[var(--radius-pill)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+              Artifacts · {artifacts.length}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            {visibleArtifacts.map((artifact) => {
+              const isPathAvailable = Boolean(artifact.path);
+              return (
+                <button
+                  key={artifact.path}
+                  disabled={!isPathAvailable}
+                  onClick={() => openArtifact(artifact.path)}
+                  className={[
+                    'flex w-full items-center gap-2 rounded-[var(--radius-pill)] border border-transparent px-2 py-1.5 text-left transition-colors',
+                    isPathAvailable
+                      ? 'hover:border-[var(--color-line-soft)] hover:bg-[var(--hover-bg)]'
+                      : 'cursor-not-allowed opacity-60',
+                  ].join(' ')}
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[var(--font-size-sm)] font-medium text-[var(--color-text-primary)]">
+                      {artifact.fileName}
+                    </span>
+                    <span className="block truncate font-mono text-[11px] text-[var(--color-text-muted)]">
+                      {isPathAvailable ? getDisplayPath(artifact.path, workingDirectory) : 'Path unavailable'}
+                    </span>
+                  </span>
+                  <ExternalLink className="h-3 w-3 shrink-0 text-[var(--color-text-muted)]" />
+                </button>
+              );
+            })}
+          </div>
+
+          {artifacts.length > visibleArtifacts.length && (
+            <div className="mt-2 px-2 text-[11px] text-[var(--color-text-muted)]">
+              +{artifacts.length - visibleArtifacts.length} more
             </div>
           )}
         </div>
