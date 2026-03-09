@@ -19,6 +19,19 @@ import { ToolIndex, extractToolStarts, extractToolResults, type ContentBlock } f
 import { getPluginPaths } from '../skills/loader';
 import { createA2UIServer } from './a2ui-tools';
 
+type ForcedA2UITool = 'render_playground' | 'render_tournament' | null;
+
+function extractForcedA2UIToolFromMessage(message: string): ForcedA2UITool {
+  const lower = message.toLowerCase();
+  if (lower.includes('[pick-a-style]')) return 'render_playground';
+  if (lower.includes('[this-or-that]')) return 'render_tournament';
+  return null;
+}
+
+function isA2UIRenderToolName(toolName: string): boolean {
+  return toolName.includes('render_playground') || toolName.includes('render_tournament');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,6 +103,7 @@ export class DeskhandAgent {
    */
   async chat(message: string, options?: ChatOptions): Promise<void> {
     const emit = (event: AgentEvent) => options?.onEvent?.(event);
+    const forcedA2UITool = extractForcedA2UIToolFromMessage(message);
 
     // ─── Step 1: 准备 ───
     this.abortController = new AbortController();
@@ -115,8 +129,32 @@ export class DeskhandAgent {
     // Bash commands that are explicitly destructive
     const DESTRUCTIVE_COMMANDS = new Set(['rm', 'rmdir', 'unlink', 'shred']);
 
+    const systemPromptAppendBlocks: string[] = [];
+
     if (this.options.clipboardPaths) {
       console.log('[DeskhandAgent] Clipboard context injected:', this.options.clipboardPaths.indexPath);
+      systemPromptAppendBlocks.push([
+        '## Clipboard History',
+        'The user has clipboard monitoring enabled. Their clipboard history is stored locally.',
+        `- Index file (lightweight metadata): ${this.options.clipboardPaths.indexPath}`,
+        `- Full history file (complete content): ${this.options.clipboardPaths.historyPath}`,
+        '',
+        'When the user mentions clipboard, copied content, or asks to find something they copied before:',
+        '1. Read the index file first to browse entries (each line is JSON with id, type, preview, timestamp)',
+        '2. If you need the full content of a specific entry, search for its id in the history file',
+        '3. Always respond in the language the user is using',
+      ].join('\n'));
+    }
+
+    if (forcedA2UITool) {
+      console.log('[DeskhandAgent] Interact tag detected, forcing tool:', forcedA2UITool);
+      const blockedTool = forcedA2UITool === 'render_playground' ? 'render_tournament' : 'render_playground';
+      systemPromptAppendBlocks.push([
+        '## Interact Tag Routing',
+        `The user message includes an interact tag that requires tool routing.`,
+        `You MUST use ${forcedA2UITool} for A2UI rendering in this turn.`,
+        `You MUST NOT call ${blockedTool} in this turn.`,
+      ].join('\n'));
     }
 
     const sdkOptions = {
@@ -124,23 +162,12 @@ export class DeskhandAgent {
       cwd: this.options.workingDirectory || process.cwd(),
       abortController: this.abortController,
       pathToClaudeCodeExecutable: this.options.pathToClaudeCodeExecutable,
-      // System prompt: inject clipboard context if available
-      ...(this.options.clipboardPaths ? {
+      // System prompt: inject optional runtime constraints
+      ...(systemPromptAppendBlocks.length > 0 ? {
         systemPrompt: {
           type: 'preset' as const,
           preset: 'claude_code' as const,
-          append: [
-            '',
-            '## Clipboard History',
-            'The user has clipboard monitoring enabled. Their clipboard history is stored locally.',
-            `- Index file (lightweight metadata): ${this.options.clipboardPaths.indexPath}`,
-            `- Full history file (complete content): ${this.options.clipboardPaths.historyPath}`,
-            '',
-            'When the user mentions clipboard, copied content, or asks to find something they copied before:',
-            '1. Read the index file first to browse entries (each line is JSON with id, type, preview, timestamp)',
-            '2. If you need the full content of a specific entry, search for its id in the history file',
-            '3. Always respond in the language the user is using',
-          ].join('\n'),
+          append: `\n${systemPromptAppendBlocks.join('\n\n')}`,
         },
       } : {}),
       // Bypass SDK's built-in permissions — we implement our own via PreToolUse hook
@@ -166,6 +193,16 @@ export class DeskhandAgent {
 
             const toolName = input.tool_name as string;
             const toolInput = input.tool_input as Record<string, unknown>;
+
+            // Interact tag hard routing:
+            // When present, block the mismatched A2UI render tool at hook layer.
+            if (forcedA2UITool && isA2UIRenderToolName(toolName) && !toolName.includes(forcedA2UITool)) {
+              return {
+                continue: false,
+                decision: 'block' as const,
+                reason: `Interact tag requires ${forcedA2UITool}`,
+              };
+            }
 
             // Determine if this operation needs permission
             let needsPermission = false;
