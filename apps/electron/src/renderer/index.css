@@ -46,6 +46,10 @@
     --color-accent: #0b6a60;
     --color-accent-soft: #e9f6f3;
     --color-accent-strong: #084f47;
+    --color-action-primary-bg: #084f47;
+    --color-action-primary-hover: #063d37;
+    --color-action-primary-text: #fffef9;
+    --color-action-primary-shadow: color-mix(in srgb, var(--color-action-primary-bg) 24%, transparent);
 
     --color-danger: #b42318;
     --color-danger-soft: #fff2ef;

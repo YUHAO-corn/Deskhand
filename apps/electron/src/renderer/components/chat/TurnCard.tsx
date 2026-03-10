@@ -200,11 +200,17 @@ export function TurnCard({ turn }: TurnCardProps) {
               <button
                 key={i}
                 onClick={() => setPendingAction(action.presetMessage)}
+                style={action.style === 'primary' ? {
+                  color: 'var(--color-action-primary-text)',
+                  backgroundColor: 'var(--color-action-primary-bg)',
+                  borderColor: 'var(--color-action-primary-bg)',
+                  boxShadow: '0 10px 18px var(--color-action-primary-shadow)',
+                } : undefined}
                 className={[
-                  'rounded-[var(--radius-pill)] px-4 py-2 text-[var(--font-size-sm)] font-medium transition-colors duration-150',
+                  'rounded-[var(--radius-pill)] px-4 py-2 text-[var(--font-size-sm)] font-semibold transition-all duration-150',
                   action.style === 'primary'
-                    ? 'border border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-surface-elevated)] hover:bg-[var(--color-accent-strong)]'
-                    : 'border border-[var(--color-line-soft)] text-[var(--color-text-secondary)] hover:bg-[var(--hover-bg)]',
+                    ? 'border hover:brightness-95'
+                    : 'border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] hover:bg-[var(--hover-bg)]',
                 ].join(' ')}
               >
                 {action.label}
