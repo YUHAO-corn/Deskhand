@@ -154,9 +154,32 @@ function parseA2UIResultFilePath(resultText: string | undefined): string | undef
   return undefined
 }
 
+/** Known artifact file extensions */
+const ARTIFACT_EXTENSIONS = new Set([
+  'html', 'htm', 'md', 'markdown', 'mdx',
+  'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp',
+  'xlsx', 'xls', 'docx',
+])
+
+/** Extract file paths from Bash tool result text */
+function extractFilePathsFromText(text: string | undefined): string[] {
+  if (!text) return []
+  const pathRegex = /(?:["']?)(\/?(?:[\w./-]+\/)?[\w.-]+\.(\w+))(?:["']?)/g
+  const paths: string[] = []
+  let match
+  while ((match = pathRegex.exec(text)) !== null) {
+    const rawPath = match[1]!
+    const ext = match[2]!.toLowerCase()
+    if (ARTIFACT_EXTENSIONS.has(ext) && !paths.includes(rawPath)) {
+      paths.push(rawPath)
+    }
+  }
+  return paths
+}
+
 /**
  * Extract file artifacts from one assistant turn.
- * Includes Write/Edit inputs and A2UI tool results, deduped by path.
+ * Includes Write/Edit inputs, A2UI tool results, and Bash tool outputs, deduped by path.
  */
 export function extractArtifactsFromTurn(turn: AssistantTurn): TurnArtifact[] {
   const deduped = new Map<string, TurnArtifact>()
@@ -175,21 +198,31 @@ export function extractArtifactsFromTurn(turn: AssistantTurn): TurnArtifact[] {
           : undefined)
       : undefined
 
+    // For Bash tools, scan the result text for file paths with known extensions
+    const bashFilePaths = (toolNameLower === 'bash' || toolNameLower === 'execute_command')
+      ? extractFilePathsFromText(activity.content)
+      : []
+
     const filePath = filePathFromToolInput ?? parseA2UIResultFilePath(activity.content)
-    if (!filePath) continue
 
-    const normalizedPath = filePath.trim()
-    if (!normalizedPath) continue
+    // Collect all file paths: from tool input, A2UI result, or Bash output
+    const allPaths = filePath ? [filePath, ...bashFilePaths] : bashFilePaths
+    if (allPaths.length === 0) continue
 
-    const artifact: TurnArtifact = {
-      path: normalizedPath,
-      fileName: getBasename(normalizedPath),
-      timestamp: activity.timestamp,
-    }
+    for (const fp of allPaths) {
+      const normalizedPath = fp.trim()
+      if (!normalizedPath) continue
 
-    const existing = deduped.get(normalizedPath)
-    if (!existing || artifact.timestamp >= existing.timestamp) {
-      deduped.set(normalizedPath, artifact)
+      const artifact: TurnArtifact = {
+        path: normalizedPath,
+        fileName: getBasename(normalizedPath),
+        timestamp: activity.timestamp,
+      }
+
+      const existing = deduped.get(normalizedPath)
+      if (!existing || artifact.timestamp >= existing.timestamp) {
+        deduped.set(normalizedPath, artifact)
+      }
     }
   }
 

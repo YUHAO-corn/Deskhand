@@ -47,6 +47,36 @@ function resolveArtifactPath(filePath: string, workingDirectory: string | null):
   return filePath;
 }
 
+/** Known artifact file extensions (binary + renderable) */
+const ARTIFACT_EXTENSIONS = new Set([
+  'html', 'htm', 'md', 'markdown', 'mdx',
+  'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp',
+  'xlsx', 'xls', 'docx',
+]);
+
+/**
+ * Extract file paths from Bash tool result text.
+ * Looks for absolute paths or relative paths ending with known artifact extensions.
+ */
+function extractFilePathsFromBashResult(text: string, workingDirectory: string | null): string[] {
+  if (!text) return [];
+  // Match paths like /path/to/file.xlsx, ./file.xlsx, "file.xlsx", 'output.docx'
+  const pathRegex = /(?:["']?)(\/?(?:[\w./-]+\/)?[\w.-]+\.(\w+))(?:["']?)/g;
+  const paths: string[] = [];
+  let match;
+  while ((match = pathRegex.exec(text)) !== null) {
+    const rawPath = match[1]!;
+    const ext = match[2]!.toLowerCase();
+    if (!ARTIFACT_EXTENSIONS.has(ext)) continue;
+    // Resolve to absolute path
+    const resolved = rawPath.startsWith('/') ? rawPath : resolveArtifactPath(rawPath, workingDirectory);
+    if (!paths.includes(resolved)) {
+      paths.push(resolved);
+    }
+  }
+  return paths;
+}
+
 /**
  * Agent 事件订阅 Hook
  */
@@ -273,6 +303,24 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
             }
           } catch {
             // Not JSON or not A2UI — ignore
+          }
+
+          // Bash tool: scan result for file paths with known artifact extensions
+          const toolName = event.toolName ?? '';
+          if (toolName.toLowerCase() === 'bash' || toolName.toLowerCase() === 'execute_command') {
+            const filePaths = extractFilePathsFromBashResult(event.result, workingDirectory);
+            for (const fp of filePaths) {
+              setArtifacts((prev) => {
+                const filtered = prev.filter((p) => p !== fp);
+                const updated = [...filtered, fp];
+                if (!memoryOnlySessions.has(sessionId)) {
+                  window.electronAPI?.updateSessionMeta(sessionId, { artifacts: updated }).catch(() => {});
+                }
+                return updated;
+              });
+              setSelectedArtifact(fp);
+              setArtifactPanelOpen(true);
+            }
           }
         }
         break;
