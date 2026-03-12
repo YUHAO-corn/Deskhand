@@ -421,6 +421,7 @@ export function registerIpcHandlers(): void {
       // Check if it's an image file — return base64 for rendering
       const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
       const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp'];
+      const binaryDocExts = ['xlsx', 'xls', 'docx'];
       if (imageExts.includes(ext)) {
         const buffer = await fs.readFile(filePath);
         const mimeMap: Record<string, string> = {
@@ -430,6 +431,11 @@ export function registerIpcHandlers(): void {
         };
         const mime = mimeMap[ext] ?? 'application/octet-stream';
         return { content: '', exists: true, base64: `data:${mime};base64,${buffer.toString('base64')}` };
+      }
+      // Office binary files — return raw base64 for client-side parsing
+      if (binaryDocExts.includes(ext)) {
+        const buffer = await fs.readFile(filePath);
+        return { content: '', exists: true, base64: buffer.toString('base64') };
       }
       const content = await fs.readFile(filePath, 'utf-8');
       return { content, exists: true };

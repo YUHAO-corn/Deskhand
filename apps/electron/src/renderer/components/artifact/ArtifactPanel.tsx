@@ -21,18 +21,22 @@ import {
   pendingA2UIPromptAtom,
 } from '../../atoms/sessions';
 import { Markdown } from '../chat/markdown/Markdown';
+import { ExcelPreview } from './ExcelPreview';
+import { WordPreview } from './WordPreview';
 
 // ============================================
 // File type detection
 // ============================================
 
-type FileType = 'html' | 'markdown' | 'image' | 'text';
+type FileType = 'html' | 'markdown' | 'image' | 'excel' | 'word' | 'text';
 
 function getFileType(filePath: string): FileType {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
   if (['html', 'htm'].includes(ext)) return 'html';
   if (['md', 'markdown', 'mdx'].includes(ext)) return 'markdown';
   if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp'].includes(ext)) return 'image';
+  if (['xlsx', 'xls'].includes(ext)) return 'excel';
+  if (['docx'].includes(ext)) return 'word';
   return 'text';
 }
 
@@ -567,6 +571,24 @@ function ArtifactPreview({ fileType, content, base64, fileName }: ArtifactPrevie
         </div>
       );
 
+    case 'excel':
+      return base64 ? (
+        <ExcelPreview base64={base64} />
+      ) : (
+        <span className="text-[var(--color-text-muted)] text-[var(--font-size-sm)] p-4">
+          Unable to load Excel file
+        </span>
+      );
+
+    case 'word':
+      return base64 ? (
+        <WordPreview base64={base64} />
+      ) : (
+        <span className="text-[var(--color-text-muted)] text-[var(--font-size-sm)] p-4">
+          Unable to load Word file
+        </span>
+      );
+
     default:
       return (
         <pre className="p-4 text-[var(--font-size-sm)] text-[var(--color-text-primary)] whitespace-pre-wrap break-words font-mono leading-relaxed m-0">
@@ -585,6 +607,8 @@ function FileTypeIcon({ type }: { type: FileType }) {
     html: 'text-orange-500',
     markdown: 'text-blue-500',
     image: 'text-green-500',
+    excel: 'text-emerald-600',
+    word: 'text-blue-600',
     text: 'text-[var(--color-text-muted)]',
   }[type];
 
@@ -608,6 +632,22 @@ function FileTypeIcon({ type }: { type: FileType }) {
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
           <circle cx="8.5" cy="8.5" r="1.5" />
           <polyline points="21 15 16 10 5 21" />
+        </svg>
+      ) : type === 'excel' ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="8" y1="13" x2="16" y2="13" />
+          <line x1="8" y1="17" x2="16" y2="17" />
+          <line x1="12" y1="9" x2="12" y2="21" />
+        </svg>
+      ) : type === 'word' ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <line x1="10" y1="9" x2="8" y2="9" />
         </svg>
       ) : (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">

@@ -22,6 +22,8 @@
   "dependencies": {
     "@deskhand/core": "workspace:*",
     "@deskhand/shared": "workspace:*",
-    "jotai-family": "^1.0.1"
+    "jotai-family": "^1.0.1",
+    "mammoth": "^1.11.0",
+    "xlsx": "^0.18.5"
   }
 }
