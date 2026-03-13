@@ -39,6 +39,9 @@ bun.lockb
 # AI Development
 CLAUDE.md
 
+# Internal docs (not for public release)
+docs/internal/
+
 # Draft docs (only commit finalized plans)
 docs/readme_outline.md
 docs/readme-draft.md
