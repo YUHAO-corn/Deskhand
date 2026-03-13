@@ -139,7 +139,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
       case 'text_delta': {
         setMessages((prev) => {
           // Find or create streaming message
-          let messageId = streamingMessageIdRef.current;
+          const messageId = streamingMessageIdRef.current;
           const existingIdx = messageId
             ? prev.findIndex((m) => m.id === messageId)
             : -1;
