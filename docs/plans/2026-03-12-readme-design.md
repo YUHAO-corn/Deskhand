@@ -1,7 +1,6 @@
-# README Design — Sections 1, 2, 3, 6, 7
+# README Design — All Sections
 
-> Brainstormed 2026-03-12. Covers the "simple" sections only.
-> Sections 4 (Feature Highlights) and 5 (Engineering) are deferred.
+> Brainstormed 2026-03-12. Updated 2026-03-13 with Sections 4 & 5.
 
 ---
 
@@ -74,3 +73,54 @@ Optional `.env` fields (mention briefly, don't expand):
 - **License**: MIT — create `LICENSE` file at repo root
 - **Contributing**: short paragraph — how to file issues / submit PRs
 - **Acknowledgments**: Anthropic SDK, Claude Agent SDK
+
+---
+
+## Section 4: Feature Highlights
+
+### Spotlight Features (1 image + 1-2 sentence each)
+
+**Generative UI (A2UI)**
+- Image: `genui-playground` (blog style explorer with controls + live preview)
+- Copy: AI generates interactive UI components — Playground for style exploration, Tournament for preference discovery, Guided Form for step-by-step input collection.
+
+**Skill Insight**
+- Image: `skill-insight` (analysis report + install button)
+- Copy: Analyzes your usage patterns, identifies friction points, and recommends skills to install — one click to activate.
+
+**Clipboard Intelligence**
+- Image: `clipboard-2` (work trajectory analysis)
+- Copy: Background clipboard monitoring gives the AI awareness of your working context — ask it to summarize your week and it already knows.
+
+### Other Features (feature list, no images)
+
+- **Permission System** — Ask mode requires confirmation; Allow-All mode for trusted workflows
+- **Session Management** — Persistent conversations with lazy loading, rename, archive, delete
+- **Artifact Panel** — Preview HTML, Excel, Word, and code in a side panel
+- **Activity Tree** — Visual step-by-step display of tool execution progress
+
+---
+
+## Section 5: Architecture & Tech Stack
+
+### Tech Stack (layered table)
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Electron 33, Node.js |
+| UI | React 18, TailwindCSS 4, Radix UI |
+| State | Jotai |
+| AI | Claude Agent SDK, Anthropic SDK, MCP SDK |
+| Build | Vite 6, esbuild, TypeScript 5 |
+| Storage | JSONL (append-only) |
+
+### Architecture Diagram
+
+Hand-drawn excalidraw style (placeholder until drawn).
+
+Three-layer structure top to bottom:
+
+1. **Renderer (React)** — SessionSidebar, ChatArea, ArtifactPanel, InputToolbar, A2UI, Popups + Jotai Atoms
+2. **IPC Bridge** (Preload) — single communication channel
+3. **Main Process (Node.js)** — Deskhand Agent (Permission, Tool Execution, A2UI Tools, Thinking Level) + Session Storage + Skill System + Clipboard Monitor + Insight Pipeline
+4. **External** — Claude API (cloud) + Local Filesystem & OS APIs

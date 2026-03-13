@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="[TBD]">Product Showcase</a> · <a href="[TBD]">Builder's QA Column</a>
+  <a href="https://yuhao-corn.github.io/deskhand-showcase/">Product Showcase</a> · <a href="https://yuhao-corn.github.io/column/">Builder's QA Column</a>
 </p>
 
 ---
@@ -54,9 +54,55 @@
 
 ---
 
-<!-- TODO: Section 4 — Feature Highlights -->
+## Features
 
-<!-- TODO: Section 5 — Architecture & Tech Stack -->
+### Generative UI
+
+AI-generated interactive components for structured input — Playground for style exploration with live preview, Tournament for preference discovery through binary choices, and Guided Form for step-by-step information collection.
+
+<p align="center">
+  <img src="assets/readme/07-genui-playground.png" width="864" />
+</p>
+
+### Skill Insight
+
+Analyzes your usage patterns, identifies friction points, and recommends skills to install — one click to activate.
+
+<p align="center">
+  <img src="assets/readme/08-skill-insight.png" width="864" />
+</p>
+
+### Clipboard Intelligence
+
+Background clipboard monitoring gives the AI awareness of your working context. Ask it to summarize your week and it already knows what you've been doing.
+
+<p align="center">
+  <img src="assets/readme/09-clipboard-intelligence.png" width="864" />
+</p>
+
+### More
+
+- **Permission System** — Ask mode requires confirmation for file operations; Allow-All mode for trusted workflows
+- **Session Management** — Persistent conversations with lazy loading, rename, archive, delete
+- **Artifact Panel** — Preview HTML, Excel, Word, and code in a side panel
+- **Activity Tree** — Visual step-by-step display of tool execution progress
+
+---
+
+## Architecture
+
+<p align="center">
+  <img src="assets/readme/06-architecture.png" width="864" />
+</p>
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Electron 33, Node.js |
+| UI | React 18, TailwindCSS 4, Radix UI |
+| State | Jotai |
+| AI | Claude Agent SDK, Anthropic SDK, MCP SDK |
+| Build | Vite 6, esbuild, TypeScript 5 |
+| Storage | JSONL (append-only) |
 
 ---
 
