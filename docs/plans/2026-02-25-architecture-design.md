@@ -2,7 +2,7 @@
 
 > 📅 2026-02-25 回顾记录
 > Phase 0-1 在 2026-01~02 期间完成，有 SPEC 文档但漏写了决策 Q&A，现补充回顾决策经历。
-> 对应 SPEC：`/Users/godcorn/cursor/craft-agents-oss-main/docs/SPEC.md` §1-5
+> 对应 SPEC：`docs/SPEC.md` §1-5
 
 ---
 

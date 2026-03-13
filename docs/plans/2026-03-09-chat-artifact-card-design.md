@@ -45,7 +45,7 @@
 
 ## 4.1 展示位置
 
-在 [TurnCard.tsx](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/chat/TurnCard.tsx) 中，放在 `Activity` 区块与 `response` 之间（或 response 下方，二选一保持一致）。
+在 [TurnCard.tsx](apps/electron/src/renderer/components/chat/TurnCard.tsx) 中，放在 `Activity` 区块与 `response` 之间（或 response 下方，二选一保持一致）。
 
 建议顺序：
 1. Phase chip + Activity。  
@@ -105,9 +105,9 @@
 
 ## 6.2 核心实现点
 
-1. 在 [useAgentEvents.ts](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/hooks/useAgentEvents.ts) 的 Write/Edit 捕获处，把 resolved path 回填到 tool message（例如 `toolInput.file_path_resolved`）。  
-2. 在 [turn-utils.ts](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/chat/turn-utils.ts) 新增 `extractArtifactsFromTurn(turn)`，统一提取并去重。  
-3. 在 [TurnCard.tsx](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/chat/TurnCard.tsx) 渲染 `ArtifactAttachmentSection`。  
+1. 在 [useAgentEvents.ts](apps/electron/src/renderer/hooks/useAgentEvents.ts) 的 Write/Edit 捕获处，把 resolved path 回填到 tool message（例如 `toolInput.file_path_resolved`）。  
+2. 在 [turn-utils.ts](apps/electron/src/renderer/components/chat/turn-utils.ts) 新增 `extractArtifactsFromTurn(turn)`，统一提取并去重。  
+3. 在 [TurnCard.tsx](apps/electron/src/renderer/components/chat/TurnCard.tsx) 渲染 `ArtifactAttachmentSection`。  
 4. 点击文件项时设置：
 - `selectedArtifactAtom`  
 - `artifactPanelOpenAtom = true`  
@@ -198,12 +198,12 @@
 ## 10. 相关文件
 
 核心实现文件：
-- [useAgentEvents.ts](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/hooks/useAgentEvents.ts)  
-- [turn-utils.ts](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/chat/turn-utils.ts)  
-- [TurnCard.tsx](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/chat/TurnCard.tsx)  
+- [useAgentEvents.ts](apps/electron/src/renderer/hooks/useAgentEvents.ts)  
+- [turn-utils.ts](apps/electron/src/renderer/components/chat/turn-utils.ts)  
+- [TurnCard.tsx](apps/electron/src/renderer/components/chat/TurnCard.tsx)  
 
 参考文件：
-- [ArtifactPanel.tsx](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/artifact/ArtifactPanel.tsx)  
-- [ToolActivityRow.tsx](/Users/godcorn/cursor/Deskhand/apps/electron/src/renderer/components/chat/ToolActivityRow.tsx)  
-- [2026-03-07-column-style-migration-design-plan.md](/Users/godcorn/cursor/Deskhand/docs/plans/2026-03-07-column-style-migration-design-plan.md)  
+- [ArtifactPanel.tsx](apps/electron/src/renderer/components/artifact/ArtifactPanel.tsx)  
+- [ToolActivityRow.tsx](apps/electron/src/renderer/components/chat/ToolActivityRow.tsx)  
+- [2026-03-07-column-style-migration-design-plan.md](docs/plans/2026-03-07-column-style-migration-design-plan.md)  
 

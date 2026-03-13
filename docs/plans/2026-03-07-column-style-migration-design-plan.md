@@ -512,12 +512,12 @@
 
 ### Column（目标风格源）
 
-- `/Users/godcorn/cursor/column/src/styles/global.css`  
-- `/Users/godcorn/cursor/column/tailwind.config.mjs`  
-- `/Users/godcorn/cursor/column/src/layouts/Layout.astro`  
-- `/Users/godcorn/cursor/column/src/components/Header.astro`  
-- `/Users/godcorn/cursor/column/src/components/ReadFlow.astro`  
-- `/Users/godcorn/cursor/column/src/components/TopicCard.astro`  
+- `column/src/styles/global.css`
+- `column/tailwind.config.mjs`
+- `column/src/layouts/Layout.astro`
+- `column/src/components/Header.astro`
+- `column/src/components/ReadFlow.astro`
+- `column/src/components/TopicCard.astro`  
 
 ---
 
