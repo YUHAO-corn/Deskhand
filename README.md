@@ -7,6 +7,14 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+  <img src="https://img.shields.io/badge/electron-33-47848F?logo=electron" alt="Electron" />
+  <img src="https://img.shields.io/badge/react-18-61DAFB?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/typescript-5-3178C6?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/powered%20by-Claude-D97757?logo=anthropic" alt="Claude" />
+</p>
+
+<p align="center">
   <a href="https://yuhao-corn.github.io/deskhand-showcase/">Product Showcase</a> · <a href="https://yuhao-corn.github.io/column/">Builder's QA Column</a>
 </p>
 
