@@ -119,7 +119,7 @@ Background clipboard monitoring gives the AI awareness of your working context. 
 Prerequisites: [Git](https://git-scm.com/) and [Bun](https://bun.sh/) (v1.0+).
 
 ```bash
-git clone https://github.com/xxx/Deskhand.git
+git clone https://github.com/YUHAO-corn/Deskhand.git
 cd Deskhand
 bun install
 cp .env.example .env
