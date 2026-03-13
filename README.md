@@ -16,7 +16,7 @@
 
 <!-- 1. Disk Cleanup — Desktop-exclusive: scan disk, suggest cleanup, execute with permission -->
 <p align="center">
-  <img src="assets/readme/01-disk-cleanup.png" width="720" />
+  <img src="assets/readme/01-disk-cleanup.png" width="864" />
 </p>
 <p align="center"><em>Scan disk usage, suggest cleanup targets, and execute only after your confirmation.</em></p>
 
@@ -24,7 +24,7 @@
 
 <!-- 2. Excel Analysis — Turn raw data into structured analysis -->
 <p align="center">
-  <img src="assets/readme/02-data-analysis-excel.png" width="720" />
+  <img src="assets/readme/02-data-analysis-excel.png" width="864" />
 </p>
 <p align="center"><em>Find local data files, analyze them, and produce a structured Excel report.</em></p>
 
@@ -32,7 +32,7 @@
 
 <!-- 3. HTML Dashboard — Visualize the same data as an interactive dashboard -->
 <p align="center">
-  <img src="assets/readme/03-data-analysis-dashboard.png" width="720" />
+  <img src="assets/readme/03-data-analysis-dashboard.png" width="864" />
 </p>
 <p align="center"><em>Then turn that analysis into a visual HTML dashboard — in the same conversation.</em></p>
 
@@ -40,7 +40,7 @@
 
 <!-- 4. Notes Classification — Organize and isolate sensitive content -->
 <p align="center">
-  <img src="assets/readme/04-note-classification.png" width="720" />
+  <img src="assets/readme/04-note-classification.png" width="864" />
 </p>
 <p align="center"><em>Classify Apple Notes by topic and isolate entries containing sensitive information.</em></p>
 
@@ -48,7 +48,7 @@
 
 <!-- 5. Document Translation — Read, translate, and render .docx files -->
 <p align="center">
-  <img src="assets/readme/05-rental-contract-docx.png" width="720" />
+  <img src="assets/readme/05-rental-contract-docx.png" width="864" />
 </p>
 <p align="center"><em>Read a local .docx file, translate it, and render the result with full formatting.</em></p>
 
