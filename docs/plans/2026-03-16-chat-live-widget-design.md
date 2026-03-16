@@ -332,6 +332,90 @@ SVG 或复杂布局连续增长时，会频繁触发高度变化。
 
 ---
 
+## Q15：Vertical Slice 应该怎么切？
+
+结论：**先切得更细，先验证“能塞进去”，再验证“能被实时塞进去”。**
+
+不建议第一刀就直接接真实 agent/tool 链路。因为这个功能横跨：
+
+1. tool 定义
+2. agent 事件发射
+3. renderer 状态更新
+4. turn 内嵌 iframe runtime
+
+如果一开始全连上，任何一层出问题，定位都会很慢。
+
+更合理的做法是分 4 个 vertical slice：
+
+### VS1：静态 widget 容器
+
+目标：
+
+1. 先不接真实 agent。
+2. 在 renderer 里用本地 mock 数据，给一个 assistant turn 塞入最终 HTML/SVG。
+3. 验证 widget 能稳定显示在正文后。
+
+验收：
+
+1. `TurnCard` 能稳定渲染 `LiveWidgetFrame`。
+2. 静态 HTML/SVG 显示正常。
+3. 高度自适应正常。
+4. 不影响现有 turn 渲染结构。
+
+### VS2：假流式
+
+目标：
+
+1. 仍然不接真实 agent。
+2. 用前端定时器按 chunk 模拟 widget 增量到达。
+3. 验证 buffer、增量 append 和“边画边长”的视觉效果。
+
+验收：
+
+1. chunk 是逐步长出来的，不是整页替换。
+2. 半截标签不会破坏 DOM。
+3. 高度变化可控，没有明显抖动或闪烁。
+
+### VS3：真实事件流接入
+
+目标：
+
+1. 接入 `show_widget` 和真实 widget 事件。
+2. 让 `useAgentEvents` 能把 widget 流正确写入对应 message。
+3. turn 层按真实 session 数据渲染 widget。
+
+验收：
+
+1. `widget_chunk/widget_complete/widget_error` 事件能走通。
+2. 当前 turn 能正确关联唯一 widget。
+3. 不影响现有 text/tool/activity 渲染链路。
+
+### VS4：交互与持久化
+
+目标：
+
+1. 加入 `sendPrompt(text, { submit? })` bridge。
+2. 完成脚本延迟激活。
+3. 完成最终态持久化与历史恢复。
+4. 补错误态、异常态和边界处理。
+
+验收：
+
+1. widget 完成后交互可用。
+2. `sendPrompt` 默认填入输入框，可选直接发送。
+3. 关闭并重开会话后，最终态可直接显示。
+4. 脚本不会在流式阶段提前执行。
+
+这个切法的核心思想是：
+
+1. 先把问题缩成纯前端嵌入问题。
+2. 再验证流式 runtime。
+3. 最后才把 agent/tool 链路和持久化接上。
+
+这样每一刀都能独立验收，失败时也更容易定位。
+
+---
+
 ## 附：本次讨论的结论清单
 
 1. widget 是 assistant turn 的原生内容块。
@@ -344,3 +428,4 @@ SVG 或复杂布局连续增长时，会频繁触发高度变化。
 8. 历史只存最终 HTML/SVG。
 9. `sendPrompt` 默认填入输入框，支持参数控制直接发送。
 10. 第一阶段只做轻量 chat widget，复杂场景继续走 Artifact。
+11. 开发顺序按 4 个 vertical slice 推进：静态容器 → 假流式 → 真事件流 → 交互与持久化。
