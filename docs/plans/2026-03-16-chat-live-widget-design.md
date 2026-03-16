@@ -1,0 +1,346 @@
+# Chat 内 Live Widget 设计 Q&A
+
+> 日期：2026-03-16
+> 状态：设计确认，待实现
+> 目标：在聊天区域中支持 assistant turn 内联的流式可交互 widget，并与输入框桥接。
+
+---
+
+## Q1：这个功能本质上是什么？
+
+它不是 Artifact 预览，也不是右侧面板的缩略版，而是 **assistant turn 的原生内容块**。
+
+用户感知应该像 Claude 这类产品里的可视化回复：
+
+1. AI 先正常输出文字。
+2. 说到合适的位置时，开始在同一条回复里“画图”或“搭界面”。
+3. 图会随着流式输出逐步出现。
+4. 图中元素可以交互，交互结果可以回到聊天输入框，必要时也可以直接发送。
+
+因此，这个功能不是“生成一个 HTML 文件给用户点开”，而是让 ChatArea 自己具备承载轻量可视化回复的能力。
+
+---
+
+## Q2：widget 在 turn 里是临时预览，还是历史内容的一部分？
+
+结论：**是历史内容的一部分，但只保留最终态，不回放生成过程。**
+
+具体规则：
+
+1. Live session 中，用户看到 widget 被逐步画出来。
+2. 流结束后，只持久化最终 HTML/SVG 代码。
+3. 重新打开会话时，直接渲染最终态，不重放 chunk。
+
+原因很直接：
+
+1. “逐步出现”的动画感属于生成过程体验，不是内容本身。
+2. 用户回看历史时，核心诉求是看到最终图和可交互控件，而不是再看一遍绘制过程。
+3. 持久化 chunk 日志或中间快照，复杂度很高，收益很低。
+
+---
+
+## Q3：流式协议选什么？
+
+结论：**选 A，纯增量注入。**
+
+不选“整体快照替换”或“节流版快照刷新”，因为它们都给不了“边说边画”的感觉。用户要看到的是元素逐步出现，而不是整个 iframe 一闪一闪地整体重绘。
+
+这里的关键不是换协议，而是在渲染层补两个机制：
+
+1. **标签完整性缓冲层**
+   token 先进入 buffer，不直接喂给 iframe。
+   只有检测到一段合法、完整的 HTML/SVG 片段后，才 append 进 DOM。
+
+2. **脚本延迟激活**
+   流式阶段把 `<script>` 改为阻塞态，不立即执行。
+   等 `widget_complete` 到达，再统一激活。
+
+一句话总结：**流式协议保持纯增量，稳定性靠缓冲与延迟执行兜底。**
+
+---
+
+## Q4：点击 widget 后，是填入输入框，还是直接发送？
+
+结论：**协议同时支持两者，但默认是填入输入框。**
+
+推荐桥接接口：
+
+```ts
+sendPrompt(text)
+sendPrompt(text, { submit: true })
+```
+
+语义如下：
+
+1. `sendPrompt(text)`：只把文本放进输入框，不自动发送。
+2. `sendPrompt(text, { submit: true })`：由宿主侧触发真正的发送流程。
+
+这样做的原因：
+
+1. 默认填入输入框更安全，避免 widget 替用户误发消息。
+2. 直接发送在“明确 CTA”场景里仍然可用，比如“继续解释这个节点”或“按这个方案展开”。
+3. 宿主保留最终控制权，后续可以在用户正编辑 draft 时增加保护逻辑。
+
+---
+
+## Q5：一个 assistant turn 里允许几个 live widget？
+
+结论：**先限制为每轮最多一个。**
+
+这样做的原因不是保守，而是为了控制第一版复杂度：
+
+1. 一个 turn 只需要维护一套 widget 生命周期。
+2. 只需要一个 buffer、一个 iframe、一套桥接、一套高度同步。
+3. `TurnCard` 中的展示位置和状态管理都更清晰。
+4. 避免模型滥用，一轮回复里堆出多个交互块，破坏聊天感。
+
+如果后续真有“一轮多个交互中心”的需求，再把数据结构升级成列表。
+
+---
+
+## Q6：widget 在 turn 里的默认位置放哪？
+
+结论：**放在 assistant 正文之后。**
+
+原因：
+
+1. 流式场景下通常是文字先到，widget code 后到。
+2. 放在正文后面最符合自然渲染顺序，不需要后插内容导致正文整体下移。
+3. 可以减少 turn 高度的二次跳动。
+
+因此，一个 assistant turn 的顺序为：
+
+1. Activity 区
+2. 正文 Markdown
+3. Live Widget Block
+4. Action buttons（若有）
+
+---
+
+## Q7：widget 的来源协议是什么？
+
+结论：**必须走专门的 tool call，不从 Markdown 代码块里解析。**
+
+推荐做法：
+
+1. Agent 调用 `show_widget` 之类的专用工具。
+2. 该工具触发专门的 widget 事件流。
+3. 正文继续走现有 `text_delta/text_complete` 通道。
+4. widget 走独立的 `widget_chunk/widget_complete/widget_error` 通道。
+
+不选“在 Markdown 里塞特殊代码块再由前端提取”，因为那样会把 UI 解析和自然语言流混在一起，容错更差，持久化也更难定义。
+
+---
+
+## Q8：chat 内 widget 的能力边界是什么？
+
+结论：**先做轻量沙箱，不做复杂 app。**
+
+第一版边界：
+
+1. 只承载轻量 HTML/SVG 可视化与局部交互。
+2. 支持基础内联 CSS 和基础 JS。
+3. 通过宿主注入的 `sendPrompt` 与聊天系统通信。
+4. 不开放复杂外部能力，不把它做成完整网页运行时。
+
+对应的产品边界也要明确：
+
+1. 适合解释图、流程图、局部可交互 mock、小选择器、小问答组件。
+2. 不适合大型 playground、复杂多页应用、重资源内容。
+3. 复杂场景继续走 Artifact Panel。
+
+---
+
+## Q9：渲染管道和提示词层的关系是什么？
+
+结论：**先做渲染管道，再做提示词层。两者是关联的，但不应混在一个开发阶段里。**
+
+当前设计明确拆成两块：
+
+1. **渲染管道**
+   解决“模型产出的代码，如何稳定显示在 ChatArea 里”。
+
+2. **内容生成 / 提示词层**
+   解决“模型什么时候该调 `show_widget`，调了之后该画什么，遵循什么设计规范”。
+
+目前先做第一块。等管道打通后，再进入第二块：
+
+1. 用手写 HTML/SVG 通过 `show_widget` 验证渲染效果。
+2. 管道稳定后，再设计 system prompt 路由规则。
+3. 再决定是否增加 `read_me` 工具和按需加载的规范文档。
+
+相关参考：
+
+1. `docs/plans/pipeline_vs_content_architecture.html`
+2. `docs/plans/full_request_lifecycle.html`
+3. `docs/plans/a2ui_full_architecture.html`
+
+---
+
+## Q10：在这个仓库里，真实的实现落点在哪里？
+
+### 10.1 协议与类型层
+
+需要修改：
+
+1. `packages/core/src/types/event.ts`
+   新增 `widget_chunk`、`widget_complete`、`widget_error` 等事件类型。
+
+2. `packages/core/src/types/message.ts`
+   给 `Message` / `StoredMessage` 增加 `widget` 字段，用于持久化最终代码与运行态元信息。
+
+### 10.2 Agent 事件接入层
+
+需要修改：
+
+1. `apps/electron/src/renderer/hooks/useAgentEvents.ts`
+
+职责：
+
+1. 识别 `show_widget` 对应的 tool start。
+2. 接收 widget 流式事件并更新对应 message。
+3. 在 complete 时只持久化最终代码。
+
+### 10.3 Turn 组装与 UI 层
+
+需要修改：
+
+1. `apps/electron/src/renderer/components/chat/turn-utils.ts`
+   提取 turn 级唯一 widget。
+
+2. `apps/electron/src/renderer/components/chat/TurnCard.tsx`
+   在正文后插入 live widget block。
+
+建议新增：
+
+1. `apps/electron/src/renderer/components/chat/LiveWidgetFrame.tsx`
+   封装 iframe、buffer、桥接、高度同步与脚本激活。
+
+如实现中需要拆开字符串模板或宿主注入脚本，可再新增：
+
+1. `apps/electron/src/renderer/components/chat/live-widget/runtime.ts`
+2. `apps/electron/src/renderer/components/chat/live-widget/buffer.ts`
+
+### 10.4 Agent / tool 侧
+
+需要检查并按实际接入方式修改：
+
+1. `packages/shared/src/agent/*`
+2. `packages/shared/src/agent/index.ts`
+3. 未来新增或接入 `show_widget` tool 的位置
+
+目标不是在这里一次性定义完整提示词系统，而是先确保 tool 能把 widget 相关事件发到 renderer。
+
+---
+
+## Q11：第一版的核心风险是什么？
+
+### 风险 1：标签缓冲误判
+
+不能简单地“看到一个 `>` 就 append”，否则属性值、注释、`style`、`script`、SVG 嵌套都可能出问题。
+
+建议：
+
+1. 做一个有限状态的轻量 parser。
+2. 只在确认片段完整时提交给 iframe。
+
+### 风险 2：DOM 注入方式不稳
+
+不要在流式过程中反复 `document.write` 或整体覆盖 `srcDoc`。
+
+建议：
+
+1. iframe 初始化后有一个固定 `#widget-root`。
+2. 合法片段统一 append 到这个 root 下。
+
+### 风险 3：高度同步抖动
+
+SVG 或复杂布局连续增长时，会频繁触发高度变化。
+
+建议：
+
+1. iframe 内用 `ResizeObserver`。
+2. 对 postMessage 回传做节流。
+
+### 风险 4：自动发送误触
+
+即使协议支持 `submit: true`，宿主也不能无脑发。
+
+建议：
+
+1. 默认只填入输入框。
+2. 自动发送场景由宿主仲裁。
+3. 后续可以加“输入框非空时不自动发”的保护。
+
+---
+
+## Q12：建议的开发顺序是什么？
+
+### Phase 1：渲染管道打通
+
+1. 定义 widget 事件类型。
+2. 让 Agent/tool 能发出 widget 事件。
+3. renderer 能接收并在 turn 内渲染 iframe。
+4. 手写 HTML/SVG 验证：
+   - 能流式出现
+   - 高度自适应正常
+   - `sendPrompt` 可用
+   - 历史恢复显示最终态
+
+### Phase 2：稳定性收口
+
+1. 完善 buffer 规则。
+2. 处理脚本延迟激活。
+3. 处理异常、超长内容、iframe 错误态。
+
+### Phase 3：提示词层 / 内容生成
+
+1. 设计 system prompt 路由规则。
+2. 明确什么时候用 `show_widget`。
+3. 视需要增加 `read_me` 工具。
+4. 编写具体的设计规范文档和 few-shot 示例。
+
+---
+
+## Q13：第一版验收标准是什么？
+
+满足以下条件即可认为“渲染管道跑通”：
+
+1. assistant turn 中可在正文后显示 live widget。
+2. widget 可随 chunk 流式增长，而不是整页替换闪烁。
+3. iframe 高度能随内容变化自动同步。
+4. 流式阶段脚本不会提前执行。
+5. 流结束后脚本可激活，交互可用。
+6. `sendPrompt(text)` 能把内容送入输入框。
+7. `sendPrompt(text, { submit: true })` 能走宿主发送链路。
+8. 关闭并重新打开会话时，widget 直接显示最终态。
+
+---
+
+## Q14：本次设计刻意不解决什么？
+
+以下内容明确延后，不进入本次“渲染管道实现”范围：
+
+1. 什么时候该自动触发 `show_widget`
+2. 哪些任务适合用 widget、哪些不适合
+3. read_me 工具的最终形态
+4. widget 视觉设计规范与代码模板
+5. 多 widget per turn
+6. 富能力 mini-app 沙箱
+
+这样拆分的原因很简单：先把水管接通，再调水的配方。
+
+---
+
+## 附：本次讨论的结论清单
+
+1. widget 是 assistant turn 的原生内容块。
+2. 每轮最多一个 widget。
+3. 放在正文之后。
+4. 走专用 tool call，不从 markdown 提取。
+5. 协议选纯增量注入。
+6. 通过缓冲层保证只注入完整标签。
+7. 流式阶段阻塞脚本，完成后再激活。
+8. 历史只存最终 HTML/SVG。
+9. `sendPrompt` 默认填入输入框，支持参数控制直接发送。
+10. 第一阶段只做轻量 chat widget，复杂场景继续走 Artifact。

@@ -1,0 +1,98 @@
+
+<style>
+  .block { border:0.5px solid var(--color-border-tertiary); border-radius:var(--border-radius-lg); padding:14px 16px; }
+  .block-title { font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px; }
+  .block-desc { font-size:12px; color:var(--color-text-secondary); line-height:1.6; }
+  .mono { font-family:var(--font-mono); font-size:11px; padding:1px 5px; border-radius:4px; background:var(--color-background-secondary); }
+  .status { display:inline-block; font-size:11px; padding:3px 10px; border-radius:var(--border-radius-md); font-weight:500; }
+  .s-doing { background:#E1F5EE; color:#085041; }
+  .s-later { background:var(--color-background-secondary); color:var(--color-text-tertiary); }
+  .items { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .item { font-size:12px; color:var(--color-text-secondary); padding:6px 10px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); line-height:1.5; }
+  .item-title { font-weight:500; color:var(--color-text-primary); }
+  .big-arrow { text-align:center; color:var(--color-text-tertiary); font-size:14px; margin:10px 0; }
+  .phase-row { display:flex; gap:12px; margin:8px 0; }
+  .phase { flex:1; padding:10px 12px; border-radius:var(--border-radius-md); text-align:center; }
+  .p1 { background:#E1F5EE; color:#085041; }
+  .p2 { background:#EEEDFE; color:#3C3489; }
+  .p3 { background:#FAEEDA; color:#633806; }
+</style>
+
+<div style="padding:0.5rem 0;">
+
+  <!-- 两大块总览 -->
+  <div style="display:flex;gap:12px;margin-bottom:16px;">
+    <div class="block" style="flex:1;border-color:var(--color-border-info);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div class="block-title">渲染管道</div>
+        <span class="status s-doing">Codex 正在做</span>
+      </div>
+      <div class="block-desc">解决"代码怎么从模型到屏幕"</div>
+      <div class="items">
+        <div class="item"><span class="item-title">事件协议</span> — widget_chunk 等</div>
+        <div class="item"><span class="item-title">状态存储</span> — message.widget 字段</div>
+        <div class="item"><span class="item-title">iframe 渲染</span> — 缓冲、高度、桥接</div>
+      </div>
+    </div>
+    <div class="block" style="flex:1;opacity:0.7;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div class="block-title">内容生成</div>
+        <span class="status s-later">管道通了再做</span>
+      </div>
+      <div class="block-desc">解决"模型到底画出什么东西"</div>
+      <div class="items">
+        <div class="item"><span class="item-title">路由规则</span> — 什么时候该画图</div>
+        <div class="item"><span class="item-title">read_me 机制</span> — 按需加载设计规范</div>
+        <div class="item"><span class="item-title">设计规范</span> — 颜色、字号、代码模板</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 比喻 -->
+  <div class="block" style="background:var(--color-background-secondary);border:none;">
+    <div class="block-desc" style="text-align:center;">
+      <span class="item-title">打个比方：</span>管道是水管和水龙头，内容生成是水。先把水管接好，再调水的配方。
+    </div>
+  </div>
+
+  <!-- 开发顺序 -->
+  <div class="big-arrow">↓ 开发顺序</div>
+
+  <div class="phase-row">
+    <div class="phase p1">
+      <div style="font-size:13px;font-weight:500;">第一步</div>
+      <div style="font-size:12px;margin-top:4px;">Codex 做完管道</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--color-text-tertiary);">→</div>
+    <div class="phase p2">
+      <div style="font-size:13px;font-weight:500;">第二步</div>
+      <div style="font-size:12px;margin-top:4px;">手写一段 HTML 测试管道</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--color-text-tertiary);">→</div>
+    <div class="phase p3">
+      <div style="font-size:13px;font-weight:500;">第三步</div>
+      <div style="font-size:12px;margin-top:4px;">设计提示词让模型自己画</div>
+    </div>
+  </div>
+
+  <div class="block" style="margin-top:12px;">
+    <div class="block-desc">
+      <span class="item-title">第三步拆开来有三件事：</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;">
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;">3a. 路由规则</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.5;">写进系统提示词，常驻。<br>告诉模型什么时候调 show_widget，什么时候不调。</div>
+      </div>
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;">
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;">3b. read_me 工具</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.5;">注册一个新 tool。<br>模型决定画图后调用它加载详细设计规范。</div>
+      </div>
+      <div style="flex:1;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;">
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;">3c. 设计规范</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.5;">read_me 返回的内容。<br>颜色体系、布局规则、代码模板、常见错误清单。</div>
+      </div>
+    </div>
+  </div>
+
+</div>
