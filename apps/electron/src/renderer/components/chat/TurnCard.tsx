@@ -13,20 +13,24 @@ interface TurnCardProps {
   turn: AssistantTurn;
 }
 
+function isWidgetToolName(toolName: string | undefined): boolean {
+  return toolName?.toLowerCase().includes('show_widget') ?? false;
+}
+
 function getPreviewText(turn: AssistantTurn, isStreaming: boolean, hasResponse: boolean): string {
   const intent = getTurnIntent(turn);
   if (intent) return intent;
 
   if (isStreaming && hasResponse) return 'Responding...';
 
-  const runningTools = turn.activities.filter((a) => a.status === 'running' && a.toolName);
+  const runningTools = turn.activities.filter((a) => a.status === 'running' && a.toolName && !isWidgetToolName(a.toolName));
   if (runningTools.length > 0) {
     const toolNames = runningTools.map((a) => a.toolName).slice(0, 3);
     return `${toolNames.join(', ')}...`;
   }
 
-  const completedCount = turn.activities.filter((a) => a.status === 'completed').length;
-  const errorCount = turn.activities.filter((a) => a.status === 'error').length;
+  const completedCount = turn.activities.filter((a) => a.status === 'completed' && !isWidgetToolName(a.toolName)).length;
+  const errorCount = turn.activities.filter((a) => a.status === 'error' && !isWidgetToolName(a.toolName)).length;
   if (completedCount > 0 || errorCount > 0) {
     const errorSuffix = errorCount > 0 ? ` · ${errorCount} error${errorCount > 1 ? 's' : ''}` : '';
     return `Steps completed${errorSuffix}`;
@@ -82,10 +86,14 @@ export function TurnCard({ turn }: TurnCardProps) {
 
   const [isExpanded, setIsExpanded] = useState(true);
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
+  const visibleActivities = useMemo(
+    () => activities.filter((activity) => !isWidgetToolName(activity.toolName)),
+    [activities],
+  );
 
   const showThinking = shouldShowThinkingIndicator(phase, false);
   const hasContent = response && response.text.length > 0;
-  const hasActivities = activities && activities.length > 0;
+  const hasActivities = visibleActivities.length > 0;
   const isResponseStreaming = response?.isStreaming ?? false;
 
   const previewText = useMemo(() => getPreviewText(turn, turn.isStreaming, !!response), [turn, response]);
@@ -123,14 +131,14 @@ export function TurnCard({ turn }: TurnCardProps) {
                 ].join(' ')}
               />
 
-              <span className="shrink-0 text-[var(--font-size-xs)] tabular-nums">{activities.length}</span>
+              <span className="shrink-0 text-[var(--font-size-xs)] tabular-nums">{visibleActivities.length}</span>
               <span className="flex-1 truncate">{previewText}</span>
             </button>
 
             {isExpanded && (
               <div className="mt-2 rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] px-2 py-2">
                 <ActivityTree
-                  activities={activities}
+                  activities={visibleActivities}
                   onActivityClick={(activity) => {
                     console.log('Activity clicked:', activity);
                   }}

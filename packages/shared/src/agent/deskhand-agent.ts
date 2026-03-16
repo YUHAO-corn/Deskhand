@@ -19,17 +19,134 @@ import { ToolIndex, extractToolStarts, extractToolResults, type ContentBlock } f
 import { getPluginPaths } from '../skills/loader';
 import { createA2UIServer } from './a2ui-tools';
 
-type ForcedA2UITool = 'render_playground' | 'render_tournament' | null;
+type ForcedA2UITool = 'render_playground' | 'render_tournament' | 'show_widget' | null;
 
 function extractForcedA2UIToolFromMessage(message: string): ForcedA2UITool {
   const lower = message.toLowerCase();
   if (lower.includes('[pick-a-style]')) return 'render_playground';
   if (lower.includes('[this-or-that]')) return 'render_tournament';
+  if (lower.includes('[show-widget]')) return 'show_widget';
   return null;
 }
 
 function isA2UIRenderToolName(toolName: string): boolean {
-  return toolName.includes('render_playground') || toolName.includes('render_tournament');
+  return toolName.includes('render_playground') || toolName.includes('render_tournament') || toolName.includes('show_widget');
+}
+
+function isShowWidgetToolName(toolName: string | undefined): boolean {
+  return toolName?.toLowerCase().includes('show_widget') ?? false;
+}
+
+interface StreamingWidgetState {
+  toolUseId: string;
+  turnId?: string;
+  jsonBuffer: string;
+  emittedCodeLength: number;
+  title?: string;
+  mimeType?: 'text/html' | 'image/svg+xml';
+}
+
+function parseJsonStringLiteral(source: string, startIndex: number): { value: string; complete: boolean; endIndex: number } | null {
+  if (source[startIndex] !== '"') return null;
+
+  let value = '';
+  let escaped = false;
+
+  for (let i = startIndex + 1; i < source.length; i += 1) {
+    const char = source[i];
+
+    if (escaped) {
+      switch (char) {
+        case '"':
+        case '\\':
+        case '/':
+          value += char;
+          break;
+        case 'b':
+          value += '\b';
+          break;
+        case 'f':
+          value += '\f';
+          break;
+        case 'n':
+          value += '\n';
+          break;
+        case 'r':
+          value += '\r';
+          break;
+        case 't':
+          value += '\t';
+          break;
+        case 'u': {
+          const hex = source.slice(i + 1, i + 5);
+          if (hex.length < 4 || !/^[0-9a-fA-F]{4}$/.test(hex)) {
+            return { value, complete: false, endIndex: source.length };
+          }
+          value += String.fromCharCode(Number.parseInt(hex, 16));
+          i += 4;
+          break;
+        }
+        default:
+          value += char;
+      }
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      return { value, complete: true, endIndex: i };
+    }
+
+    value += char;
+  }
+
+  return { value, complete: false, endIndex: source.length };
+}
+
+function extractStringFieldFromPartialJson(source: string, fieldName: string): { value: string; complete: boolean } | null {
+  const key = `"${fieldName}"`;
+  const keyIndex = source.indexOf(key);
+  if (keyIndex === -1) return null;
+
+  let cursor = keyIndex + key.length;
+  while (cursor < source.length && /\s/.test(source[cursor]!)) cursor += 1;
+  if (source[cursor] !== ':') return null;
+  cursor += 1;
+  while (cursor < source.length && /\s/.test(source[cursor]!)) cursor += 1;
+  if (source[cursor] !== '"') return null;
+
+  const parsed = parseJsonStringLiteral(source, cursor);
+  if (!parsed) return null;
+
+  return {
+    value: parsed.value,
+    complete: parsed.complete,
+  };
+}
+
+function readStreamingWidgetState(state: StreamingWidgetState): {
+  code?: string;
+  title?: string;
+  mimeType?: 'text/html' | 'image/svg+xml';
+} {
+  const codeField = extractStringFieldFromPartialJson(state.jsonBuffer, 'code');
+  const titleField = extractStringFieldFromPartialJson(state.jsonBuffer, 'title');
+  const mimeField = extractStringFieldFromPartialJson(state.jsonBuffer, 'mimeType');
+
+  const mimeType = mimeField?.value === 'image/svg+xml' || mimeField?.value === 'text/html'
+    ? mimeField.value
+    : undefined;
+
+  return {
+    code: codeField?.value,
+    title: titleField?.value,
+    mimeType,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,12 +265,11 @@ export class DeskhandAgent {
 
     if (forcedA2UITool) {
       console.log('[DeskhandAgent] Interact tag detected, forcing tool:', forcedA2UITool);
-      const blockedTool = forcedA2UITool === 'render_playground' ? 'render_tournament' : 'render_playground';
       systemPromptAppendBlocks.push([
         '## Interact Tag Routing',
         `The user message includes an interact tag that requires tool routing.`,
         `You MUST use ${forcedA2UITool} for A2UI rendering in this turn.`,
-        `You MUST NOT call ${blockedTool} in this turn.`,
+        'Do not use other A2UI render tools in this turn.',
       ].join('\n'));
     }
 
@@ -265,6 +381,7 @@ export class DeskhandAgent {
     const toolIndex = new ToolIndex();
     const emittedToolStarts = new Set<string>();
     const activeParentTools = new Set<string>();
+    const streamingWidgets = new Map<number, StreamingWidgetState>();
     let currentTurnId: string | null = null;
 
     // ─── Step 4: 遍历 SDK 消息流 ───
@@ -283,6 +400,7 @@ export class DeskhandAgent {
           toolIndex,
           emittedToolStarts,
           activeParentTools,
+          streamingWidgets,
           currentTurnId,
           (id) => { currentTurnId = id; }
         );
@@ -296,6 +414,14 @@ export class DeskhandAgent {
           }
           if (event.type === 'tool_result' && event.toolName === 'Task' && event.toolUseId) {
             activeParentTools.delete(event.toolUseId);
+          }
+          if (event.type === 'tool_result' && isShowWidgetToolName(event.toolName) && event.isError) {
+            emit({
+              type: 'widget_error',
+              toolUseId: event.toolUseId,
+              message: event.result || 'Widget tool failed',
+              turnId: event.turnId,
+            });
           }
           emit(event);
         }
@@ -323,6 +449,7 @@ export class DeskhandAgent {
     toolIndex: ToolIndex,
     emittedToolStarts: Set<string>,
     activeParentTools: Set<string>,
+    streamingWidgets: Map<number, StreamingWidgetState>,
     currentTurnId: string | null,
     setTurnId: (id: string) => void,
   ): AgentEvent[] {
@@ -353,6 +480,38 @@ export class DeskhandAgent {
               turnId: currentTurnId ?? undefined,
             });
           }
+
+          if (delta.type === 'input_json_delta') {
+            const contentBlockIndex = typeof streamEvent.index === 'number' ? streamEvent.index : undefined;
+            const partialJson = typeof delta.partial_json === 'string' ? delta.partial_json : undefined;
+            const widgetState = contentBlockIndex !== undefined ? streamingWidgets.get(contentBlockIndex) : undefined;
+
+            if (widgetState && partialJson) {
+              widgetState.jsonBuffer += partialJson;
+              const parsed = readStreamingWidgetState(widgetState);
+              const nextCode = parsed.code ?? '';
+              const nextMimeType = parsed.mimeType ?? widgetState.mimeType;
+              const nextTitle = parsed.title ?? widgetState.title;
+
+              if (nextCode.length >= widgetState.emittedCodeLength) {
+                const chunk = nextCode.slice(widgetState.emittedCodeLength);
+                if (chunk) {
+                  events.push({
+                    type: 'widget_chunk',
+                    toolUseId: widgetState.toolUseId,
+                    chunk,
+                    turnId: widgetState.turnId,
+                    title: nextTitle,
+                    mimeType: nextMimeType,
+                  });
+                  widgetState.emittedCodeLength = nextCode.length;
+                }
+              }
+
+              widgetState.title = nextTitle;
+              widgetState.mimeType = nextMimeType;
+            }
+          }
         }
 
         // content_block_start: 工具调用开始
@@ -361,6 +520,7 @@ export class DeskhandAgent {
           if (contentBlock.type === 'tool_use') {
             const toolUseId = contentBlock.id as string;
             const toolName = contentBlock.name as string;
+            const contentBlockIndex = typeof streamEvent.index === 'number' ? streamEvent.index : undefined;
 
             // 存入索引并发出事件（如果未重复）
             if (!emittedToolStarts.has(toolUseId)) {
@@ -373,6 +533,35 @@ export class DeskhandAgent {
                 input: {},
                 turnId: currentTurnId ?? undefined,
               });
+            }
+
+            if (isShowWidgetToolName(toolName) && contentBlockIndex !== undefined) {
+              streamingWidgets.set(contentBlockIndex, {
+                toolUseId,
+                turnId: currentTurnId ?? undefined,
+                jsonBuffer: '',
+                emittedCodeLength: 0,
+              });
+            }
+          }
+        }
+
+        if (streamEvent.type === 'content_block_stop') {
+          const contentBlockIndex = typeof streamEvent.index === 'number' ? streamEvent.index : undefined;
+          const widgetState = contentBlockIndex !== undefined ? streamingWidgets.get(contentBlockIndex) : undefined;
+
+          if (widgetState) {
+            const parsed = readStreamingWidgetState(widgetState);
+            events.push({
+              type: 'widget_complete',
+              toolUseId: widgetState.toolUseId,
+              turnId: widgetState.turnId,
+              code: parsed.code,
+              title: parsed.title ?? widgetState.title,
+              mimeType: parsed.mimeType ?? widgetState.mimeType,
+            });
+            if (contentBlockIndex !== undefined) {
+              streamingWidgets.delete(contentBlockIndex);
             }
           }
         }

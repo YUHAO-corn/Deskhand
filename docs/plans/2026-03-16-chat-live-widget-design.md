@@ -416,6 +416,106 @@ SVG 或复杂布局连续增长时，会频繁触发高度变化。
 
 ---
 
+## Q16：VS3 验证后的真实结论是什么？
+
+结论：**当前基于 MCP `show_widget` tool input 的真实链路，已经能跑通完成态渲染，但拿不到我们需要的流式 code delta。**
+
+已经验证成功的部分：
+
+1. 模型可以调用真实的 `show_widget` tool。
+2. renderer 可以把该 tool 的最终代码渲染成 chat 内 widget。
+3. `show_widget` 的工具痕迹可以从 Activity 区隐藏，不让界面看起来像“露出工具调用”。
+4. 历史里可以保留最终态 widget。
+
+已经验证失败的部分：
+
+1. 在当前 `Claude Agent SDK + MCP tool` 路径下，没有拿到 `input_json_delta`。
+2. 因此 `widget_chunk` 在真实链路里没有触发。
+3. 结果是：真实 `show_widget` 目前只能“最终一下子出现”，不能“边生成边画”。
+
+这不是 renderer 的 bug，也不是少写了一层 buffer，而是**事件源没有提供工具输入的流式增量**。
+
+这条结论非常重要，因为它说明：
+
+1. “MCP tool 被真实调用”不等于“tool input 可以流式拿到”。
+2. 如果继续沿着当前 MCP tool input 路线深挖，大概率只是在错误方向上耗时间。
+
+---
+
+## Q17：下一阶段应该走哪条路线？
+
+结论：**推荐方案 B：设计一条独立于 MCP tool input 的 widget streaming 通道。**
+
+当前有两条候选路线：
+
+### 路线 A：继续深挖 SDK / SSE 原始事件
+
+思路：
+
+1. 再往更底层拿原始流事件。
+2. 确认 SDK 是否在别处暴露了工具输入增量，只是当前封装层没接到。
+
+优点：
+
+1. 如果拿到了原始 delta，可以保留“tool call 即渲染协议”的一致性。
+
+缺点：
+
+1. 风险大，不确定 SDK 是否真的暴露了我们需要的字段。
+2. 可能继续投入后，结论仍然是“没有”。
+
+### 路线 B：独立 streaming 通道
+
+思路：
+
+1. 不再依赖 MCP tool input 本身流式传 code。
+2. 设计一条专门的 widget streaming 协议，把代码增量作为独立事件通道发送给 renderer。
+3. `show_widget` 或其他 tool 只负责“建立 widget 生命周期 / 最终确认”，不承担 code delta 的运输。
+
+优点：
+
+1. 协议和渲染目标更一致，直接围绕“live widget”设计。
+2. 不受 MCP tool input streaming 能力限制。
+3. 更容易精确控制 chunk、complete、error、script activation 等生命周期事件。
+
+缺点：
+
+1. 需要重新定义一层 agent -> renderer 的专用协议。
+2. 不再是“只靠现有 MCP tool 就自然获得流式”。
+
+本轮讨论后的推荐是：**优先走路线 B。**
+
+原因不是偏好，而是因为路线 A 已经通过一次真实验证暴露出明显的不确定性，而路线 B 至少能把“边生成边画”作为一等目标来设计。
+
+---
+
+## Q18：如果换一个窗口继续做，下一位 Codex 最需要知道什么？
+
+进入下一窗口时，最重要的上下文不是“我们已经写了哪些代码”，而是这三条结论：
+
+1. **VS1 已完成**
+   ChatArea 中已经能在 assistant turn 正文后渲染独立 widget block。
+
+2. **VS2 已完成**
+   前端 fake streaming + iframe 增量渲染 runtime 已验证可行，说明 renderer 侧的“纯增量注入”方向成立。
+
+3. **VS3 部分完成，且关键结论已拿到**
+   真实 `show_widget` tool 已打通完成态显示，但当前 MCP tool input 路线无法提供 live code delta。
+
+因此，下一窗口不应该再花时间重复验证：
+
+1. widget 能不能嵌在 turn 里
+2. iframe buffer 能不能工作
+3. MCP `show_widget` 能不能显示最终态
+
+下一窗口应该直接从新的协议设计开始，重点讨论：
+
+1. 独立 streaming 通道的事件模型
+2. 它与 `show_widget` 的关系
+3. 如何让 Agent 在运行时同时管理“正文流”和“widget 流”
+
+---
+
 ## 附：本次讨论的结论清单
 
 1. widget 是 assistant turn 的原生内容块。
@@ -429,3 +529,5 @@ SVG 或复杂布局连续增长时，会频繁触发高度变化。
 9. `sendPrompt` 默认填入输入框，支持参数控制直接发送。
 10. 第一阶段只做轻量 chat widget，复杂场景继续走 Artifact。
 11. 开发顺序按 4 个 vertical slice 推进：静态容器 → 假流式 → 真事件流 → 交互与持久化。
+12. 当前 MCP `show_widget` 真实链路只能完成态显示，拿不到我们要的流式 code delta。
+13. 下一阶段推荐改走独立于 MCP tool input 的 widget streaming 通道。

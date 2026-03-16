@@ -41,6 +41,9 @@ export type AgentEvent =
   // Tool calls
   | { type: 'tool_start'; toolName: string; toolUseId: string; input: Record<string, unknown>; intent?: string; displayName?: string; turnId?: string; parentToolUseId?: string }
   | { type: 'tool_result'; toolUseId: string; result: string; isError: boolean; toolName?: string; input?: Record<string, unknown>; turnId?: string; parentToolUseId?: string }
+  | { type: 'widget_chunk'; toolUseId: string; chunk: string; turnId?: string; title?: string; mimeType?: 'text/html' | 'image/svg+xml' }
+  | { type: 'widget_complete'; toolUseId: string; turnId?: string; code?: string; title?: string; mimeType?: 'text/html' | 'image/svg+xml' }
+  | { type: 'widget_error'; toolUseId: string; message: string; turnId?: string }
 
   // Permission request
   | { type: 'permission_request'; requestId: string; toolName: string; command: string; description: string }

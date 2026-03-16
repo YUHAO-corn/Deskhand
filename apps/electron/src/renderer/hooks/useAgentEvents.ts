@@ -77,6 +77,10 @@ function extractFilePathsFromBashResult(text: string, workingDirectory: string |
   return paths;
 }
 
+function isShowWidgetTool(toolName: string | undefined): boolean {
+  return toolName?.toLowerCase().includes('show_widget') ?? false;
+}
+
 /**
  * Agent 事件订阅 Hook
  */
@@ -227,22 +231,55 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           };
         }
 
-        const toolMessage: Message = {
-          id: generateMessageId(),
-          role: 'tool',
-          content: '',
-          timestamp: Date.now(),
-          toolName: event.toolName,
-          toolUseId: event.toolUseId,
-          toolInput,
-          toolStatus: 'executing',
-          turnId: event.turnId,
-          toolIntent: event.intent,
-          toolDisplayName: event.displayName,
-          parentToolUseId: event.parentToolUseId,
-        };
-        setMessages((prev) => [...prev, toolMessage]);
-        persistMessage(toolMessage);
+        const widget =
+          isShowWidgetTool(event.toolName)
+            ? {
+                title: typeof toolInput?.title === 'string' ? toolInput.title : undefined,
+                mimeType: toolInput?.mimeType === 'image/svg+xml' ? 'image/svg+xml' : 'text/html' as const,
+                code: typeof toolInput?.code === 'string' ? toolInput.code : '',
+                isStreaming: true,
+              }
+            : undefined;
+
+        setMessages((prev) => {
+          const existingIndex = prev.findIndex((m) => m.toolUseId === event.toolUseId);
+          if (existingIndex >= 0) {
+            const updated = [...prev];
+            const existing = updated[existingIndex]!;
+            updated[existingIndex] = {
+              ...existing,
+              timestamp: existing.timestamp || Date.now(),
+              toolName: event.toolName,
+              toolInput,
+              toolStatus: 'executing',
+              turnId: event.turnId,
+              toolIntent: event.intent,
+              toolDisplayName: event.displayName,
+              parentToolUseId: event.parentToolUseId,
+              widget: widget ?? existing.widget,
+            };
+            persistMessage(updated[existingIndex]!);
+            return updated;
+          }
+
+          const toolMessage: Message = {
+            id: generateMessageId(),
+            role: 'tool',
+            content: '',
+            timestamp: Date.now(),
+            toolName: event.toolName,
+            toolUseId: event.toolUseId,
+            toolInput,
+            toolStatus: 'executing',
+            turnId: event.turnId,
+            toolIntent: event.intent,
+            toolDisplayName: event.displayName,
+            parentToolUseId: event.parentToolUseId,
+            widget,
+          };
+          persistMessage(toolMessage);
+          return [...prev, toolMessage];
+        });
 
         // Capture file artifacts from Write/Edit tools
         if (resolvedFilePath) {
@@ -261,6 +298,69 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
         break;
       }
 
+      case 'widget_chunk': {
+        setMessages((prev) => {
+          const updated = prev.map((m) =>
+            m.toolUseId === event.toolUseId
+              ? {
+                  ...m,
+                  widget: {
+                    title: event.title ?? m.widget?.title,
+                    mimeType: event.mimeType ?? m.widget?.mimeType ?? 'text/html',
+                    code: `${m.widget?.code ?? ''}${event.chunk}`,
+                    isStreaming: true,
+                  },
+                }
+              : m
+          );
+          return updated;
+        });
+        break;
+      }
+
+      case 'widget_complete': {
+        setMessages((prev) => {
+          const updated = prev.map((m) =>
+            m.toolUseId === event.toolUseId
+              ? {
+                  ...m,
+                  widget: {
+                    title: event.title ?? m.widget?.title,
+                    mimeType: event.mimeType ?? m.widget?.mimeType ?? 'text/html',
+                    code: event.code ?? m.widget?.code ?? '',
+                    isStreaming: false,
+                  },
+                }
+              : m
+          );
+          const updatedMsg = updated.find((m) => m.toolUseId === event.toolUseId);
+          if (updatedMsg) persistMessage(updatedMsg);
+          return updated;
+        });
+        break;
+      }
+
+      case 'widget_error': {
+        setMessages((prev) => {
+          const updated = prev.map((m) =>
+            m.toolUseId === event.toolUseId
+              ? {
+                  ...m,
+                  widget: m.widget
+                    ? { ...m.widget, isStreaming: false }
+                    : m.widget,
+                  toolStatus: 'error' as import('@deskhand/core').ToolStatus,
+                  toolResult: event.message,
+                }
+              : m
+          );
+          const updatedMsg = updated.find((m) => m.toolUseId === event.toolUseId);
+          if (updatedMsg) persistMessage(updatedMsg);
+          return updated;
+        });
+        break;
+      }
+
       case 'tool_result': {
         setMessages((prev) => {
           const updated = prev.map((m) =>
@@ -269,6 +369,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
                   ...m,
                   toolResult: event.result,
                   toolStatus: (event.isError ? 'error' : 'completed') as import('@deskhand/core').ToolStatus,
+                  widget: m.widget ? { ...m.widget, isStreaming: event.isError ? false : m.widget.isStreaming } : m.widget,
                 }
               : m
           );

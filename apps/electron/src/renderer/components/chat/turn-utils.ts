@@ -669,6 +669,9 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
           timestamp: message.timestamp,
         }
       }
+      if (message.widget) {
+        currentTurn.widget = message.widget
+      }
       // Always add to current turn (ignoring turnId differences)
       // Pass existing activities for incremental depth calculation
       currentTurn.activities.push(messageToActivity(message, currentTurn.activities))
@@ -747,7 +750,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
         streamStartTime: message.isStreaming ? message.timestamp : undefined,
         actions: message.actions,
       }
-      currentTurn.widget = message.widget
+      currentTurn.widget = message.widget ?? currentTurn.widget
       currentTurn.isStreaming = !!message.isStreaming
       currentTurn.isComplete = !message.isStreaming
 
