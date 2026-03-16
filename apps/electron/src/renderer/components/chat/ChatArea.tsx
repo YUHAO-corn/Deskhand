@@ -1,5 +1,6 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
+import type { Message, MessageWidget } from '@deskhand/core';
 import {
   activeSessionIdAtom,
   artifactPanelOpenAtom,
@@ -13,6 +14,73 @@ import { InputToolbar } from '../input/InputToolbar';
 import { UserMessageBubble } from './UserMessageBubble';
 import { TurnCard } from './TurnCard';
 import { ProcessingIndicator } from './ProcessingIndicator';
+
+function isWidgetDemoEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('widgetDemo') === '1';
+}
+
+function createWidgetDemoTurns(): Turn[] {
+  const userMessage: Message = {
+    id: 'demo-user-widget',
+    role: 'user',
+    content: '用一个图解释 TCP 三次握手，并告诉我每一步在确认什么。',
+    timestamp: 1,
+  };
+
+  const widget: MessageWidget = {
+    title: 'TCP 三次握手',
+    mimeType: 'text/html',
+    code: `
+      <section style="padding:6px 0 0;font-family:ui-sans-serif,system-ui,sans-serif;color:#14302a;background:transparent;">
+        <svg viewBox="0 0 760 260" width="100%" style="display:block;height:auto;background:transparent;">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#10a37f"></path>
+            </marker>
+          </defs>
+          <rect x="44" y="38" width="168" height="54" rx="18" fill="#f6fbfa"></rect>
+          <text x="128" y="60" text-anchor="middle" fill="#14302a" font-size="19" font-weight="700">客户端</text>
+          <text x="128" y="80" text-anchor="middle" fill="#67827b" font-size="12">想建立连接的一方</text>
+          <rect x="548" y="38" width="168" height="54" rx="18" fill="#f6fbfa"></rect>
+          <text x="632" y="60" text-anchor="middle" fill="#14302a" font-size="19" font-weight="700">服务端</text>
+          <text x="632" y="80" text-anchor="middle" fill="#67827b" font-size="12">接收连接请求的一方</text>
+          <line x1="128" y1="110" x2="128" y2="222" stroke="#c8d9d4" stroke-width="2" stroke-dasharray="5 5"></line>
+          <line x1="632" y1="110" x2="632" y2="222" stroke="#c8d9d4" stroke-width="2" stroke-dasharray="5 5"></line>
+          <line x1="156" y1="132" x2="598" y2="132" stroke="#10a37f" stroke-width="3.5" marker-end="url(#arrow)"></line>
+          <text x="377" y="118" text-anchor="middle" fill="#0d6b53" font-size="15" font-weight="700">1. SYN</text>
+          <text x="377" y="149" text-anchor="middle" fill="#58716b" font-size="12">客户端说：我想开始通信，这是我的初始序号</text>
+          <line x1="604" y1="178" x2="162" y2="178" stroke="#f28f3b" stroke-width="3.5" marker-end="url(#arrow)"></line>
+          <text x="383" y="167" text-anchor="middle" fill="#a75416" font-size="15" font-weight="700">2. SYN + ACK</text>
+          <text x="383" y="195" text-anchor="middle" fill="#7d5a3f" font-size="12">服务端说：收到你的 SYN，这里是我的序号，也确认你的序号</text>
+          <line x1="156" y1="224" x2="598" y2="224" stroke="#4d7df2" stroke-width="3.5" marker-end="url(#arrow)"></line>
+          <text x="377" y="212" text-anchor="middle" fill="#295ccf" font-size="15" font-weight="700">3. ACK</text>
+          <text x="377" y="242" text-anchor="middle" fill="#50627f" font-size="12">客户端说：收到你的回应，双方都确认彼此具备收发能力</text>
+        </svg>
+      </section>
+    `.trim(),
+  };
+
+  const assistantTurn: AssistantTurn = {
+    type: 'assistant',
+    turnId: 'demo-assistant-widget',
+    activities: [],
+    response: {
+      text: '三次握手的本质不是形式上的“三步”，而是双方分别确认两件事：我发得出去，你收得到；你发得回来，我也收得到。',
+      isStreaming: false,
+    },
+    widget,
+    intent: undefined,
+    isStreaming: false,
+    isComplete: true,
+    timestamp: 2,
+  };
+
+  return [
+    { type: 'user', message: userMessage, timestamp: userMessage.timestamp },
+    assistantTurn,
+  ];
+}
 
 function getTurnKey(turn: Turn): string {
   if (turn.type === 'assistant') {
@@ -37,6 +105,7 @@ export function ChatArea() {
   const [isProcessing] = useAtom(processingAtom);
 
   const [loadedSessions, setLoadedSessions] = useAtom(loadedSessionsAtom);
+  const [showWidgetDemo, setShowWidgetDemo] = useState(false);
 
   useEffect(() => {
     if (!activeSessionId) return;
@@ -60,13 +129,14 @@ export function ChatArea() {
             isIntermediate: sm.isIntermediate,
             turnId: sm.turnId,
             attachments: sm.attachments,
+            widget: sm.widget,
             planPath: sm.planPath,
             errorCode: sm.errorCode,
             errorTitle: sm.errorTitle,
             errorDetails: sm.errorDetails,
             errorCanRetry: sm.errorCanRetry,
             actions: sm.actions,
-          }) as import('@deskhand/core').Message[]);
+          }) as Message[]);
           setMessages(msgs);
         }
       } catch (err) {
@@ -79,9 +149,13 @@ export function ChatArea() {
   }, [activeSessionId, loadedSessions, setLoadedSessions, setMessages]);
 
   const turns = useMemo(() => groupMessagesByTurn(messages), [messages]);
-  const isEmpty = turns.length === 0;
+  const displayTurns = useMemo(() => {
+    if (turns.length > 0) return turns;
+    return showWidgetDemo || isWidgetDemoEnabled() ? createWidgetDemoTurns() : turns;
+  }, [showWidgetDemo, turns]);
+  const isEmpty = displayTurns.length === 0;
 
-  const lastTurn = turns[turns.length - 1];
+  const lastTurn = displayTurns[displayTurns.length - 1];
   const showPendingThinking = isProcessing && lastTurn?.type !== 'assistant';
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -109,15 +183,23 @@ export function ChatArea() {
               <p className="mt-1 text-[var(--font-size-sm)] text-[var(--color-text-muted)] opacity-80">
                 Generated files will appear in Artifacts when they are created.
               </p>
+              {import.meta.env.DEV && (
+                <button
+                  onClick={() => setShowWidgetDemo(true)}
+                  className="mt-5 inline-flex items-center rounded-[var(--radius-pill)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] px-4 py-2 text-[var(--font-size-sm)] font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]"
+                >
+                  Load Widget Demo
+                </button>
+              )}
             </div>
           </div>
         ) : (
           <div className="mx-auto max-w-[880px] py-8">
-            {turns.map((turn, index) => (
+            {displayTurns.map((turn, index) => (
               <TurnRenderer
                 key={getTurnKey(turn)}
                 turn={turn}
-                prevTurnType={index > 0 ? turns[index - 1].type : undefined}
+                prevTurnType={index > 0 ? displayTurns[index - 1].type : undefined}
               />
             ))}
             {showPendingThinking && (

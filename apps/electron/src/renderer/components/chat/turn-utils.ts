@@ -9,7 +9,7 @@
  * - Phase：Turn 的当前阶段（pending → tool_active → awaiting → streaming → complete）
  */
 
-import type { Message, StoredMessage, MessageRole } from '@deskhand/core'
+import type { Message, StoredMessage, MessageWidget } from '@deskhand/core'
 import type { ActivityItem, ActivityStatus, ActivityType, ResponseContent, TodoItem } from './turn-types'
 
 // Re-export ActivityItem for consumers
@@ -57,6 +57,7 @@ export function storedToMessage(stored: StoredMessage): Message {
     isError: stored.isError,
     isIntermediate: stored.isIntermediate,
     turnId: stored.turnId,
+    widget: stored.widget,
     errorCode: stored.errorCode,
     errorTitle: stored.errorTitle,
     errorDetails: stored.errorDetails,
@@ -92,6 +93,7 @@ export interface AssistantTurn {
   turnId: string
   activities: ActivityItem[]
   response?: ResponseContent
+  widget?: MessageWidget
   intent?: string
   isStreaming: boolean
   isComplete: boolean
@@ -568,6 +570,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
           turnId: message.id,
           activities: [],
           response: undefined,
+          widget: undefined,
           intent: undefined,
           isStreaming: true,
           isComplete: false,
@@ -629,6 +632,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
           turnId: message.turnId || message.id,
           activities: [],
           response: undefined,
+          widget: undefined,
           intent: undefined,
           isStreaming: false,
           isComplete: false,
@@ -658,6 +662,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
           turnId: message.turnId || message.id,
           activities: [],
           response: undefined,
+          widget: undefined,
           intent: message.toolIntent,
           isStreaming: !isToolComplete,
           isComplete: false,
@@ -684,6 +689,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
             turnId: message.turnId || message.id,
             activities: [],
             response: undefined,
+            widget: undefined,
             intent: undefined,
             isStreaming: !!message.isPending,
             isComplete: false,
@@ -726,6 +732,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
           turnId: message.turnId || message.id,
           activities: [],
           response: undefined,
+          widget: undefined,
           intent: undefined,
           isStreaming: !!message.isStreaming,
           isComplete: !message.isStreaming,
@@ -740,6 +747,7 @@ export function groupMessagesByTurn(messages: Message[]): Turn[] {
         streamStartTime: message.isStreaming ? message.timestamp : undefined,
         actions: message.actions,
       }
+      currentTurn.widget = message.widget
       currentTurn.isStreaming = !!message.isStreaming
       currentTurn.isComplete = !message.isStreaming
 

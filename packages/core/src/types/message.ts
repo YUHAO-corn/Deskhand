@@ -80,6 +80,13 @@ export interface StoredAttachment {
   thumbnailBase64?: string;          // Base64 thumbnail (for rendering)
 }
 
+/** Assistant live widget content */
+export interface MessageWidget {
+  title?: string;
+  mimeType: 'text/html' | 'image/svg+xml';
+  code: string;
+}
+
 // ============ Message ============
 
 /**
@@ -108,6 +115,9 @@ export interface Message {
 
   // Attachments (user messages)
   attachments?: StoredAttachment[];
+
+  // Live widget (assistant/tool messages)
+  widget?: MessageWidget;
 
   // Plan related (role='plan')
   planPath?: string;                 // Plan file path
@@ -169,6 +179,9 @@ export interface StoredMessage {
 
   // Attachments
   attachments?: StoredAttachment[];
+
+  // Live widget
+  widget?: MessageWidget;
 
   // Plan
   planPath?: string;

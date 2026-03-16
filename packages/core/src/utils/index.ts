@@ -36,6 +36,7 @@ export function messageToStored(msg: import('../types/message.ts').Message): imp
     isIntermediate: msg.isIntermediate,
     turnId: msg.turnId,
     attachments: msg.attachments,
+    widget: msg.widget,
     planPath: msg.planPath,
     errorCode: msg.errorCode,
     errorTitle: msg.errorTitle,
