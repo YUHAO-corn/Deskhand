@@ -85,6 +85,7 @@ export interface MessageWidget {
   title?: string;
   mimeType: 'text/html' | 'image/svg+xml';
   code: string;
+  isStreaming?: boolean;
 }
 
 // ============ Message ============

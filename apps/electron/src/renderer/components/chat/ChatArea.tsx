@@ -31,34 +31,7 @@ function createWidgetDemoTurns(): Turn[] {
   const widget: MessageWidget = {
     title: 'TCP 三次握手',
     mimeType: 'text/html',
-    code: `
-      <section style="padding:6px 0 0;font-family:ui-sans-serif,system-ui,sans-serif;color:#14302a;background:transparent;">
-        <svg viewBox="0 0 760 260" width="100%" style="display:block;height:auto;background:transparent;">
-          <defs>
-            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <path d="M0,0 L8,4 L0,8 Z" fill="#10a37f"></path>
-            </marker>
-          </defs>
-          <rect x="44" y="38" width="168" height="54" rx="18" fill="#f6fbfa"></rect>
-          <text x="128" y="60" text-anchor="middle" fill="#14302a" font-size="19" font-weight="700">客户端</text>
-          <text x="128" y="80" text-anchor="middle" fill="#67827b" font-size="12">想建立连接的一方</text>
-          <rect x="548" y="38" width="168" height="54" rx="18" fill="#f6fbfa"></rect>
-          <text x="632" y="60" text-anchor="middle" fill="#14302a" font-size="19" font-weight="700">服务端</text>
-          <text x="632" y="80" text-anchor="middle" fill="#67827b" font-size="12">接收连接请求的一方</text>
-          <line x1="128" y1="110" x2="128" y2="222" stroke="#c8d9d4" stroke-width="2" stroke-dasharray="5 5"></line>
-          <line x1="632" y1="110" x2="632" y2="222" stroke="#c8d9d4" stroke-width="2" stroke-dasharray="5 5"></line>
-          <line x1="156" y1="132" x2="598" y2="132" stroke="#10a37f" stroke-width="3.5" marker-end="url(#arrow)"></line>
-          <text x="377" y="118" text-anchor="middle" fill="#0d6b53" font-size="15" font-weight="700">1. SYN</text>
-          <text x="377" y="149" text-anchor="middle" fill="#58716b" font-size="12">客户端说：我想开始通信，这是我的初始序号</text>
-          <line x1="604" y1="178" x2="162" y2="178" stroke="#f28f3b" stroke-width="3.5" marker-end="url(#arrow)"></line>
-          <text x="383" y="167" text-anchor="middle" fill="#a75416" font-size="15" font-weight="700">2. SYN + ACK</text>
-          <text x="383" y="195" text-anchor="middle" fill="#7d5a3f" font-size="12">服务端说：收到你的 SYN，这里是我的序号，也确认你的序号</text>
-          <line x1="156" y1="224" x2="598" y2="224" stroke="#4d7df2" stroke-width="3.5" marker-end="url(#arrow)"></line>
-          <text x="377" y="212" text-anchor="middle" fill="#295ccf" font-size="15" font-weight="700">3. ACK</text>
-          <text x="377" y="242" text-anchor="middle" fill="#50627f" font-size="12">客户端说：收到你的回应，双方都确认彼此具备收发能力</text>
-        </svg>
-      </section>
-    `.trim(),
+    code: WIDGET_DEMO_CODE,
   };
 
   const assistantTurn: AssistantTurn = {
@@ -79,6 +52,76 @@ function createWidgetDemoTurns(): Turn[] {
   return [
     { type: 'user', message: userMessage, timestamp: userMessage.timestamp },
     assistantTurn,
+  ];
+}
+
+const WIDGET_DEMO_CODE = `
+<section style="padding:6px 0 0;font-family:ui-sans-serif,system-ui,sans-serif;color:#14302a;background:transparent;">
+  <svg viewBox="0 0 760 260" width="100%" style="display:block;height:auto;background:transparent;">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#10a37f"></path>
+      </marker>
+    </defs>
+    <rect x="44" y="38" width="168" height="54" rx="18" fill="#f6fbfa"></rect>
+    <text x="128" y="60" text-anchor="middle" fill="#14302a" font-size="19" font-weight="700">客户端</text>
+    <text x="128" y="80" text-anchor="middle" fill="#67827b" font-size="12">想建立连接的一方</text>
+    <rect x="548" y="38" width="168" height="54" rx="18" fill="#f6fbfa"></rect>
+    <text x="632" y="60" text-anchor="middle" fill="#14302a" font-size="19" font-weight="700">服务端</text>
+    <text x="632" y="80" text-anchor="middle" fill="#67827b" font-size="12">接收连接请求的一方</text>
+    <line x1="128" y1="110" x2="128" y2="222" stroke="#c8d9d4" stroke-width="2" stroke-dasharray="5 5"></line>
+    <line x1="632" y1="110" x2="632" y2="222" stroke="#c8d9d4" stroke-width="2" stroke-dasharray="5 5"></line>
+    <line x1="156" y1="132" x2="598" y2="132" stroke="#10a37f" stroke-width="3.5" marker-end="url(#arrow)"></line>
+    <text x="377" y="118" text-anchor="middle" fill="#0d6b53" font-size="15" font-weight="700">1. SYN</text>
+    <text x="377" y="149" text-anchor="middle" fill="#58716b" font-size="12">客户端说：我想开始通信，这是我的初始序号</text>
+    <line x1="604" y1="178" x2="162" y2="178" stroke="#f28f3b" stroke-width="3.5" marker-end="url(#arrow)"></line>
+    <text x="383" y="167" text-anchor="middle" fill="#a75416" font-size="15" font-weight="700">2. SYN + ACK</text>
+    <text x="383" y="195" text-anchor="middle" fill="#7d5a3f" font-size="12">服务端说：收到你的 SYN，这里是我的序号，也确认你的序号</text>
+    <line x1="156" y1="224" x2="598" y2="224" stroke="#4d7df2" stroke-width="3.5" marker-end="url(#arrow)"></line>
+    <text x="377" y="212" text-anchor="middle" fill="#295ccf" font-size="15" font-weight="700">3. ACK</text>
+    <text x="377" y="242" text-anchor="middle" fill="#50627f" font-size="12">客户端说：收到你的回应，双方都确认彼此具备收发能力</text>
+  </svg>
+</section>
+`.trim();
+
+function splitDemoIntoChunks(code: string): string[] {
+  const chunks: string[] = [];
+  let index = 0;
+
+  while (index < code.length) {
+    const size = 11 + ((index * 7) % 19);
+    chunks.push(code.slice(index, index + size));
+    index += size;
+  }
+
+  return chunks;
+}
+
+interface WidgetDemoState {
+  enabled: boolean;
+  code: string;
+  isStreaming: boolean;
+}
+
+function createStreamingWidgetDemoTurns(widgetState: WidgetDemoState): Turn[] {
+  const baseTurns = createWidgetDemoTurns();
+  const assistantTurn = baseTurns[1];
+
+  if (assistantTurn?.type !== 'assistant') {
+    return baseTurns;
+  }
+
+  return [
+    baseTurns[0]!,
+    {
+      ...assistantTurn,
+      widget: {
+        title: 'TCP 三次握手',
+        mimeType: 'text/html',
+        code: widgetState.code,
+        isStreaming: widgetState.isStreaming,
+      },
+    },
   ];
 }
 
@@ -106,6 +149,12 @@ export function ChatArea() {
 
   const [loadedSessions, setLoadedSessions] = useAtom(loadedSessionsAtom);
   const [showWidgetDemo, setShowWidgetDemo] = useState(false);
+  const [widgetDemoState, setWidgetDemoState] = useState<WidgetDemoState>({
+    enabled: false,
+    code: '',
+    isStreaming: false,
+  });
+  const widgetDemoStartedRef = useRef(false);
 
   useEffect(() => {
     if (!activeSessionId) return;
@@ -151,8 +200,14 @@ export function ChatArea() {
   const turns = useMemo(() => groupMessagesByTurn(messages), [messages]);
   const displayTurns = useMemo(() => {
     if (turns.length > 0) return turns;
-    return showWidgetDemo || isWidgetDemoEnabled() ? createWidgetDemoTurns() : turns;
-  }, [showWidgetDemo, turns]);
+    if (showWidgetDemo) {
+      const state = widgetDemoState.enabled
+        ? widgetDemoState
+        : { enabled: true, code: '', isStreaming: true };
+      return createStreamingWidgetDemoTurns(state);
+    }
+    return isWidgetDemoEnabled() ? createWidgetDemoTurns() : turns;
+  }, [showWidgetDemo, turns, widgetDemoState]);
   const isEmpty = displayTurns.length === 0;
 
   const lastTurn = displayTurns[displayTurns.length - 1];
@@ -163,7 +218,48 @@ export function ChatArea() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, widgetDemoState.code]);
+
+  useEffect(() => {
+    if (!showWidgetDemo || widgetDemoStartedRef.current) return;
+    widgetDemoStartedRef.current = true;
+
+    const chunks = splitDemoIntoChunks(WIDGET_DEMO_CODE);
+    setWidgetDemoState({
+      enabled: true,
+      code: '',
+      isStreaming: true,
+    });
+
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let index = 0;
+
+    const pump = () => {
+      if (cancelled) return;
+
+      index += 1;
+      const nextCode = chunks.slice(0, index).join('');
+      const done = index >= chunks.length;
+
+      setWidgetDemoState({
+        enabled: true,
+        code: nextCode,
+        isStreaming: !done,
+      });
+
+      if (!done) {
+        timeoutId = setTimeout(pump, 70);
+      }
+    };
+
+    timeoutId = setTimeout(pump, 120);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [showWidgetDemo]);
 
   return (
     <div className="relative flex min-w-[400px] flex-1 flex-col overflow-hidden bg-[var(--color-surface-canvas)]">
