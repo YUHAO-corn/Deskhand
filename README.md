@@ -112,6 +112,12 @@ Background clipboard monitoring gives the AI awareness of your working context. 
 | Build | Vite 6, esbuild, TypeScript 5 |
 | Storage | JSONL (append-only) |
 
+### Data Flow Architecture
+
+<p align="center">
+  <img src="assets/readme/deskhand_architecture_github.svg" width="864" />
+</p>
+
 ---
 
 ## Quick Start
