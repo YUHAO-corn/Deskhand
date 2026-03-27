@@ -12,7 +12,7 @@
  * - 管理通知设置
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { settingsOpenAtom } from '../../atoms/sessions';
 import type { PermissionMode } from '@deskhand/core';
@@ -38,6 +38,31 @@ export function SettingsPage() {
   const [startMinimized, setStartMinimized] = useState(false);
   const [apiProvider, setApiProvider] = useState('anthropic');
   const [apiKey, setApiKey] = useState('');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+  // Load existing config on mount
+  useEffect(() => {
+    window.electronAPI?.getSetupNeeds().then((needs) => {
+      if (needs.isFullyConfigured) {
+        setApiKey('••••••••••••••••');
+      }
+    });
+  }, []);
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey || apiKey === '••••••••••••••••') return;
+    setApiKeyError(null);
+    setApiKeySaved(false);
+    try {
+      await window.electronAPI?.saveConfig({ apiKey });
+      setApiKeySaved(true);
+      setApiKey('••••••••••••••••');
+      setTimeout(() => setApiKeySaved(false), 3000);
+    } catch {
+      setApiKeyError('Failed to save API key');
+    }
+  };
 
   // 导航菜单项
   const navItems: NavItem[] = [
@@ -126,7 +151,10 @@ export function SettingsPage() {
               apiProvider={apiProvider}
               setApiProvider={setApiProvider}
               apiKey={apiKey}
-              setApiKey={setApiKey}
+              setApiKey={(v) => { setApiKey(v); setApiKeySaved(false); setApiKeyError(null); }}
+              onSave={handleSaveApiKey}
+              saved={apiKeySaved}
+              error={apiKeyError}
             />
           )}
 
@@ -254,9 +282,12 @@ interface ApiSectionProps {
   setApiProvider: (v: string) => void;
   apiKey: string;
   setApiKey: (v: string) => void;
+  onSave: () => void;
+  saved: boolean;
+  error: string | null;
 }
 
-function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey }: ApiSectionProps) {
+function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey, onSave, saved, error }: ApiSectionProps) {
   return (
     <>
       {/* Provider */}
@@ -282,21 +313,44 @@ function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey }: ApiSecti
 
       {/* API Key */}
       <SettingsCard title="API Key" description="Your API key is stored locally and never sent to our servers.">
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="sk-..."
-          className="
-            w-full px-4 py-3
-            bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
-            rounded-[var(--radius-md)]
-            text-[var(--font-size-sm)] text-[var(--color-text-primary)]
-            placeholder-[var(--color-text-muted)]
-            hover:border-[var(--color-text-muted)]
-            focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
-          "
-        />
+        <div className="flex gap-2">
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            onFocus={() => { if (apiKey === '••••••••••••••••') setApiKey(''); }}
+            placeholder="sk-ant-..."
+            className="
+              flex-1 px-4 py-3
+              bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
+              rounded-[var(--radius-md)]
+              text-[var(--font-size-sm)] text-[var(--color-text-primary)]
+              placeholder-[var(--color-text-muted)]
+              hover:border-[var(--color-text-muted)]
+              focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
+            "
+          />
+          <button
+            onClick={onSave}
+            disabled={!apiKey || apiKey === '••••••••••••••••'}
+            className="
+              px-4 py-3 rounded-[var(--radius-md)] border-none cursor-pointer
+              text-[var(--font-size-sm)] font-medium
+              bg-[var(--color-accent)] text-white
+              hover:bg-[var(--color-accent-strong)]
+              disabled:opacity-40 disabled:cursor-not-allowed
+              transition-colors duration-[var(--transition-fast)]
+            "
+          >
+            Save
+          </button>
+        </div>
+        {saved && (
+          <p className="mt-2 text-[var(--font-size-sm)] text-green-500">API key saved successfully.</p>
+        )}
+        {error && (
+          <p className="mt-2 text-[var(--font-size-sm)] text-[var(--color-danger)]">{error}</p>
+        )}
       </SettingsCard>
     </>
   );
