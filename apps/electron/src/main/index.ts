@@ -44,6 +44,9 @@ function createWindow(): void {
     },
   });
 
+  // Default zoom (one step smaller than 100%)
+  mainWindow.webContents.setZoomFactor(0.9);
+
   // Load the app
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
   if (devServerUrl) {
