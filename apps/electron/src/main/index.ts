@@ -18,6 +18,16 @@ import { loadWindowState, saveWindowState } from './window-state.ts';
 import { ensureBuiltinSkills } from '@deskhand/shared/skills';
 import { startClipboardMonitor } from './clipboard-monitor.ts';
 
+// Fix PATH for packaged app — macOS GUI apps don't inherit shell PATH
+if (app.isPackaged) {
+  const extraPaths = ['/usr/local/bin', '/opt/homebrew/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
+  const currentPath = process.env.PATH || '';
+  const missing = extraPaths.filter((p) => !currentPath.includes(p));
+  if (missing.length > 0) {
+    process.env.PATH = `${currentPath}:${missing.join(':')}`;
+  }
+}
+
 // ============ Window Management ============
 
 let mainWindow: BrowserWindow | null = null;
