@@ -388,6 +388,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           timestamp: Date.now(),
         };
         setMessages((prev) => [...prev, errorMessage]);
+        setProcessing(false);
         break;
       }
 
@@ -403,6 +404,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
           errorCanRetry: event.error.canRetry,
         };
         setMessages((prev) => [...prev, typedErrorMessage]);
+        setProcessing(false);
         break;
       }
 

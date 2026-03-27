@@ -290,7 +290,7 @@ export function registerIpcHandlers(): void {
     if (!agent) {
       event.sender.send('agent:event', sessionId, {
         type: 'error',
-        error: 'No API key configured',
+        message: 'No API key configured',
       } as AgentEvent);
       return;
     }
@@ -307,7 +307,7 @@ export function registerIpcHandlers(): void {
       console.error('[IPC] agent.chat error:', err);
       event.sender.send('agent:event', sessionId, {
         type: 'error',
-        error: String(err),
+        message: String(err),
       } as AgentEvent);
     });
 
