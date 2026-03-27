@@ -49,16 +49,18 @@ let insightRunning = false;
 
 /** Resolve path to the Claude Agent SDK cli.js */
 function getCliPath(): string {
-  const basePath = app.isPackaged ? app.getAppPath() : process.cwd();
-  return join(basePath, 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
+  if (app.isPackaged) {
+    return join(process.resourcesPath, 'claude-sdk', 'cli.js');
+  }
+  return join(process.cwd(), 'node_modules', '@anthropic-ai', 'claude-agent-sdk', 'cli.js');
 }
 
 /** Resolve path to A2UI HTML templates */
 function getA2UITemplateDir(): string {
-  // In dev: apps/electron/resources/a2ui-templates/
-  // In packaged: resources/a2ui-templates/ (copied by electron-builder)
-  const basePath = app.isPackaged ? join(app.getAppPath(), '..') : join(process.cwd(), 'apps', 'electron', 'resources');
-  return join(basePath, 'a2ui-templates');
+  if (app.isPackaged) {
+    return join(process.resourcesPath, 'a2ui-templates');
+  }
+  return join(process.cwd(), 'apps', 'electron', 'resources', 'a2ui-templates');
 }
 
 // Get or create agent for a session

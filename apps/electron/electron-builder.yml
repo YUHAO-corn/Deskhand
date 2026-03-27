@@ -32,3 +32,5 @@ dmg:
 extraResources:
   - from: resources/a2ui-templates
     to: a2ui-templates
+  - from: ../../node_modules/@anthropic-ai/claude-agent-sdk/cli.js
+    to: claude-sdk/cli.js
