@@ -38,6 +38,7 @@ export function SettingsPage() {
   const [startMinimized, setStartMinimized] = useState(false);
   const [apiProvider, setApiProvider] = useState('anthropic');
   const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
@@ -48,6 +49,9 @@ export function SettingsPage() {
         setApiKey('••••••••••••••••');
       }
     });
+    window.electronAPI?.getConfig().then((config) => {
+      if (config?.baseUrl) setBaseUrl(config.baseUrl);
+    });
   }, []);
 
   const handleSaveApiKey = async () => {
@@ -55,12 +59,22 @@ export function SettingsPage() {
     setApiKeyError(null);
     setApiKeySaved(false);
     try {
-      await window.electronAPI?.saveConfig({ apiKey });
+      await window.electronAPI?.saveConfig({ apiKey, baseUrl: baseUrl || undefined });
       setApiKeySaved(true);
       setApiKey('••••••••••••••••');
       setTimeout(() => setApiKeySaved(false), 3000);
     } catch {
       setApiKeyError('Failed to save API key');
+    }
+  };
+
+  const handleSaveBaseUrl = async () => {
+    try {
+      await window.electronAPI?.saveConfig({ baseUrl: baseUrl || undefined });
+      setApiKeySaved(true);
+      setTimeout(() => setApiKeySaved(false), 3000);
+    } catch {
+      setApiKeyError('Failed to save base URL');
     }
   };
 
@@ -152,7 +166,10 @@ export function SettingsPage() {
               setApiProvider={setApiProvider}
               apiKey={apiKey}
               setApiKey={(v) => { setApiKey(v); setApiKeySaved(false); setApiKeyError(null); }}
+              baseUrl={baseUrl}
+              setBaseUrl={setBaseUrl}
               onSave={handleSaveApiKey}
+              onSaveBaseUrl={handleSaveBaseUrl}
               saved={apiKeySaved}
               error={apiKeyError}
             />
@@ -282,12 +299,15 @@ interface ApiSectionProps {
   setApiProvider: (v: string) => void;
   apiKey: string;
   setApiKey: (v: string) => void;
+  baseUrl: string;
+  setBaseUrl: (v: string) => void;
   onSave: () => void;
+  onSaveBaseUrl: () => void;
   saved: boolean;
   error: string | null;
 }
 
-function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey, onSave, saved, error }: ApiSectionProps) {
+function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey, baseUrl, setBaseUrl, onSave, onSaveBaseUrl, saved, error }: ApiSectionProps) {
   return (
     <>
       {/* Provider */}
@@ -346,11 +366,44 @@ function ApiSection({ apiProvider, setApiProvider, apiKey, setApiKey, onSave, sa
           </button>
         </div>
         {saved && (
-          <p className="mt-2 text-[var(--font-size-sm)] text-green-500">API key saved successfully.</p>
+          <p className="mt-2 text-[var(--font-size-sm)] text-green-500">Saved successfully.</p>
         )}
         {error && (
           <p className="mt-2 text-[var(--font-size-sm)] text-[var(--color-danger)]">{error}</p>
         )}
+      </SettingsCard>
+
+      {/* Base URL */}
+      <SettingsCard title="Base URL" description="Optional. Use a custom API endpoint or proxy. Leave empty for the official Anthropic API.">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            placeholder="https://api.anthropic.com"
+            className="
+              flex-1 px-4 py-3
+              bg-[var(--color-surface-elevated)] border border-[var(--color-line-soft)]
+              rounded-[var(--radius-md)]
+              text-[var(--font-size-sm)] text-[var(--color-text-primary)]
+              placeholder-[var(--color-text-muted)]
+              hover:border-[var(--color-text-muted)]
+              focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
+            "
+          />
+          <button
+            onClick={onSaveBaseUrl}
+            className="
+              px-4 py-3 rounded-[var(--radius-md)] border-none cursor-pointer
+              text-[var(--font-size-sm)] font-medium
+              bg-[var(--color-accent)] text-white
+              hover:bg-[var(--color-accent-strong)]
+              transition-colors duration-[var(--transition-fast)]
+            "
+          >
+            Save
+          </button>
+        </div>
       </SettingsCard>
     </>
   );

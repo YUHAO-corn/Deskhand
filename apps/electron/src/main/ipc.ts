@@ -73,6 +73,10 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
   const apiKey = process.env.ANTHROPIC_API_KEY || await getApiKey();
   if (!apiKey) return null;
 
+  // Load base URL from config
+  const appConfig = await loadConfig();
+  const baseUrl = appConfig?.baseUrl;
+
   const cliPath = getCliPath();
 
   // For monorepos, try root level if not found locally
@@ -82,6 +86,7 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
 
   const agent = new DeskhandAgent({
     apiKey,
+    baseUrl,
     pathToClaudeCodeExecutable: cliPath,
     workingDirectory: workingDirectory || undefined,
     a2uiTemplateDir: getA2UITemplateDir(),
