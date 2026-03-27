@@ -133,8 +133,6 @@ const PlaygroundOption = z.object({
   ),
 });
 
-const LiveWidgetMimeType = z.enum(['text/html', 'image/svg+xml']);
-
 // ─── Template Injection ───
 
 /** Inject JSON config into the HTML template by replacing the placeholder script */
@@ -274,48 +272,6 @@ The user fills in answers, reviews a summary, and copies the generated prompt ba
   );
 }
 
-/** Create the show_widget tool for chat-inline live widgets */
-function createShowWidgetTool() {
-  return tool(
-    'show_widget',
-    `Render a lightweight live widget directly inside the chat reply.
-
-Use this when the user would benefit from a compact inline visual explanation, flow diagram, comparison graphic, or small interactive widget that belongs in the conversation itself.
-
-Rules:
-- Prefer HTML/SVG that can render progressively as code streams in.
-- Keep it lightweight and self-contained. No external assets.
-- Use plain inline styles. Do not rely on remote CSS or JS.
-- If using script, keep it minimal and self-contained.
-- For diagrams, SVG is preferred.
-- For richer inline UI, use HTML.
-- Do NOT use this for large tools, multi-page apps, or heavy playgrounds. Those should go to Artifact panel tools instead.`,
-    {
-      title: z.string().optional().describe('Optional short title for internal metadata; the chat UI may choose not to display it.'),
-      mimeType: LiveWidgetMimeType.describe('Use "image/svg+xml" for diagrams and "text/html" for inline widgets.'),
-      code: z.string().describe('Complete HTML or SVG source for the inline widget. Keep it self-contained and progressively renderable.'),
-    },
-    async (args) => {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({
-            widget: true,
-            title: args.title,
-            mimeType: args.mimeType,
-          }),
-        }],
-      };
-    },
-    {
-      annotations: {
-        readOnlyHint: true,
-        openWorldHint: false,
-      },
-    },
-  );
-}
-
 /** Create the render_tournament tool with access to the template directory */
 function createRenderTournamentTool(templateDir: string) {
   return tool(
@@ -415,7 +371,6 @@ export function createA2UIServer(templateDir: string) {
     name: 'deskhand-a2ui',
     version: '1.0.0',
     tools: [
-      createShowWidgetTool(),
       createRenderPlaygroundTool(templateDir),
       createRenderGuidedFormTool(templateDir),
       createRenderTournamentTool(templateDir),

@@ -25,7 +25,6 @@ export type {
   TokenUsage,
   ToolDisplayMeta,
   StoredAttachment,
-  MessageWidget,
   Message,
   StoredMessage,
   MessageAction,
