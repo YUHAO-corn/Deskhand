@@ -111,6 +111,7 @@ export const TurnCard = memo(function TurnCard({ turn }: TurnCardProps) {
         <div className="mb-2">
           <button
             onClick={toggleExpanded}
+            aria-label={isExpanded ? 'Collapse activities' : 'Expand activities'}
             className="flex w-full items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] px-2.5 py-1.5 text-left text-[var(--font-size-sm)] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-secondary)]"
           >
             <ChevronRight

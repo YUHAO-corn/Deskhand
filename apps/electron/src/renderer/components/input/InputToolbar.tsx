@@ -71,6 +71,9 @@ export function InputToolbar() {
   // 弹窗状态
   const [activePopup, setActivePopup] = useState<string | null>(null);
 
+  // 发送错误状态
+  const [sendError, setSendError] = useState<string | null>(null);
+
   // Interact 标记（斜杠命令 chip）
   const [interactTag, setInteractTag] = useState<string | null>(null);
 
@@ -227,6 +230,7 @@ export function InputToolbar() {
 
     // 5. 调用 IPC 发送消息
     try {
+      setSendError(null);
       await window.electronAPI?.chat(activeSessionId, fullMessage, {
         model: selectedModel,
         workingDirectory: workingDirectory ?? undefined,
@@ -234,6 +238,7 @@ export function InputToolbar() {
       });
     } catch (error) {
       console.error('[InputToolbar] chat error:', error);
+      setSendError('Failed to send message. Please try again.');
     }
   }, [inputValue, activeSessionId, setMessages, setProcessing, setInputValue, selectedModel, workingDirectory, permissionMode, memoryOnlySessions, setMemoryOnlySessions, sessionMetaMap, setSessionMetaMap, setSessionIds, clipboardAttachments, interactTag]);
 
@@ -268,6 +273,22 @@ export function InputToolbar() {
 
   return (
     <div className="relative px-6 pt-4 pb-7">
+      {/* Error banner */}
+      {sendError && (
+        <div className="mb-2 flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-danger-line)] bg-[var(--color-danger-soft)] px-3 py-2 text-[var(--font-size-sm)] text-[var(--color-danger)]">
+          <span className="flex-1">{sendError}</span>
+          <button
+            onClick={() => setSendError(null)}
+            aria-label="Dismiss error"
+            className="shrink-0 cursor-pointer border-none bg-transparent text-[var(--color-danger)] hover:text-[var(--color-text-primary)]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
       {/* ============================================
           区域：弹窗背景遮罩
           功能：点击关闭弹窗
@@ -472,6 +493,7 @@ export function InputToolbar() {
               <button
                 onClick={handleStop}
                 title="Stop generating"
+                aria-label="Stop generating"
                 className="
                   w-[30px] h-[30px]
                   border-none bg-red-500 rounded-lg
@@ -491,6 +513,7 @@ export function InputToolbar() {
                 onClick={() => handleSend()}
                 disabled={!inputValue?.trim() && !interactTag}
                 title="Send message"
+                aria-label="Send message"
                 className="
                   w-[30px] h-[30px]
                   border-none bg-transparent rounded-lg
@@ -576,6 +599,7 @@ function ToolbarIconButton({ children, badge, active, onClick, title }: ToolbarI
     <button
       onClick={onClick}
       title={title}
+      aria-label={title}
       className={`
         w-[30px] h-[30px]
         border-none bg-transparent rounded-lg
@@ -623,6 +647,7 @@ function ToolbarTextButton({ children, active, highlight, onClick, title }: Tool
     <button
       onClick={onClick}
       title={title}
+      aria-label={title}
       className={`
         px-2 py-1
         bg-transparent border-none rounded-[var(--radius-sm)]

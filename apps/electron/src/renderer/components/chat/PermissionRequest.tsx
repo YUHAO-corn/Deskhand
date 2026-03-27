@@ -6,11 +6,22 @@
  */
 
 import { useAtom } from 'jotai';
+import { useEffect, useRef } from 'react';
 import { permissionRequestAtom, activeSessionIdAtom } from '../../atoms/sessions';
 
 export function PermissionRequest() {
   const [request, setRequest] = useAtom(permissionRequestAtom);
   const [activeSessionId] = useAtom(activeSessionIdAtom);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Auto-focus Allow button when dialog opens
+  useEffect(() => {
+    if (!request?.isOpen) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const allowBtn = dialog.querySelector<HTMLButtonElement>('[data-autofocus]');
+    allowBtn?.focus();
+  }, [request?.isOpen]);
 
   if (!request?.isOpen) return null;
 
@@ -28,6 +39,28 @@ export function PermissionRequest() {
     setRequest(null);
   };
 
+  // Trap focus within dialog
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleDeny();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const focusable = dialog.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   // Tool name → display label
   const toolLabel: Record<string, string> = {
     Bash: 'Terminal',
@@ -39,8 +72,13 @@ export function PermissionRequest() {
     <div
       className="fixed inset-0 z-[400] flex items-center justify-center bg-black/30"
       onClick={handleDeny}
+      onKeyDown={handleKeyDown}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Permission Required"
         className="w-[500px] overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] shadow-[var(--elevation-3)]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -81,6 +119,7 @@ export function PermissionRequest() {
             Deny
           </button>
           <button
+            data-autofocus
             onClick={handleAllow}
             className="
               cursor-pointer rounded-[var(--radius-pill)] border border-[var(--color-accent)] bg-[var(--color-accent)] px-4 py-2

@@ -332,6 +332,7 @@ function PreviewToolbar({
               }
             `}
             title="Code"
+            aria-label="Code view"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="16 18 22 12 16 6" />
@@ -350,6 +351,7 @@ function PreviewToolbar({
               }
             `}
             title="Preview"
+            aria-label="Preview"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -440,6 +442,7 @@ function PreviewToolbar({
               hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
             "
             title="Show in Finder"
+            aria-label="Show in Finder"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -461,6 +464,7 @@ function PreviewToolbar({
             hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
           "
           title="Copy content"
+          aria-label="Copy content"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -480,6 +484,7 @@ function PreviewToolbar({
             hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
           "
           title="Refresh"
+          aria-label="Refresh"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="23 4 23 10 17 10" />
@@ -499,6 +504,7 @@ function PreviewToolbar({
             hover:bg-[var(--hover-bg)] hover:text-[var(--color-text-primary)]
           "
           title="Close panel"
+          aria-label="Close panel"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
