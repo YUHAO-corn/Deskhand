@@ -2,6 +2,7 @@
   "name": "@deskhand/electron",
   "version": "0.1.0",
   "description": "Electron desktop app for Deskhand",
+  "author": "Deskhand",
   "main": "dist/main.cjs",
   "private": true,
   "type": "module",
@@ -17,7 +18,8 @@
     "start": "bun run build && electron .",
     "dev": "vite dev",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "pack": "electron-builder --mac --config electron-builder.yml"
   },
   "dependencies": {
     "@deskhand/core": "workspace:*",

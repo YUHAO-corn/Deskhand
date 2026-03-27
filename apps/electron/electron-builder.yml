@@ -1,0 +1,34 @@
+appId: com.deskhand.app
+productName: Deskhand
+copyright: Copyright © 2026
+
+electronVersion: "33.4.11"
+
+directories:
+  output: release
+
+files:
+  - dist/**/*
+  - package.json
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  identity: null  # skip code signing
+
+dmg:
+  title: Deskhand
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+extraResources:
+  - from: resources/a2ui-templates
+    to: a2ui-templates
