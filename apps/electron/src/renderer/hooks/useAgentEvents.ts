@@ -96,6 +96,10 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
   // Track the current streaming message ID
   const streamingMessageIdRef = useRef<string | null>(null);
 
+  // ─── rAF throttle for text_delta batching ───
+  const pendingDeltaRef = useRef<string>('');
+  const rafIdRef = useRef<number | null>(null);
+
   // ─── Persistence helper ───
   const persistMessage = useCallback((msg: Message) => {
     // Don't persist for memory-only sessions (not yet on disk)
@@ -135,44 +139,58 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
 
     // 根据事件类型分别处理
     switch (event.type) {
-      // ─── 文本流式事件 ───
+      // ─── 文本流式事件（rAF 节流） ───
       case 'text_delta': {
-        setMessages((prev) => {
-          // Find or create streaming message
-          const messageId = streamingMessageIdRef.current;
-          const existingIdx = messageId
-            ? prev.findIndex((m) => m.id === messageId)
-            : -1;
+        pendingDeltaRef.current += event.text;
+        if (rafIdRef.current === null) {
+          rafIdRef.current = requestAnimationFrame(() => {
+            rafIdRef.current = null;
+            const batch = pendingDeltaRef.current;
+            if (!batch) return;
+            pendingDeltaRef.current = '';
 
-          if (existingIdx >= 0) {
-            // Append to existing message
-            const updated = [...prev];
-            const existing = updated[existingIdx]!;
-            updated[existingIdx] = {
-              ...existing,
-              content: existing.content + event.text,
-            };
-            return updated;
-          } else {
-            // Create new streaming message
-            const newId = generateMessageId();
-            streamingMessageIdRef.current = newId;
-            const newMessage: Message = {
-              id: newId,
-              role: 'assistant',
-              content: event.text,
-              timestamp: Date.now(),
-              isStreaming: true,
-              isPending: true,
-              turnId: event.turnId,
-            };
-            return [...prev, newMessage];
-          }
-        });
+            setMessages((prev) => {
+              const messageId = streamingMessageIdRef.current;
+              const existingIdx = messageId
+                ? prev.findIndex((m) => m.id === messageId)
+                : -1;
+
+              if (existingIdx >= 0) {
+                const updated = [...prev];
+                const existing = updated[existingIdx]!;
+                updated[existingIdx] = {
+                  ...existing,
+                  content: existing.content + batch,
+                };
+                return updated;
+              } else {
+                const newId = generateMessageId();
+                streamingMessageIdRef.current = newId;
+                const newMessage: Message = {
+                  id: newId,
+                  role: 'assistant',
+                  content: batch,
+                  timestamp: Date.now(),
+                  isStreaming: true,
+                  isPending: true,
+                  turnId: event.turnId,
+                };
+                return [...prev, newMessage];
+              }
+            });
+          });
+        }
         break;
       }
 
       case 'text_complete': {
+        // Flush any pending rAF delta before finalizing
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+        pendingDeltaRef.current = '';
+
         setMessages((prev) => {
           const messageId = streamingMessageIdRef.current;
           if (!messageId) {
@@ -425,6 +443,10 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
     // 清理订阅
     return () => {
       unsubscribe?.();
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
   }, [enabled, handleEvent]);
 }

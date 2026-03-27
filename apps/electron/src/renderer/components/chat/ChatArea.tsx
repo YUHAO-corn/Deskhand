@@ -1,5 +1,6 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAtom } from 'jotai';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import {
   activeSessionIdAtom,
   artifactPanelOpenAtom,
@@ -84,12 +85,19 @@ export function ChatArea() {
   const lastTurn = turns[turns.length - 1];
   const showPendingThinking = isProcessing && lastTurn?.type !== 'assistant';
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const isAtBottomRef = useRef(true);
+
+  const handleAtBottomStateChange = useCallback((atBottom: boolean) => {
+    isAtBottomRef.current = atBottom;
+  }, []);
+
+  // Auto-scroll when new messages arrive (only if already at bottom)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (isAtBottomRef.current && turns.length > 0) {
+      virtuosoRef.current?.scrollToIndex({ index: 'LAST', behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, turns.length]);
 
   return (
     <div className="relative flex min-w-[400px] flex-1 flex-col overflow-hidden bg-[var(--color-surface-canvas)]">
@@ -98,7 +106,7 @@ export function ChatArea() {
         <div className="absolute right-[-20%] top-[8%] h-[48%] w-[60%] rounded-full bg-[radial-gradient(circle,_var(--color-surface-elevated)_0%,_transparent_68%)]" />
       </div>
 
-      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-5">
+      <div className="relative z-10 flex-1 overflow-hidden px-5">
         {isEmpty ? (
           <div className="flex h-full items-center justify-center">
             <div className="max-w-[440px] rounded-[var(--radius-card)] border border-[var(--color-line-soft)] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[var(--elevation-1)]">
@@ -112,20 +120,32 @@ export function ChatArea() {
             </div>
           </div>
         ) : (
-          <div className="mx-auto max-w-[880px] py-8">
-            {turns.map((turn, index) => (
-              <TurnRenderer
-                key={getTurnKey(turn)}
-                turn={turn}
-                prevTurnType={index > 0 ? turns[index - 1].type : undefined}
-              />
-            ))}
-            {showPendingThinking && (
-              <div className="mb-2">
-                <ProcessingIndicator />
+          <Virtuoso
+            ref={virtuosoRef}
+            data={turns}
+            atBottomStateChange={handleAtBottomStateChange}
+            followOutput="smooth"
+            initialTopMostItemIndex={turns.length - 1}
+            increaseViewportBy={200}
+            itemContent={(index, turn) => (
+              <div className="mx-auto max-w-[880px]">
+                <TurnRenderer
+                  key={getTurnKey(turn)}
+                  turn={turn}
+                  prevTurnType={index > 0 ? turns[index - 1].type : undefined}
+                />
+                {index === turns.length - 1 && showPendingThinking && (
+                  <div className="mb-2">
+                    <ProcessingIndicator />
+                  </div>
+                )}
               </div>
             )}
-          </div>
+            components={{
+              Header: () => <div className="h-8" />,
+              Footer: () => <div className="h-8" />,
+            }}
+          />
         )}
       </div>
 

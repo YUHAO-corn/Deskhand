@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import { ChevronRight, FileText, ExternalLink } from 'lucide-react';
 import type { AssistantTurn, TurnPhase } from './turn-utils';
@@ -71,7 +71,7 @@ function getDisplayPath(filePath: string, workingDirectory: string | null): stri
   return filePath;
 }
 
-export function TurnCard({ turn }: TurnCardProps) {
+export const TurnCard = memo(function TurnCard({ turn }: TurnCardProps) {
   const { response, activities, timestamp } = turn;
   const phase = deriveTurnPhase(turn);
   const setPendingAction = useSetAtom(pendingActionMessageAtom);
@@ -221,4 +221,4 @@ export function TurnCard({ turn }: TurnCardProps) {
       </div>
     </div>
   );
-}
+});

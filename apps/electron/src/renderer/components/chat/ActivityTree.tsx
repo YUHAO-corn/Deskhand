@@ -7,7 +7,7 @@
  * - 渲染树形连接线（├─ └─）
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAtom } from 'jotai';
 import type { ActivityItem } from './turn-utils';
 import {
@@ -24,8 +24,8 @@ interface ActivityTreeProps {
 }
 
 export function ActivityTree({ activities, onActivityClick }: ActivityTreeProps) {
-  // 分组：将扁平列表转换为树形结构
-  const groupedActivities = groupActivitiesByParent(activities);
+  // 分组：将扁平列表转换为树形结构（memo 避免每次渲染重算）
+  const groupedActivities = useMemo(() => groupActivitiesByParent(activities), [activities]);
 
   // 管理每个 Task 的展开/折叠状态
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(() => {
