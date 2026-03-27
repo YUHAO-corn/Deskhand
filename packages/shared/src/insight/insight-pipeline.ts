@@ -42,28 +42,22 @@ export async function runInsightPipeline(config: InsightPipelineConfig): Promise
   const client = new Anthropic({ apiKey: config.apiKey });
 
   // Stage 1: Extract facets (only new sessions if sinceTimestamp provided)
-  console.log('[InsightPipeline] Stage 1: Extracting facets...');
   const facets = await extractAllFacets(client, config.sinceTimestamp ?? 0);
-  console.log(`[InsightPipeline] Extracted ${facets.length} facets`);
 
   if (facets.length < 2) {
-    console.log('[InsightPipeline] Not enough sessions for pattern analysis');
     return { created: false };
   }
 
   // Stage 2: Run insight agent
-  console.log('[InsightPipeline] Stage 2: Running insight agent...');
   const agentConfig: InsightAgentConfig = {
     apiKey: config.apiKey,
     pathToClaudeCodeExecutable: config.pathToClaudeCodeExecutable,
     workingDirectory: config.workingDirectory,
   };
   const agentResult = await runInsightAgent(agentConfig, facets);
-  console.log(`[InsightPipeline] Agent produced ${agentResult.messages.length} messages, ${agentResult.actions.length} actions`);
 
   // Quality gate: if agent produced no messages, skip
   if (agentResult.messages.length === 0) {
-    console.log('[InsightPipeline] Agent produced no output, staying silent');
     return { created: false };
   }
 
@@ -92,7 +86,6 @@ export async function runInsightPipeline(config: InsightPipelineConfig): Promise
     hasUnread: true,
   });
 
-  console.log(`[InsightPipeline] Created insight session: ${sessionId}`);
   return {
     created: true,
     sessionId,

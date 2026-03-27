@@ -94,7 +94,6 @@ export async function extractSessionFacet(
 
   // Parse response
   const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
-  console.log(`[InsightPipeline] Raw facet response for ${sessionId}:`, text.slice(0, 200));
   try {
     // Strip markdown code fences if present
     const jsonText = text.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();

@@ -31,7 +31,7 @@ export function ToolActivityRow({
   hasChildren,
   taskOutputData,
 }: ToolActivityRowProps) {
-  const { status, toolName, content, intent, displayName, error } = activity;
+  const { status, toolName, displayName, error } = activity;
 
   // 获取工具显示名称
   const toolDisplayName = displayName || toolName || 'Tool';

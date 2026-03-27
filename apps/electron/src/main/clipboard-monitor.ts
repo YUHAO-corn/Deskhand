@@ -232,7 +232,6 @@ export function startClipboardMonitor(): void {
         timestamp: e.timestamp, charCount: e.charCount, fileSize: e.fileSize,
       })).join('\n') + '\n';
       fs.writeFileSync(getIndexPath(), indexContent, 'utf-8');
-      console.log(`[clipboard] Rebuilt index from ${entries.length} history entries`);
     }
   }
 

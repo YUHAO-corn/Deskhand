@@ -205,7 +205,7 @@ function SessionItem({
   isDeleting,
   onClick,
   onMenuToggle,
-  onMenuClose,
+  onMenuClose: _onMenuClose,
   onRenameStart,
   onRenameConfirm,
   onRenameCancel,

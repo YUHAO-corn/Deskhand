@@ -221,12 +221,10 @@ export async function runInsightAgent(
 
   const collector = new EventCollector();
 
-  console.log('[InsightAgent] Starting agent...');
   await agent.chat(prompt, {
     permissionMode: 'allow-all',
     onEvent: (event) => collector.handleEvent(event),
   });
-  console.log('[InsightAgent] Agent completed');
 
   const messages = collector.finalize();
 

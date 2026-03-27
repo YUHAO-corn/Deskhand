@@ -128,9 +128,7 @@ export const TurnCard = memo(function TurnCard({ turn }: TurnCardProps) {
             <div className="mt-2 rounded-[var(--radius-control)] border border-[var(--color-line-soft)] bg-[var(--color-surface-panel)] px-2 py-2">
               <ActivityTree
                 activities={activities}
-                onActivityClick={(activity) => {
-                  console.log('Activity clicked:', activity);
-                }}
+                onActivityClick={() => {}}
               />
               {showThinking && !hasContent && <ProcessingIndicator startTime={timestamp} />}
             </div>

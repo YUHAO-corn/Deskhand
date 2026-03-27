@@ -53,7 +53,7 @@ export function InputToolbar() {
 
   // Session persistence state
   const [sessionMetaMap, setSessionMetaMap] = useAtom(sessionMetaMapAtom);
-  const [sessionIds, setSessionIds] = useAtom(sessionIdsAtom);
+  const [_sessionIds, setSessionIds] = useAtom(sessionIdsAtom);
   const [memoryOnlySessions, setMemoryOnlySessions] = useAtom(memoryOnlySessionsAtom);
 
   // 模型配置
@@ -63,7 +63,7 @@ export function InputToolbar() {
   const [workingDirectory] = useAtom(workingDirectoryAtom);
 
   // 权限模式
-  const [permissionMode, setPermissionMode] = useAtom(permissionModeAtom);
+  const [permissionMode, _setPermissionMode] = useAtom(permissionModeAtom);
 
   // A2UI prompt attachment
   const [a2uiPrompt, setA2UIPrompt] = useAtom(pendingA2UIPromptAtom);

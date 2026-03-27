@@ -9,7 +9,7 @@
  * - Phase：Turn 的当前阶段（pending → tool_active → awaiting → streaming → complete）
  */
 
-import type { Message, StoredMessage, MessageRole } from '@deskhand/core'
+import type { Message, StoredMessage } from '@deskhand/core'
 import type { ActivityItem, ActivityStatus, ActivityType, ResponseContent, TodoItem } from './turn-types'
 
 // Re-export ActivityItem for consumers

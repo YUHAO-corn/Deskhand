@@ -429,7 +429,7 @@ export function useAgentEvents({ sessionId, enabled = true }: UseAgentEventsOpti
         break;
 
       default:
-        console.log('[useAgentEvents] unknown event type:', (event as { type: string }).type);
+        break;
     }
   }, [sessionId, setMessages, setProcessing, setPermissionRequest, persistMessage, updateMeta, setArtifacts, setArtifactPanelOpen, setSelectedArtifact, workingDirectory]);
 

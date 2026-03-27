@@ -28,7 +28,6 @@ import {
   loadSession,
   createSession,
   deleteSession,
-  generateSessionId,
   appendMessage,
   updateSessionMeta,
 } from '@deskhand/shared/sessions';
@@ -76,10 +75,8 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
 
   // For monorepos, try root level if not found locally
   if (!existsSync(cliPath) && !app.isPackaged) {
-    console.log('[ipc] SDK cli.js not found at:', cliPath);
+    // SDK cli.js not found — will fail at runtime
   }
-
-  console.log('[ipc] Using pathToClaudeCodeExecutable:', cliPath);
 
   const agent = new DeskhandAgent({
     apiKey,
@@ -89,7 +86,6 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
     clipboardPaths: getClipboardPaths(),
     // Callback to persist SDK session ID when captured
     onSdkSessionIdUpdate: (sdkSessionId: string) => {
-      console.log('[ipc] SDK session ID captured for', sessionId, ':', sdkSessionId);
       sdkSessionIds.set(sessionId, sdkSessionId);
     },
   });
@@ -97,7 +93,6 @@ async function getOrCreateAgent(sessionId: string, workingDirectory?: string): P
   // Restore SDK session ID if we have one from previous conversation
   const existingSdkSessionId = sdkSessionIds.get(sessionId);
   if (existingSdkSessionId) {
-    console.log('[ipc] Resuming SDK session:', existingSdkSessionId);
     agent.setSessionId(existingSdkSessionId);
   }
 
@@ -133,7 +128,6 @@ async function maybeRunInsight(sender: Electron.WebContents): Promise<void> {
     if (!apiKey) return;
 
     insightRunning = true;
-    console.log(`[Insight] Auto-trigger: ${newSessionCount} new sessions since last insight`);
 
     const result = await runInsightPipeline({
       apiKey,
@@ -153,8 +147,6 @@ async function maybeRunInsight(sender: Electron.WebContents): Promise<void> {
     if (result.created) {
       sender.send('sessions:refresh');
     }
-
-    console.log(`[Insight] Auto-trigger complete: created=${result.created}`);
   } catch (error) {
     console.error('[Insight] Auto-trigger failed:', error);
   } finally {
@@ -230,14 +222,14 @@ export function registerIpcHandlers(): void {
     if (config.apiKey) {
       await saveApiKey(config.apiKey);
       // Don't save API key in config.json
-      const { apiKey, ...rest } = config;
+      const { apiKey: _apiKey, ...rest } = config;
       await saveConfig(rest as AppConfig);
     } else {
       await saveConfig(config);
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.VALIDATE_API_KEY, async (_, apiKey: string, baseUrl?: string): Promise<{ valid: boolean; error?: string }> => {
+  ipcMain.handle(IPC_CHANNELS.VALIDATE_API_KEY, async (_, apiKey: string, _baseUrl?: string): Promise<{ valid: boolean; error?: string }> => {
     // 实现步骤：
     // 1. 验证 API key 格式（以 sk-ant- 开头）
     // 2. 调用 Anthropic API 验证 key 有效性
@@ -291,7 +283,6 @@ export function registerIpcHandlers(): void {
     //    event.sender.send('agent:event', sessionId, agentEvent)
     // 3. 调用 agent.chat(message, { onEvent, ...config })
     // 4. 聊天完成后，更新 session 的 lastMessageAt
-    console.log('[IPC] agent:chat', sessionId, message, config);
 
     const agent = await getOrCreateAgent(sessionId, config?.workingDirectory);
     if (!agent) {
@@ -308,7 +299,6 @@ export function registerIpcHandlers(): void {
       permissionMode: config?.permissionMode,
       onEvent: (agentEvent: AgentEvent) => {
         // Forward event to renderer
-        console.log('[IPC] agent:event', sessionId, agentEvent.type);
         event.sender.send('agent:event', sessionId, agentEvent);
       },
     }).catch((err: unknown) => {
@@ -319,8 +309,6 @@ export function registerIpcHandlers(): void {
       } as AgentEvent);
     });
 
-    console.log('[IPC] agent.chat completed for', sessionId);
-
     // Auto-trigger insight check (async, non-blocking)
     maybeRunInsight(event.sender).catch(() => {});
   });
@@ -329,7 +317,6 @@ export function registerIpcHandlers(): void {
     // 实现步骤：
     // 1. 从 agents Map 获取该 session 的 agent
     // 2. 如果存在，调用 agent.stop()
-    console.log('[IPC] agent:stop', sessionId);
 
     const agent = agents.get(sessionId);
     if (agent) {
@@ -341,7 +328,6 @@ export function registerIpcHandlers(): void {
     // 实现步骤：
     // 1. 从 agents Map 获取该 session 的 agent
     // 2. 调用 agent.respondToPermission(requestId, response)
-    console.log('[IPC] agent:permission-response', sessionId, requestId, response);
 
     const agent = agents.get(sessionId);
     if (agent) {

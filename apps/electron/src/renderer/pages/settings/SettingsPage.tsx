@@ -15,7 +15,7 @@
 import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { settingsOpenAtom } from '../../atoms/sessions';
-import type { PermissionMode, Skill } from '@deskhand/core';
+import type { PermissionMode } from '@deskhand/core';
 
 // 导航项类型
 type NavItemId = 'general' | 'api' | 'permissions' | 'skills';

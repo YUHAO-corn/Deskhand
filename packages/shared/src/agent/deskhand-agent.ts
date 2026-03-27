@@ -115,9 +115,8 @@ export class DeskhandAgent {
     const effectiveModel = options?.model || this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
 
     // TODO: thinkingLevel needs to be mapped to SDK parameters (e.g., budget_tokens)
-    // For now, we log it but don't apply it until we understand the SDK's API
     if (options?.thinkingLevel && options.thinkingLevel !== 'off') {
-      console.log('[DeskhandAgent] Thinking level requested:', options.thinkingLevel);
+      // Not yet applied — waiting for SDK API support
     }
 
     // Permission mode: 'ask' = confirm all dangerous ops, 'allow-all' = only confirm destructive bash
@@ -132,7 +131,6 @@ export class DeskhandAgent {
     const systemPromptAppendBlocks: string[] = [];
 
     if (this.options.clipboardPaths) {
-      console.log('[DeskhandAgent] Clipboard context injected:', this.options.clipboardPaths.indexPath);
       systemPromptAppendBlocks.push([
         '## Clipboard History',
         'The user has clipboard monitoring enabled. Their clipboard history is stored locally.',
@@ -147,7 +145,6 @@ export class DeskhandAgent {
     }
 
     if (forcedA2UITool) {
-      console.log('[DeskhandAgent] Interact tag detected, forcing tool:', forcedA2UITool);
       const blockedTool = forcedA2UITool === 'render_playground' ? 'render_tournament' : 'render_playground';
       systemPromptAppendBlocks.push([
         '## Interact Tag Routing',
@@ -274,7 +271,6 @@ export class DeskhandAgent {
         const msg = sdkMessage as Record<string, unknown>;
         if (msg.session_id && !this.sdkSessionId) {
           this.sdkSessionId = msg.session_id as string;
-          console.log('[DeskhandAgent] Captured SDK session ID:', this.sdkSessionId);
           this.options.onSdkSessionIdUpdate?.(this.sdkSessionId);
         }
 
