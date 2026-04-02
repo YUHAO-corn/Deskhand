@@ -1,0 +1,14 @@
+{
+  "id": "001-create-react-component",
+  "name": "创建 React 组件",
+  "description": "测试 agent 能否根据用户需求创建一个简单的 React 组件",
+  "input": "帮我创建一个 React 按钮组件，要求：1) 支持 primary 和 secondary 两种样式 2) 支持 disabled 状态 3) 使用 TypeScript",
+  "expected_behavior": "Agent 应该创建一个 Button.tsx 文件，包含完整的组件实现和类型定义",
+  "success_criteria": [
+    "创建了 Button.tsx 文件",
+    "组件支持 variant 属性（primary/secondary）",
+    "组件支持 disabled 属性",
+    "使用了 TypeScript 类型定义",
+    "代码可以直接运行"
+  ]
+}
