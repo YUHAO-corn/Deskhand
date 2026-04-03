@@ -27,6 +27,9 @@ export interface EvalResult {
   scenario_name: string;
   timestamp: string;
 
+  // 场景完整信息（用于报告展示）
+  scenario: Scenario;
+
   // Agent 执行记录
   transcript: {
     user_input: string;

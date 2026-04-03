@@ -47,35 +47,47 @@ ${passIcon} **${result.passed ? 'PASSED' : 'FAILED'}** | Overall Score: **${resu
 
 ---
 
-## 场景信息
+## 1. 测试场景
 
-- **Scenario ID**: ${result.scenario_id}
-- **执行时间**: ${new Date(result.timestamp).toLocaleString('zh-CN')}
+**场景 ID**: ${result.scenario_id}
 
-## 评分详情
+**场景描述**: ${result.scenario.description}
+
+**用户输入**:
+\`\`\`
+${result.scenario.input}
+\`\`\`
+
+**期望行为**: ${result.scenario.expected_behavior}
+
+**成功标准**:
+${result.scenario.success_criteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+---
+
+## 2. 评分结果
 
 ${result.scores.map(s => `### ${s.name}: ${s.score}/10
 
 ${s.reasoning}
 `).join('\n')}
 
-## Judge 总评
+### Judge 总评
 
 ${result.judge_comment}
 
 ---
 
-## 执行记录
+## 3. 执行过程
 
-### 用户输入
-
-\`\`\`
-${result.transcript.user_input}
-\`\`\`
+**执行时间**: ${new Date(result.timestamp).toLocaleString('zh-CN')}
 
 ### 对话记录
 
-${result.transcript.messages.map(m => `**${m.role}**:\n\n${m.content}\n`).join('\n---\n\n')}
+${result.transcript.messages.map(m => `**${m.role}**:
+
+${m.content}
+`).join('\n---\n\n')}
 
 ### 工具调用
 

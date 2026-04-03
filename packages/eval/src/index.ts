@@ -48,6 +48,7 @@ async function main() {
     scenario_id: scenario.id,
     scenario_name: scenario.name,
     timestamp: new Date().toISOString(),
+    scenario, // 包含完整的 scenario 信息
     transcript: runResult.transcript,
     ...judgeResult,
   };

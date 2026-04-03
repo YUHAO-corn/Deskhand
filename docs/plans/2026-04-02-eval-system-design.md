@@ -2,7 +2,27 @@
 
 **Date**: 2026-04-02  
 **Status**: Ready for Implementation  
-**Target**: MVP with 1 test case, expandable to 10-20 cases
+**Target**: MVP with 1 scenario, expandable to 10-20 scenarios
+
+---
+
+## 🎯 核心理念：场景价值 vs 功能测试
+
+**这不是传统工程测试**：
+- ❌ 不是测"list_files 功能是否存在"
+- ❌ 不是测"API 返回 200 状态码"
+- ❌ 不是确定性的 pass/fail 判断
+
+**这是 AI 产品的场景评估**：
+- ✅ 测"agent 能否完成真实用户需求场景"
+- ✅ 测"在概率性输出下，价值交付的稳定性"
+- ✅ 用 LLM-as-Judge 做推理式评分，而非规则引擎
+
+**为什么这样设计**：
+AI 系统是概率性的，不是确定性的。传统软件测试追求"功能是否存在"，但 AI 产品评估要问"场景是否完成、价值是否交付"。这是 AI Native 产品思维的核心区别。
+
+面试时可以这样解释：
+> "我们不是在测试工具调用是否成功，而是在对抗 AI 的概率性输出，验证在真实需求场景下，agent 能否稳定地交付价值。这是 AI 产品 eval 和传统软件测试的本质区别。"
 
 ---
 
