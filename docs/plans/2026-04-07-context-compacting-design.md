@@ -186,7 +186,101 @@ PreCompact Hook 的问题：
 
 ---
 
+## Deskhand 版 Context Compacting 流程图
+
+```text
+每一轮对话
++------------------+
+| Tool call result |
++------------------+
+        |
+        v
+[Layer 1: micro_compact]        （silent, every turn）
+  - 清理 3 轮之前的旧 tool_result
+  - 只保留简短占位符："[Previous: used {tool_name}]"
+        |
+        v
+[Check: tokens > 50000?]
+   |               |
+   no              yes
+   |               |
+   v               v
+继续对话   [Layer 2: auto_compact]
+              - 触发 SDK / API 摘要压缩
+              - 将完整转录写入 .transcripts/
+              - 生成结构化摘要
+                    |
+                    v
+            [Layer 3: compact tool]
+              - 用户或系统显式触发压缩
+              - 与 auto_compact 走同一套摘要逻辑
+                    |
+                    v
+            [Layer 4: post_compact_restore]
+              - 恢复 .claude/user.md
+              - 恢复 .claude/tasks.jsonl
+              - 恢复最近读取 / 编辑的关键文件
+              - 必要时恢复少量项目结构信息
+                    |
+                    v
+               继续对话
+```
+
+```text
+Deskhand 的重点不是“再做一次压缩”，而是“压缩之后把关键工作记忆补回来”。
+
+Claude Code 负责底座能力：
+- micro_compact
+- auto_compact
+- compact tool
+
+Deskhand 额外负责产品层恢复：
+- user.md
+- todo / tasks.jsonl
+- 关键文件上下文
+```
+
 ## 实现计划
+
+### Vertical Slice 实现顺序
+
+按可交付的最小闭环推进，先把“压缩后还能继续工作”跑通，再加增强项。采用 **Vertical Slice + 原子化提交** 的方式开发：
+
+- 每完成一小段可验证功能，就先提交这一小段
+- 不把多个子功能攒在一起一次性提交
+- 这样如果后续某一步出错，只需要回退最近的一小块，而不是整坨回滚
+
+1. **阈值触发 compact**
+   - 先确定触发阈值
+   - 在接近阈值时自动压缩
+   - 生成 summary，并确保 summary 保留最近 2~3 轮原始对话
+
+2. **注册 user / task 工具 + workspace 初始化**
+   - 启动时初始化 workspace 级别的 `.claude/user.md` 和 `.claude/tasks.jsonl`
+   - 设计工具描述、触发时机、写入内容和文件格式
+   - 让 agent 知道什么时候该记录什么信息
+
+3. **压缩后恢复 user / task 文件**
+   - compact 完成后读取 `.claude/user.md` 和 `.claude/tasks.jsonl`
+   - 作为恢复上下文注入到新的会话起点
+   - 验证压缩后仍能记住用户偏好和当前任务
+
+4. **编写压缩提示词文件**
+   - 在压缩阶段给 API 传入更贴近非技术用户视角的指引
+   - 让 summary 更重视任务、偏好、下一步，而不是开发者式细节
+
+5. **上下文恢复增强**
+   - 压缩后自动读取最近编辑过的 3 个文件
+   - 总量不超过 5000 tokens
+   - 如果最近一次 Skill 调用在 5 轮对话内，则恢复该 Skill 的上下文
+
+6. **精细化 tool result 清理规则**
+   - 在基础闭环跑通后，再做更细的 tool result 生命周期控制
+   - 先保证简单可用，再考虑按工具类型做差异化清理
+
+### MVP 边界
+
+第一版先只做 1~4，形成完整闭环；5~6 作为增强项后置。
 
 ### 配置参数
 
@@ -212,37 +306,13 @@ ${userContent}
 }
 ```
 
-### 实现步骤
-
-1. **配置压缩阈值**
-   - 设置 `autoCompactWindow: 140000`
-   - 验证触发时机（通过日志）
-
-2. **实现 PostCompact Hook**
-   - 读取 `.claude/todo.md` 和 `.claude/user.md`
-   - 格式化为系统消息
-   - 注入到上下文
-
-3. **测试验证**
-   - 长对话测试（100+ 轮）
-   - 验证压缩后任务连贯性
-   - 验证用户偏好保留
-
-4. **（可选）精细控制 Tool Result Clearing**
-   - 如果默认清理不合理，启用 `context_management`
-   - 配置保留读取类工具、清理执行类工具
-
 ### 不做的事情
 
 - ❌ 不使用 PreCompact Hook（会失真）
 - ❌ 不注入技能列表（在系统提示词里）
 - ❌ 不注入技能执行结果（应该记录在 todo.md）
-- ❌ 暂不注入项目文件结构（观察是否需要）
-- ❌ 暂不精细控制 Tool Result Clearing（先用默认）
-
----
-
----
+- ❌ 不把最近文件恢复放进第一版 MVP
+- ❌ 不把精细 Tool Result Clearing 放进第一版 MVP
 
 ## Q11: 任务和用户偏好如何维护？
 
