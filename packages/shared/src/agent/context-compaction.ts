@@ -1,3 +1,6 @@
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
 import { buildPostCompactRestoreContext, loadWorkspaceCompactionPrompt } from './workspace-memory.ts';
 
 export const DEFAULT_AUTO_COMPACT_WINDOW = 140000;
@@ -18,6 +21,14 @@ export interface DeskhandCompactionRuntimeOptions {
       pause_after_compaction: false;
     }>;
   };
+}
+
+export interface ArchiveTranscriptSnapshotInput {
+  workspaceDir: string;
+  sessionId: string;
+  transcriptPath: string;
+  trigger: 'auto' | 'manual';
+  timestamp?: number;
 }
 
 export function supportsDeskhandCompaction(model: string): boolean {
@@ -65,4 +76,37 @@ export async function buildPostCompactHookOutput(workspaceDir: string): Promise<
       additionalContext,
     },
   };
+}
+
+function formatSnapshotTimestamp(timestamp: number): string {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+}
+
+export async function archiveTranscriptSnapshot(
+  input: ArchiveTranscriptSnapshotInput,
+): Promise<string | null> {
+  try {
+    const transcriptContent = await fs.readFile(input.transcriptPath, 'utf-8');
+    const archiveDir = path.join(input.workspaceDir, '.transcripts');
+    await fs.mkdir(archiveDir, { recursive: true });
+
+    const timestamp = formatSnapshotTimestamp(input.timestamp ?? Date.now());
+    const safeSessionId = input.sessionId.replace(/[^a-zA-Z0-9_-]/g, '-');
+    const filePath = path.join(
+      archiveDir,
+      `${timestamp}-${input.trigger}-${safeSessionId}.jsonl`,
+    );
+
+    await fs.writeFile(filePath, transcriptContent, 'utf-8');
+    return filePath;
+  } catch {
+    return null;
+  }
 }

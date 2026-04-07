@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import {
+  archiveTranscriptSnapshot,
   buildCompactionRuntimeOptions,
   DEFAULT_AUTO_COMPACT_WINDOW,
 } from './context-compaction.ts';
@@ -103,6 +104,27 @@ describe('workspace memory files', () => {
 });
 
 describe('compaction runtime options', () => {
+  test('archives full transcript before compaction', async () => {
+    const workspaceDir = makeTempWorkspace();
+    await ensureWorkspaceMemoryFiles(workspaceDir);
+
+    const transcriptPath = path.join(workspaceDir, 'sdk-session.jsonl');
+    fs.writeFileSync(transcriptPath, '{"type":"user","content":"hello"}\n', 'utf-8');
+
+    const archivedPath = await archiveTranscriptSnapshot({
+      workspaceDir,
+      sessionId: 'session-123',
+      transcriptPath,
+      trigger: 'auto',
+      timestamp: 1712476800000,
+    });
+
+    expect(archivedPath).not.toBeNull();
+    expect(archivedPath).toContain('.transcripts');
+    expect(fs.existsSync(archivedPath!)).toBe(true);
+    expect(fs.readFileSync(archivedPath!, 'utf-8')).toBe('{"type":"user","content":"hello"}\n');
+  });
+
   test('enables compaction config for 4.6-class models', async () => {
     const workspaceDir = makeTempWorkspace();
 

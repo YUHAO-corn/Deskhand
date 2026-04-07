@@ -18,7 +18,11 @@ import { query, AbortError, type Query } from '@anthropic-ai/claude-agent-sdk';
 import { ToolIndex, extractToolStarts, extractToolResults, type ContentBlock } from './tool-matching';
 import { getPluginPaths } from '../skills/loader';
 import { createA2UIServer } from './a2ui-tools';
-import { buildCompactionRuntimeOptions, buildPostCompactHookOutput } from './context-compaction';
+import {
+  archiveTranscriptSnapshot,
+  buildCompactionRuntimeOptions,
+  buildPostCompactHookOutput,
+} from './context-compaction';
 import { createWorkspaceMemoryServer } from './workspace-memory-tools';
 import { ensureWorkspaceMemoryFiles } from './workspace-memory';
 
@@ -256,6 +260,22 @@ export class DeskhandAgent {
                 reason: 'User denied permission',
               };
             }
+
+            return { continue: true };
+          }],
+        }],
+        PreCompact: [{
+          hooks: [async (input: Record<string, unknown>) => {
+            if (input.hook_event_name !== 'PreCompact') {
+              return { continue: true };
+            }
+
+            await archiveTranscriptSnapshot({
+              workspaceDir: workingDirectory,
+              sessionId: String(input.session_id),
+              transcriptPath: String(input.transcript_path),
+              trigger: input.trigger === 'manual' ? 'manual' : 'auto',
+            });
 
             return { continue: true };
           }],
