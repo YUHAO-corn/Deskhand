@@ -18,6 +18,9 @@ import { query, AbortError, type Query } from '@anthropic-ai/claude-agent-sdk';
 import { ToolIndex, extractToolStarts, extractToolResults, type ContentBlock } from './tool-matching';
 import { getPluginPaths } from '../skills/loader';
 import { createA2UIServer } from './a2ui-tools';
+import { buildCompactionRuntimeOptions, buildPostCompactHookOutput } from './context-compaction';
+import { createWorkspaceMemoryServer } from './workspace-memory-tools';
+import { ensureWorkspaceMemoryFiles } from './workspace-memory';
 
 type ForcedA2UITool = 'render_playground' | 'render_tournament' | null;
 
@@ -104,15 +107,18 @@ export class DeskhandAgent {
   async chat(message: string, options?: ChatOptions): Promise<void> {
     const emit = (event: AgentEvent) => options?.onEvent?.(event);
     const forcedA2UITool = extractForcedA2UIToolFromMessage(message);
+    const workingDirectory = this.options.workingDirectory || process.cwd();
 
     // ─── Step 1: 准备 ───
     this.abortController = new AbortController();
+    await ensureWorkspaceMemoryFiles(workingDirectory);
     // Note: API key and base URL are read from environment variables:
     // - ANTHROPIC_API_KEY
     // - ANTHROPIC_BASE_URL
 
     // Model priority: runtime options > agent options > env var > default
-    const effectiveModel = options?.model || this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+    const effectiveModel = options?.model || this.options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+    const compactionRuntimeOptions = await buildCompactionRuntimeOptions(effectiveModel, workingDirectory);
 
     // TODO: thinkingLevel needs to be mapped to SDK parameters (e.g., budget_tokens)
     if (options?.thinkingLevel && options.thinkingLevel !== 'off') {
@@ -156,9 +162,10 @@ export class DeskhandAgent {
 
     const sdkOptions = {
       model: effectiveModel,
-      cwd: this.options.workingDirectory || process.cwd(),
+      cwd: workingDirectory,
       abortController: this.abortController,
       pathToClaudeCodeExecutable: this.options.pathToClaudeCodeExecutable,
+      ...compactionRuntimeOptions,
       // System prompt: inject optional runtime constraints
       ...(systemPromptAppendBlocks.length > 0 ? {
         systemPrompt: {
@@ -175,11 +182,12 @@ export class DeskhandAgent {
       // Skills: pass skill directories as plugins for SDK's Skill tool
       plugins: getPluginPaths(this.options.workingDirectory),
       // A2UI: custom tools for rendering interactive UI components
-      ...(this.options.a2uiTemplateDir ? {
-        mcpServers: {
+      mcpServers: {
+        'deskhand-memory': createWorkspaceMemoryServer(workingDirectory),
+        ...(this.options.a2uiTemplateDir ? {
           'deskhand-a2ui': createA2UIServer(this.options.a2uiTemplateDir),
-        },
-      } : {}),
+        } : {}),
+      },
       // Custom permission hook
       hooks: {
         PreToolUse: [{
@@ -252,8 +260,17 @@ export class DeskhandAgent {
             return { continue: true };
           }],
         }],
+        PostCompact: [{
+          hooks: [async (input: Record<string, unknown>) => {
+            if (input.hook_event_name !== 'PostCompact') {
+              return { continue: true };
+            }
+
+            return buildPostCompactHookOutput(workingDirectory);
+          }],
+        }],
       },
-    };
+    } as any;
 
     // ─── Step 2: 调用 SDK query ───
     this.currentQuery = query({ prompt: message, options: sdkOptions });
