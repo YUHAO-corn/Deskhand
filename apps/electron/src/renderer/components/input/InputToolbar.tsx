@@ -114,6 +114,8 @@ export function InputToolbar() {
   // 获取模型显示名称
   const getModelDisplayName = (modelId: string) => {
     const modelNames: Record<string, string> = {
+      'claude-opus-4-6': 'Opus 4.6',
+      'claude-sonnet-4-6': 'Sonnet 4.6',
       'claude-opus-4-5-20251101': 'Opus 4.5',
       'claude-sonnet-4-5-20250929': 'Sonnet 4.5',
       'claude-sonnet-4-20250514': 'Sonnet 4',

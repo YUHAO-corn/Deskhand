@@ -96,7 +96,7 @@ export const permissionRequestAtom = atom<{
 export const thinkingLevelAtom = atom<ThinkingLevel>('off');
 
 /** Selected model */
-export const selectedModelAtom = atom<string>('claude-sonnet-4-5');
+export const selectedModelAtom = atom<string>('claude-sonnet-4-6');
 
 /** Working directory (null = not selected, uses app default) */
 export const workingDirectoryAtom = atom<string | null>(null);

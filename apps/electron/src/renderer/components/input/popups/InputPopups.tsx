@@ -283,6 +283,8 @@ export function ModelSelectorPopup({ isOpen, onClose }: ModelSelectorPopupProps)
   const [selectedModel, setSelectedModel] = useAtom(selectedModelAtom);
 
   const models = [
+    { id: 'claude-opus-4-6', name: 'Opus 4.6' },
+    { id: 'claude-sonnet-4-6', name: 'Sonnet 4.6' },
     { id: 'claude-opus-4-5-20251101', name: 'Opus 4.5' },
     { id: 'claude-sonnet-4-5-20250929', name: 'Sonnet 4.5' },
     { id: 'claude-sonnet-4-20250514', name: 'Sonnet 4' },
@@ -843,4 +845,3 @@ function LayersIcon() {
     </svg>
   );
 }
-
