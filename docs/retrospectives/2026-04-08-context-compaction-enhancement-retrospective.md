@@ -257,3 +257,40 @@ const enhancedContext = await buildEnhancedRestoreContext(workspaceDir, transcri
 从产品角度看，Deskhand 现在已经具备了基本的"抗遗忘能力"。
 
 接下来需要的是：**真实场景下的验证和迭代**。
+
+---
+
+## 2026-04-09 补充：压缩提示词重构
+
+### 问题
+
+原始 `DEFAULT_COMPACTION_PROMPT` 只有 4 条模糊指引，没有结构要求：
+- 摘要格式不稳定，每次压缩结果差异大
+- 没有保留用户原话，决策理由容易失真
+- 没有明确的"下一步"，压缩后 agent 不知道从哪里接
+
+### 参考
+
+读了 Claude Code 的 `src/services/compact/prompt.ts`，发现它使用：
+- 9 个固定区块（Primary Request、Files、All user messages 等）
+- `<analysis>` 草稿机制（先整理思路再输出，最后剥掉）
+- 明确要求逐条保留用户原话
+- "Optional Next Step" 要求引用最近对话原文，防止任务漂移
+
+### 改动
+
+借鉴 Claude Code 结构，针对非技术用户场景裁剪为 7 个区块：
+
+1. 当前任务与意图
+2. 关键决策与理由（加了"为什么"，不只是"决定了什么"）
+3. 操作过的文件（去掉代码片段，只保留文件名和操作摘要）
+4. 用户所有消息（逐条保留原话）
+5. 用户偏好与约束（Deskhand 独有，Claude Code 没有）
+6. 待处理任务
+7. 下一步行动（引用原文防漂移）
+
+同时加入了 `<analysis>` 草稿机制和 `Do NOT call any tools` 前置声明。
+
+### 关键判断
+
+Claude Code 的提示词是面向开发者的，要求保留完整代码片段、函数签名、错误信息。Deskhand 面向非技术用户，这些都不需要，但需要额外的"用户偏好与约束"区块——这是 Claude Code 没有的。
