@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "eval": "tsx src/index.ts"
+    "eval": "tsx src/index.ts",
+    "eval:batch": "tsx src/batch-run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
