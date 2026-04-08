@@ -2,7 +2,7 @@
   "id": "004-create-presentation-outline",
   "name": "生成演示文稿大纲",
   "description": "测试 agent 能否根据主题生成结构化的演示文稿大纲",
-  "input": "我要做一个关于'如何提升团队协作效率'的 20 分钟分享，帮我生成演示大纲，包括：开场、3-4 个核心要点、每个要点的子内容、结尾总结",
+  "input": "我要做一个关于'如何提升团队协作效率'的 20 分钟分享，帮我生成演示大纲并保存成 Markdown 文件，包括：开场、3-4 个核心要点、每个要点的子内容、结尾总结",
   "expected_behavior": "Agent 应该创建一个 Markdown 文件，包含完整的演示大纲结构",
   "success_criteria": [
     "创建了 Markdown 文件",
