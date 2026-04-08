@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { buildPostCompactRestoreContext, loadWorkspaceCompactionPrompt } from './workspace-memory.ts';
+import { buildEnhancedRestoreContext } from './context-restore.ts';
 
 export const DEFAULT_AUTO_COMPACT_WINDOW = 140000;
 const COMPACTION_BETA = 'compact-2026-01-12';
@@ -57,15 +58,33 @@ export async function buildCompactionRuntimeOptions(
   };
 }
 
-export async function buildPostCompactHookOutput(workspaceDir: string): Promise<{
+export async function buildPostCompactHookOutput(
+  workspaceDir: string,
+  transcriptPath?: string,
+): Promise<{
   continue: true;
   hookSpecificOutput?: {
     hookEventName: 'PostCompact';
     additionalContext: string;
   };
 }> {
-  const additionalContext = await buildPostCompactRestoreContext(workspaceDir);
-  if (!additionalContext) {
+  const sections: string[] = [];
+
+  // Base context: tasks and user preferences
+  const baseContext = await buildPostCompactRestoreContext(workspaceDir);
+  if (baseContext) {
+    sections.push(baseContext);
+  }
+
+  // Enhanced context: recent files and skills (if transcript available)
+  if (transcriptPath) {
+    const enhancedContext = await buildEnhancedRestoreContext(workspaceDir, transcriptPath);
+    if (enhancedContext) {
+      sections.push(enhancedContext);
+    }
+  }
+
+  if (sections.length === 0) {
     return { continue: true };
   }
 
@@ -73,7 +92,7 @@ export async function buildPostCompactHookOutput(workspaceDir: string): Promise<
     continue: true,
     hookSpecificOutput: {
       hookEventName: 'PostCompact',
-      additionalContext,
+      additionalContext: sections.join('\n\n'),
     },
   };
 }

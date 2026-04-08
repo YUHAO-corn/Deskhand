@@ -286,7 +286,8 @@ export class DeskhandAgent {
               return { continue: true };
             }
 
-            return buildPostCompactHookOutput(workingDirectory);
+            const transcriptPath = input.transcript_path ? String(input.transcript_path) : undefined;
+            return buildPostCompactHookOutput(workingDirectory, transcriptPath);
           }],
         }],
       },
