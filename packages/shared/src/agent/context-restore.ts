@@ -45,21 +45,24 @@ async function extractRecentFileEdits(transcriptPath: string): Promise<RecentFil
     const edits: RecentFileEdit[] = [];
 
     for (let i = 0; i < lines.length; i++) {
-      try {
-        const message: TranscriptMessage = JSON.parse(lines[i]);
+      const line = lines[i];
+      if (!line) continue;
 
-        if (message.role !== 'assistant') continue;
+      try {
+        const message: TranscriptMessage = JSON.parse(line);
+
+        if (message.role !== 'assistant' || !message.content) continue;
 
         for (const block of message.content) {
-          if (block.type !== 'tool_use') continue;
+          if (block.type !== 'tool_use' || !block.name) continue;
 
           const toolName = block.name;
           const toolInput = block.input || {};
 
           // Track Edit and Write tools
           if (toolName === 'Edit' || toolName === 'Write') {
-            const filePath = String(toolInput.file_path || '');
-            if (filePath) {
+            const filePath = toolInput.file_path;
+            if (filePath && typeof filePath === 'string') {
               edits.push({ filePath, turnIndex: i });
             }
           }
@@ -75,7 +78,7 @@ async function extractRecentFileEdits(transcriptPath: string): Promise<RecentFil
 
     for (let i = edits.length - 1; i >= 0 && recent.length < MAX_RECENT_FILES; i--) {
       const edit = edits[i];
-      if (!seen.has(edit.filePath)) {
+      if (edit && !seen.has(edit.filePath)) {
         seen.add(edit.filePath);
         recent.push(edit);
       }
@@ -98,21 +101,24 @@ async function extractRecentSkillCalls(transcriptPath: string): Promise<RecentSk
     const skills: RecentSkillCall[] = [];
 
     for (let i = 0; i < lines.length; i++) {
-      try {
-        const message: TranscriptMessage = JSON.parse(lines[i]);
+      const line = lines[i];
+      if (!line) continue;
 
-        if (message.role !== 'assistant') continue;
+      try {
+        const message: TranscriptMessage = JSON.parse(line);
+
+        if (message.role !== 'assistant' || !message.content) continue;
 
         for (const block of message.content) {
-          if (block.type !== 'tool_use') continue;
+          if (block.type !== 'tool_use' || !block.name) continue;
 
           const toolName = block.name;
           const toolInput = block.input || {};
 
           // Track Skill tool
           if (toolName === 'Skill') {
-            const skillName = String(toolInput.skill || '');
-            if (skillName) {
+            const skillName = toolInput.skill;
+            if (skillName && typeof skillName === 'string') {
               skills.push({ skillName, turnIndex: i });
             }
           }
@@ -126,6 +132,8 @@ async function extractRecentSkillCalls(transcriptPath: string): Promise<RecentSk
     if (skills.length === 0) return [];
 
     const lastSkill = skills[skills.length - 1];
+    if (!lastSkill) return [];
+
     const totalTurns = lines.length;
     const turnsAgo = totalTurns - lastSkill.turnIndex;
 
