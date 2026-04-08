@@ -1,6 +1,9 @@
 import { DeskhandAgent } from '@deskhand/shared/agent';
 import type { AgentEvent } from '@deskhand/core';
 import type { Scenario } from './types';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 export interface RunResult {
   transcript: {
@@ -22,12 +25,20 @@ export interface RunResult {
  */
 export class EvalRunner {
   private agent: DeskhandAgent;
+  private workingDirectory: string;
 
   constructor(apiKey: string, workingDirectory?: string) {
+    // 如果没有指定工作目录，创建临时目录
+    if (!workingDirectory) {
+      this.workingDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'deskhand-eval-'));
+    } else {
+      this.workingDirectory = workingDirectory;
+    }
+
     this.agent = new DeskhandAgent({
       apiKey,
       model: 'claude-opus-4-6',
-      workingDirectory: workingDirectory || process.cwd(),
+      workingDirectory: this.workingDirectory,
     });
   }
 
