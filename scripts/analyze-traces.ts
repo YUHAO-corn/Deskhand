@@ -65,7 +65,7 @@ function classifyFailure(session: SessionSummary): string {
   for (const e of session.toolErrors) {
     toolErrorCounts[e.name] = (toolErrorCounts[e.name] ?? 0) + 1;
   }
-  if (Object.values(toolErrorCounts).some(c => c >= 3)) return 'tool_retry_loop';
+  if (Object.values(toolErrorCounts).some(c => c >= 2)) return 'tool_retry_loop';
 
   // context limit
   if (err.includes('context') || err.includes('token') || err.includes('limit') || err.includes('length')) {
