@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Trace 分析报告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0c12;
+    --surface:   #111420;
+    --surface2:  #181c2e;
+    --border:    #1f2540;
+    --border2:   #2a3060;
+    --text:      #c8d0e8;
+    --text-dim:  #5a6080;
+    --text-mute: #333a58;
+    --amber:     #f5a623;
+    --amber-dim: rgba(245,166,35,0.12);
+    --cyan:      #00d4ff;
+    --cyan-dim:  rgba(0,212,255,0.10);
+    --red:       #ff4466;
+    --red-dim:   rgba(255,68,102,0.12);
+    --yellow:    #ffd060;
+    --yellow-dim:rgba(255,208,96,0.12);
+    --green:     #00e5a0;
+    --green-dim: rgba(0,229,160,0.10);
+    --blue:      #4488ff;
+    --blue-dim:  rgba(68,136,255,0.10);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* CRT scanlines overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Ambient glow top */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(0,212,255,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  header {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .header-left { display: flex; flex-direction: column; gap: 8px; }
+
+  .header-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--cyan); }
+    50% { opacity: 0.4; box-shadow: 0 0 2px var(--cyan); }
+  }
+
+  h1 {
+    font-family: var(--sans);
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+    line-height: 1;
+  }
+
+  h1 span { color: var(--cyan); }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item { display: flex; gap: 6px; }
+  .meta-label { color: var(--text-mute); }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .btn-refresh {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    border: 1px solid rgba(0,212,255,0.25);
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-refresh:hover {
+    background: rgba(0,212,255,0.2);
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
+
+  .btn-refresh .icon { font-size: 14px; }
+
+  /* ── SECTION HEADERS ─────────────────────────────── */
+  .section { margin-top: 40px; }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-mute);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── AI SUMMARY CARD ─────────────────────────────── */
+  .ai-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--cyan), transparent);
+  }
+
+  .ai-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ai-label::before {
+    content: '◈';
+    font-size: 12px;
+  }
+
+  .ai-summary {
+    font-size: clamp(18px, 2.5vw, 26px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.35;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  .ai-analysis {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+
+  /* ── METRIC CARDS ───────────────────────────────── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, var(--glow-color, transparent) 0%, transparent 60%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .metric-card:hover { border-color: var(--border2); }
+
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .metric-value {
+    font-family: var(--mono);
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .metric-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-mute);
+  }
+
+  .metric-card.green  { --glow-color: var(--green-dim); }
+  .metric-card.yellow { --glow-color: var(--yellow-dim); }
+  .metric-card.red    { --glow-color: var(--red-dim); }
+  .metric-card.cyan   { --glow-color: var(--cyan-dim); }
+  .metric-card.amber  { --glow-color: var(--amber-dim); }
+
+  .metric-card.green  .metric-value { color: var(--green); }
+  .metric-card.yellow .metric-value { color: var(--yellow); }
+  .metric-card.red    .metric-value { color: var(--red); }
+  .metric-card.cyan   .metric-value { color: var(--cyan); }
+  .metric-card.amber  .metric-value { color: var(--amber); }
+
+  /* ── TWO COLUMN LAYOUT ───────────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── ISSUES / RECOMMENDATIONS ────────────────────── */
+  .issues-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .issue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+
+  .issue-card:hover { border-color: var(--border2); }
+
+  .issue-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .badge-high   { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(255,68,102,0.25); }
+  .badge-medium { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,208,96,0.25); }
+  .badge-low    { background: var(--blue-dim);   color: var(--blue);   border: 1px solid rgba(68,136,255,0.25); }
+
+  .issue-content {}
+  .issue-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .issue-desc  { font-family: var(--mono); font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+  .rec-card {
+    background: var(--surface);
+    border: 1px solid rgba(0,229,160,0.15);
+    border-radius: 6px;
+    padding: 16px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .rec-icon {
+    font-size: 16px;
+    color: var(--green);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .rec-title { font-size: 14px; font-weight: 600; color: var(--green); margin-bottom: 4px; }
+  .rec-desc  { font-family: var(--mono); font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+  /* ── BAR CHARTS ─────────────────────────────────── */
+  .chart-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+  }
+
+  .chart-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .bar-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .bar-item { display: flex; flex-direction: column; gap: 4px; }
+
+  .bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .bar-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .bar-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .bar-fill.tool-use   { background: linear-gradient(90deg, var(--cyan), rgba(0,212,255,0.4)); }
+  .bar-fill.tool-error { background: linear-gradient(90deg, var(--red),  rgba(255,68,102,0.4)); }
+
+  /* ── ERRORS LIST ─────────────────────────────────── */
+  .error-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .error-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .error-count {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--red);
+    min-width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .error-msg {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    word-break: break-all;
+  }
+
+  /* ── SESSION TABLE ───────────────────────────────── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  thead {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    color: var(--text-mute);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 10px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+
+  th:hover { color: var(--text); }
+  th.sort-asc::after  { content: ' ↑'; color: var(--cyan); }
+  th.sort-desc::after { content: ' ↓'; color: var(--cyan); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  td { padding: 12px 16px; color: var(--text-dim); }
+
+  .td-time { color: var(--text); }
+
+  .status-ok  { color: var(--green); }
+  .status-err { color: var(--red); }
+
+  .td-tools { color: var(--cyan); }
+  .td-errors { color: var(--red); }
+
+  /* ── ERROR STATE ─────────────────────────────────── */
+  .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .error-state .code {
+    font-family: var(--mono);
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--border2);
+    line-height: 1;
+  }
+
+  .error-state .msg {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text-dim);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  .error-state .cmd {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid rgba(245,166,35,0.2);
+    padding: 10px 20px;
+    border-radius: 4px;
+  }
+
+  /* ── LOADING ─────────────────────────────────────── */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .loading-dots { display: flex; gap: 6px; }
+
+  .loading-dot {
+    width: 6px; height: 6px;
+    background: var(--cyan);
+    border-radius: 50%;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px var(--cyan); }
+  }
+
+  /* ── FADE IN ─────────────────────────────────────── */
+  .fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .stagger > * {
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.10s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.20s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.30s; }
+
+  /* ── DIVIDER ─────────────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+</style>
+</head>
+<body>
+<div class="layout" id="app">
+  <div class="loading" id="loading">
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+    <span>正在加载报告数据…</span>
+  </div>
+</div>
+
+<script>
+// ─── Helpers ───────────────────────────────────────────────────
+
+function fmt(n) { return n == null ? '—' : String(n); }
+
+function fmtDuration(ms) {
+  if (ms == null) return '—';
+  if (ms < 1000) return ms + 'ms';
+  if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+  return (ms / 60000).toFixed(1) + 'min';
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function fmtFullTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('zh-CN');
+}
+
+function el(tag, cls, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  return e;
+}
+
+function failureColor(rate) {
+  if (rate > 20) return 'red';
+  if (rate > 10) return 'yellow';
+  return 'green';
+}
+
+// ─── Render ────────────────────────────────────────────────────
+
+function render(data) {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  const { generatedAt, days, stats, aiInsight, sessions } = data;
+
+  // ── HEADER ──
+  const header = el('header');
+  header.innerHTML = `
+    <div class="header-left">
+      <div class="header-eyebrow">实时监控 · 系统诊断</div>
+      <h1>Agent Trace <span>分析报告</span></h1>
+      <div class="header-meta">
+        <span class="meta-item"><span class="meta-label">生成时间</span>${fmtFullTime(generatedAt)}</span>
+        <span class="meta-item"><span class="meta-label">分析周期</span>${stats.period}</span>
+        <span class="meta-item"><span class="meta-label">覆盖天数</span>${days} 天</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn-refresh" onclick="window.location.reload()">
+        <span class="icon">↺</span> 刷新页面
+      </button>
+    </div>
+  `;
+  app.appendChild(header);
+
+  // ── AI DIAGNOSIS ──
+  if (aiInsight) {
+    const sec = el('div', 'section fade-in');
+    sec.innerHTML = `<div class="section-title">AI 诊断摘要</div>`;
+
+    const card = el('div', 'ai-card');
+    card.innerHTML = `
+      <div class="ai-label">Diagnosis · Claude 智能分析</div>
+      <div class="ai-summary">${aiInsight.summary || '—'}</div>
+      <div class="ai-analysis">${aiInsight.failureAnalysis || ''}</div>
+    `;
+    sec.appendChild(card);
+    app.appendChild(sec);
+  }
+
+  // ── METRICS ──
+  const metricsSection = el('div', 'section');
+  metricsSection.innerHTML = `<div class="section-title">核心指标</div>`;
+  const grid = el('div', 'metrics-grid stagger');
+
+  const fc = failureColor(stats.failureRate);
+
+  const metrics = [
+    { label: 'Total Sessions', value: stats.total, sub: `最近 ${days} 天`, color: 'cyan' },
+    { label: 'Failure Rate',   value: stats.failureRate + '%', sub: `${stats.failed} / ${stats.total} 失败`, color: fc },
+    { label: 'Avg Turns',      value: stats.avgTurnCount, sub: '每 session 平均轮次', color: 'amber' },
+    { label: 'Avg Duration',   value: fmtDuration(stats.avgDurationMs), sub: '平均耗时', color: 'amber' },
+    { label: 'Retry Loops',    value: stats.retryLoops, sub: 'tool 失败重试循环', color: stats.retryLoops > 0 ? 'red' : 'green' },
+    { label: 'Sub-agent',      value: stats.sessionsWithSubagent, sub: '含子 agent 的 session', color: 'cyan' },
+  ];
+
+  metrics.forEach(m => {
+    const card = el('div', `metric-card ${m.color}`);
+    card.innerHTML = `
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-value">${m.value}</div>
+      <div class="metric-sub">${m.sub}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  metricsSection.appendChild(grid);
+  app.appendChild(metricsSection);
+
+  // ── ISSUES + RECOMMENDATIONS ──
+  if (aiInsight && (aiInsight.topIssues?.length || aiInsight.recommendations?.length)) {
+    const sec = el('div', 'section');
+    sec.innerHTML = `<div class="section-title">问题与建议</div>`;
+    const cols = el('div', 'two-col');
+
+    // Issues
+    if (aiInsight.topIssues?.length) {
+      const left = el('div');
+      left.innerHTML = `<div class="chart-title">⚠ 发现的问题</div>`;
+      const list = el('div', 'issues-list');
+      aiInsight.topIssues.forEach(issue => {
+        const card = el('div', 'issue-card');
+        card.innerHTML = `
+          <span class="issue-badge badge-${issue.severity}">${issue.severity}</span>
+          <div class="issue-content">
+            <div class="issue-title">${issue.title}</div>
+            <div class="issue-desc">${issue.description}</div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+      left.appendChild(list);
+      cols.appendChild(left);
+    }
+
+    // Recommendations
+    if (aiInsight.recommendations?.length) {
+      const right = el('div');
+      right.innerHTML = `<div class="chart-title">✦ 优化建议</div>`;
+      const list = el('div', 'issues-list');
+      aiInsight.recommendations.forEach(rec => {
+        const card = el('div', 'rec-card');
+        card.innerHTML = `
+          <span class="rec-icon">→</span>
+          <div>
+            <div class="rec-title">${rec.title}</div>
+            <div class="rec-desc">${rec.description}</div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+      right.appendChild(list);
+      cols.appendChild(right);
+    }
+
+    sec.appendChild(cols);
+    app.appendChild(sec);
+  }
+
+  // ── TOOL CHARTS ──
+  const chartSec = el('div', 'section');
+  chartSec.innerHTML = `<div class="section-title">工具使用分布</div>`;
+  const chartCols = el('div', 'two-col');
+
+  // Tool usage
+  const maxUse = Math.max(...(stats.topTools.map(t => t[1])), 1);
+  const usePanel = el('div', 'chart-panel');
+  usePanel.innerHTML = `<div class="chart-title">◈ 工具调用频次 (Top ${stats.topTools.length})</div>`;
+  const useList = el('div', 'bar-list');
+  stats.topTools.forEach(([name, count]) => {
+    const pct = Math.round((count / maxUse) * 100);
+    const item = el('div', 'bar-item');
+    item.innerHTML = `
+      <div class="bar-header">
+        <span class="bar-name">${name}</span>
+        <span class="bar-count">${count}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill tool-use" style="width:0%" data-pct="${pct}%"></div>
+      </div>
+    `;
+    useList.appendChild(item);
+  });
+  usePanel.appendChild(useList);
+  chartCols.appendChild(usePanel);
+
+  // Tool errors
+  const maxErr = Math.max(...(stats.topToolErrors.map(t => t[1])), 1);
+  const errPanel = el('div', 'chart-panel');
+  errPanel.innerHTML = `<div class="chart-title">✕ 工具错误频次 (Top ${stats.topToolErrors.length})</div>`;
+  const errList = el('div', 'bar-list');
+  (stats.topToolErrors.length ? stats.topToolErrors : [['暂无错误', 0]]).forEach(([name, count]) => {
+    const pct = Math.round((count / maxErr) * 100);
+    const item = el('div', 'bar-item');
+    item.innerHTML = `
+      <div class="bar-header">
+        <span class="bar-name">${name}</span>
+        <span class="bar-count">${count}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill tool-error" style="width:0%" data-pct="${pct || 0}%"></div>
+      </div>
+    `;
+    errList.appendChild(item);
+  });
+  errPanel.appendChild(errList);
+  chartCols.appendChild(errPanel);
+
+  chartSec.appendChild(chartCols);
+  app.appendChild(chartSec);
+
+  // Animate bars after paint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.bar-fill').forEach(b => {
+        b.style.width = b.dataset.pct;
+      });
+    });
+  });
+
+  // ── TOP ERRORS ──
+  if (stats.topErrors?.length) {
+    const errSec = el('div', 'section');
+    errSec.innerHTML = `<div class="section-title">高频错误信息</div>`;
+    const list = el('div', 'error-list');
+    stats.topErrors.forEach(([msg, count]) => {
+      const item = el('div', 'error-item');
+      item.innerHTML = `
+        <span class="error-count">${count}</span>
+        <span class="error-msg">${msg}</span>
+      `;
+      list.appendChild(item);
+    });
+    errSec.appendChild(list);
+    app.appendChild(errSec);
+  }
+
+  // ── SESSION TABLE ──
+  if (sessions?.length) {
+    const tableSec = el('div', 'section');
+    tableSec.innerHTML = `<div class="section-title">Session 明细 (${sessions.length})</div>`;
+
+    let sortKey = 'startTime';
+    let sortDir = -1;
+
+    const wrap = el('div', 'table-wrap');
+
+    function renderTable() {
+      const sorted = [...sessions].sort((a, b) => {
+        const av = a[sortKey], bv = b[sortKey];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return av < bv ? -sortDir : av > bv ? sortDir : 0;
+      });
+
+      const cols = [
+        { key: 'startTime',     label: '时间' },
+        { key: 'durationMs',    label: '耗时' },
+        { key: 'turnCount',     label: '轮次' },
+        { key: 'toolCallCount', label: '工具调用' },
+        { key: 'toolErrorCount',label: '错误数' },
+        { key: 'success',       label: '状态' },
+      ];
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              ${cols.map(c => `<th data-key="${c.key}" class="${sortKey === c.key ? (sortDir > 0 ? 'sort-asc' : 'sort-desc') : ''}">${c.label}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(s => `
+              <tr>
+                <td class="td-time">${fmtTime(s.startTime)}</td>
+                <td>${fmtDuration(s.durationMs)}</td>
+                <td>${fmt(s.turnCount)}</td>
+                <td class="td-tools">${fmt(s.toolCallCount)}</td>
+                <td class="${s.toolErrorCount > 0 ? 'td-errors' : ''}">${fmt(s.toolErrorCount)}</td>
+                <td class="${s.success ? 'status-ok' : 'status-err'}">${s.success ? '✓ OK' : '✕ FAIL'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      wrap.querySelectorAll('th[data-key]').forEach(th => {
+        th.addEventListener('click', () => {
+          const k = th.dataset.key;
+          if (sortKey === k) { sortDir *= -1; }
+          else { sortKey = k; sortDir = -1; }
+          renderTable();
+        });
+      });
+    }
+
+    renderTable();
+    tableSec.appendChild(wrap);
+    app.appendChild(tableSec);
+  }
+}
+
+// ─── Fetch & Init ──────────────────────────────────────────────
+
+async function init() {
+  try {
+    const res = await fetch('./report.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    document.getElementById('loading').remove();
+    render(data);
+  } catch (err) {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="error-state">
+        <div class="code">⚠</div>
+        <div class="msg">
+          无法加载 <strong>report.json</strong>。<br><br>
+          浏览器直接打开本地 HTML 文件时会阻止 fetch 请求。<br>
+          请用本地 HTTP 服务器打开：
+        </div>
+        <div class="cmd">cd scripts &amp;&amp; npx http-server . -p 8080 -o</div>
+        <div class="msg" style="font-size:12px; margin-top:8px;">
+          然后在浏览器访问 <strong style="color:var(--cyan)">http://localhost:8080/report-viewer.html</strong>
+        </div>
+      </div>
+    `;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
