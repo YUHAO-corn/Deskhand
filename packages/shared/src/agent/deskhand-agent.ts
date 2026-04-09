@@ -25,6 +25,7 @@ import {
 } from './context-compaction';
 import { createWorkspaceMemoryServer } from './workspace-memory-tools';
 import { ensureWorkspaceMemoryFiles } from './workspace-memory';
+import { TraceWriter } from './trace-writer';
 
 type ForcedA2UITool = 'render_playground' | 'render_tournament' | null;
 
@@ -293,6 +294,11 @@ export class DeskhandAgent {
       },
     } as any;
 
+    // ─── Trace: 初始化 TraceWriter ───
+    const traceSessionId = this.sdkSessionId ?? `local-${Date.now()}`;
+    const tracer = new TraceWriter(traceSessionId);
+    tracer.sessionStart();
+
     // ─── Step 2: 调用 SDK query ───
     this.currentQuery = query({ prompt: message, options: sdkOptions });
 
@@ -301,6 +307,8 @@ export class DeskhandAgent {
     const emittedToolStarts = new Set<string>();
     const activeParentTools = new Set<string>();
     let currentTurnId: string | null = null;
+    let finalUsage: { inputTokens: number; outputTokens: number } | null = null;
+    let turnCount = 0;
 
     // ─── Step 4: 遍历 SDK 消息流 ───
     try {
@@ -310,6 +318,11 @@ export class DeskhandAgent {
         if (msg.session_id && !this.sdkSessionId) {
           this.sdkSessionId = msg.session_id as string;
           this.options.onSdkSessionIdUpdate?.(this.sdkSessionId);
+        }
+
+        // Count assistant turns for trace
+        if (msg.type === 'assistant') {
+          turnCount++;
         }
 
         const events = this.processSdkMessage(
@@ -323,30 +336,52 @@ export class DeskhandAgent {
 
         for (const event of events) {
           // Maintain activeParentTools for Task subagent nesting
-          // When Task starts, add its toolUseId so child tools can be nested under it
-          // When Task completes, remove it from the active set
           if (event.type === 'tool_start' && event.toolName === 'Task' && event.toolUseId) {
             activeParentTools.add(event.toolUseId);
+            tracer.subagentStart(event.toolUseId);
           }
           if (event.type === 'tool_result' && event.toolName === 'Task' && event.toolUseId) {
             activeParentTools.delete(event.toolUseId);
+            tracer.subagentEnd(event.toolUseId);
+          }
+          // Trace: tool_call / tool_error
+          if (event.type === 'tool_start' && event.toolUseId) {
+            tracer.toolCall(event.toolName ?? 'unknown', event.toolUseId);
+          }
+          if (event.type === 'tool_result' && event.toolUseId && event.isError) {
+            tracer.toolError(event.toolName ?? 'unknown', event.toolUseId, event.result ?? 'unknown error');
+          }
+          // Capture real usage from 'result' SDK message
+          if (event.type === 'complete') {
+            finalUsage = event.usage ?? null;
           }
           emit(event);
         }
       }
+      // Session ended successfully
+      tracer.sessionEnd({
+        success: true,
+        turnCount,
+        inputTokens: finalUsage?.inputTokens,
+        outputTokens: finalUsage?.outputTokens,
+      });
     } catch (error) {
       if (error instanceof AbortError) {
         emit({ type: 'info', message: 'Generation stopped' });
+        tracer.sessionEnd({ success: false, errorMessage: 'aborted', turnCount });
       } else {
         emit({ type: 'error', message: String(error) });
+        tracer.sessionEnd({ success: false, errorMessage: String(error), turnCount });
       }
     } finally {
       this.currentQuery = null;
       this.abortController = null;
     }
 
-    // ─── Step 5: 发送完成事件 ───
-    emit({ type: 'complete', usage: { inputTokens: 0, outputTokens: 0 } });
+    // ─── Step 5: 发送完成事件（如果 result 消息未带 usage）───
+    if (!finalUsage) {
+      emit({ type: 'complete', usage: { inputTokens: 0, outputTokens: 0 } });
+    }
   }
 
   /**
