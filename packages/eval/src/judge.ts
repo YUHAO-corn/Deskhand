@@ -164,13 +164,22 @@ ${transcript.tool_calls.length > 0
    * 解析 Judge 的 JSON 响应
    */
   private parseJudgeResponse(text: string): Pick<EvalResult, 'scores' | 'overall_score' | 'passed' | 'judge_comment'> {
-    // 提取 JSON 代码块
-    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+    // 尝试提取 JSON 代码块
+    const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/);
+    let jsonText = jsonMatch ? jsonMatch[1] : text;
+
+    // 如果没有代码块，尝试直接找 { } 范围
     if (!jsonMatch) {
-      throw new Error('Judge response does not contain valid JSON block');
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+        jsonText = text.slice(start, end + 1);
+      } else {
+        throw new Error('Judge response does not contain valid JSON');
+      }
     }
 
-    const parsed = JSON.parse(jsonMatch[1]);
+    const parsed = JSON.parse(jsonText);
 
     return {
       scores: parsed.scores,
