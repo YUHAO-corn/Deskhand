@@ -33,14 +33,15 @@ export class Judge {
       ],
     });
 
-    // 处理代理 API 返回的 SSE 流字符串
+    // 处理不同代理返回的响应格式
     let content: any;
     if (typeof response === 'string') {
-      // 代理返回了 SSE 流字符串，需要解析
       content = this.parseSSEResponse(response);
+    } else if (response && typeof response === 'object' && Array.isArray((response as any).content)) {
+      // 找 type === 'text' 的块（代理可能先返回 thinking 块）
+      content = (response as any).content.find((c: any) => c.type === 'text');
     } else {
-      // 正常的 Anthropic SDK 响应
-      content = response.content[0];
+      throw new Error('Unexpected response type from judge');
     }
 
     if (!content || content.type !== 'text') {
