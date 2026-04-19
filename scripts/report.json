@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-04-09T15:57:47.624Z",
+  "days": 30,
+  "stats": {
+    "total": 2,
+    "failed": 1,
+    "failureRate": 50,
+    "retryLoops": 1,
+    "avgTurnCount": 5.5,
+    "avgDurationMs": 17018,
+    "sessionsWithSubagent": 0,
+    "topTools": [
+      [
+        "Bash",
+        2
+      ],
+      [
+        "Skill",
+        2
+      ],
+      [
+        "Read",
+        1
+      ],
+      [
+        "AskUserQuestion",
+        1
+      ]
+    ],
+    "topToolErrors": [
+      [
+        "Bash",
+        2
+      ],
+      [
+        "Write",
+        1
+      ],
+      [
+        "AskUserQuestion",
+        1
+      ]
+    ],
+    "topErrors": [
+      [
+        "tool error after 3 retries",
+        1
+      ]
+    ],
+    "period": "2026-04-09 ~ 2026-04-09"
+  },
+  "aiInsight": {
+    "summary": "Agent异常率50%，Bash工具错误频发，存在重试循环，整体可靠性不足。",
+    "failureAnalysis": "核心问题在于Bash工具调用连续失败（2次错误），并触发了tool重试循环（重试3次后仍失败），说明命令执行环境存在系统性问题，可能是权限不足、路径错误或沙箱限制导致命令无法正常执行。Write工具也出现错误，进一步表明文件系统操作层面存在障碍。50%的session失败率在仅2个样本下虽不具统计显著性，但问题模式明确，需要尽快排查。",
+    "topIssues": [
+      {
+        "title": "Bash工具执行失败引发重试循环",
+        "description": "Bash工具出现2次错误且触发了重试循环（3次重试后仍失败），说明不是偶发问题，而是执行环境层面的系统性故障。这直接导致了1个session完全失败。",
+        "severity": "high"
+      },
+      {
+        "title": "文件写入工具(Write)报错",
+        "description": "Write工具出现1次错误，结合Bash的失败，暗示agent对文件系统的读写权限或路径解析可能存在问题，影响所有涉及文件操作的任务。",
+        "severity": "medium"
+      },
+      {
+        "title": "AskUserQuestion工具异常",
+        "description": "用户交互工具出现1次错误，可能导致agent无法获取必要的用户输入而卡住流程，影响交互式任务的正常推进。",
+        "severity": "low"
+      }
+    ],
+    "recommendations": [
+      {
+        "title": "排查Bash执行环境配置",
+        "description": "检查Bash工具的沙箱配置、工作目录、PATH环境变量和权限设置。重点分析重试3次失败的具体命令内容和错误输出，确认是命令本身问题还是执行环境问题。"
+      },
+      {
+        "title": "增加工具调用的错误处理与降级策略",
+        "description": "为Bash和Write工具添加前置校验（如检查目标路径是否存在、权限是否充足），在重试前诊断失败原因而非盲目重试，避免无效的重试循环浪费token和时间。"
+      },
+      {
+        "title": "扩大样本量后再评估整体健康度",
+        "description": "当前仅2个session，统计噪声大。建议积累至少10-20个session后再做趋势判断，同时为每个失败session保留完整的工具调用链日志以便根因分析。"
+      }
+    ]
+  },
+  "sessions": [
+    {
+      "sessionId": "test-session-001",
+      "startTime": "2026-04-09T15:44:56.934Z",
+      "durationMs": 3,
+      "success": false,
+      "errorMessage": "tool error after 3 retries",
+      "turnCount": 4,
+      "toolCallCount": 3,
+      "toolErrorCount": 3,
+      "hasSubagent": false,
+      "topTools": [
+        "Bash",
+        "Read"
+      ]
+    },
+    {
+      "sessionId": "local-1775749684159",
+      "startTime": "2026-04-09T15:48:04.159Z",
+      "durationMs": 34033,
+      "success": true,
+      "turnCount": 7,
+      "toolCallCount": 3,
+      "toolErrorCount": 1,
+      "hasSubagent": false,
+      "topTools": [
+        "Skill",
+        "AskUserQuestion"
+      ]
+    }
+  ]
+}
